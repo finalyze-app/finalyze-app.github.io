@@ -73,11 +73,10 @@ Financial transactions never leave the device (IndexedDB).
 - [ ] Optional: gate chat/forecasting behind the Pro license flag.
 
 ## Landing page (done)
-- [x] `landing.html` — marketing page (hero, demo mock, features, pricing, FAQ).
-      "Log in" → `index.html?signin=1`; "Create account" → `index.html?signup=1`
-      (the app opens the matching form once Supabase is configured).
-- [ ] Point your domain root at `landing.html` (or rename to `index.html` and
-      move the app to `/app/`), once hosting is set up.
+- [x] Marketing page is the homepage: `index.html` (hero, animated app preview,
+      features, pricing, FAQ). The app lives at `app.html`. "Log in" →
+      `app.html?signin=1`; "Create account" → `app.html?signup=1` (the app opens
+      the matching form once Supabase is configured).
 
 ## Notes / future
 - Add a **"Forgot password"** flow (Supabase `POST /auth/v1/recover`) — not yet

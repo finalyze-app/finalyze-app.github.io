@@ -7,7 +7,8 @@ machine**. No server, no uploads, no network calls. Works offline.
 
 Either:
 
-- **Double-click `index.html`** to open it in your browser, or
+- **Double-click `index.html`** (the landing page) and click *Open app*, or open
+  `app.html` directly, or
 - From this folder run a tiny local server and visit http://localhost:8000
 
   ```sh

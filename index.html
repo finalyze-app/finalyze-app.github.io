@@ -3,218 +3,386 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Finalyze — Spending Analyzer</title>
+  <title>Finalyze — Your personal AI financial analyst</title>
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
-  <link rel="apple-touch-icon" href="assets/icon.svg" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0a1228" />
-  <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device — nothing is uploaded." />
-  <link rel="stylesheet" href="styles.css?v=20" />
+  <meta name="description" content="Finalyze analyzes where your money goes — and what to do about it. AI-powered, and your financial data never leaves your device." />
+  <style>
+    :root{
+      --bg:#080c1a; --bg2:#0b1124; --surface:#111831; --surface2:#0e1428;
+      --ink:#eef1fb; --muted:#94a0c0; --line:#1f2845;
+      --accent:#3b82f6; --accent2:#7c4dff; --green:#0fae6f;
+      --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    }
+    *{box-sizing:border-box;} html{scroll-behavior:smooth;}
+    body{margin:0;font-family:var(--font);color:var(--ink);background:var(--bg);
+      background-image:radial-gradient(1100px 560px at 90% -10%,rgba(59,130,246,.18),transparent 55%),
+        radial-gradient(900px 500px at -10% 0%,rgba(124,77,255,.16),transparent 55%);
+      -webkit-font-smoothing:antialiased;line-height:1.6;}
+    a{color:inherit;text-decoration:none;}
+    .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:600;
+      font-size:15px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:.15s;}
+    .btn:hover{transform:translateY(-1px);}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;
+      box-shadow:0 12px 30px -10px var(--accent);}
+    .btn.ghost{background:transparent;}
+    .muted{color:var(--muted);}
+
+    /* nav */
+    nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
+      background:rgba(8,12,26,.7);border-bottom:1px solid var(--line);}
+    nav .wrap{display:flex;align-items:center;gap:18px;height:66px;}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:18px;}
+    .brand img{width:34px;height:34px;}
+    nav .links{display:flex;gap:22px;margin-left:18px;}
+    nav .links a{color:var(--muted);font-size:14px;font-weight:500;}
+    nav .links a:hover{color:var(--ink);}
+    nav .spacer{flex:1;}
+    @media(max-width:720px){nav .links{display:none;}}
+
+    /* hero */
+    .hero{padding:84px 0 48px;text-align:center;}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;
+      border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--muted);margin-bottom:26px;}
+    .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+    .hero h1{font-size:clamp(34px,6vw,60px);line-height:1.05;letter-spacing:-.025em;margin:0 0 20px;}
+    .hero h1 .grad{background:linear-gradient(120deg,#7cc0ff,#7c4dff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+    .hero p.lead{font-size:clamp(16px,2.4vw,20px);color:var(--muted);max-width:640px;margin:0 auto 32px;}
+    .hero .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+    .hero .note{margin-top:18px;font-size:13px;color:var(--muted);}
+
+    /* demo mock */
+    .demo{margin:56px auto 0;max-width:920px;border:1px solid var(--line);border-radius:20px;overflow:hidden;
+      background:linear-gradient(180deg,var(--surface),var(--surface2));box-shadow:0 40px 90px -40px rgba(0,0,0,.8);}
+    .demo .bar{display:flex;gap:7px;padding:14px 16px;border-bottom:1px solid var(--line);}
+    .demo .bar i{width:11px;height:11px;border-radius:50%;background:#2a3458;display:block;}
+    .demo .inner{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;padding:22px;}
+    @media(max-width:680px){.demo .inner{grid-template-columns:1fr;}}
+    .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+    .kpi .v{font-size:22px;font-weight:700;letter-spacing:-.02em;}
+    .kpi .l{font-size:12px;color:var(--muted);}
+    .kpi .up{color:#ff6b81;font-size:12px;font-weight:600;}
+    .kpi .down{color:var(--green);font-size:12px;font-weight:600;}
+    .ai-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+    .ai-card h4{margin:0 0 10px;font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;}
+    .ai-card li{font-size:13.5px;margin-bottom:9px;color:#cdd6f0;}
+
+    /* sections */
+    section.block{padding:72px 0;}
+    .eyebrow{text-align:center;color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;}
+    h2.title{text-align:center;font-size:clamp(26px,4vw,40px);letter-spacing:-.02em;margin:10px 0 12px;}
+    p.sub{text-align:center;color:var(--muted);max-width:620px;margin:0 auto 44px;}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+    @media(max-width:820px){.grid{grid-template-columns:1fr 1fr;}}
+    @media(max-width:520px){.grid{grid-template-columns:1fr;}}
+    .feature{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;}
+    .feature .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:14px;
+      background:rgba(59,130,246,.14);color:#7cc0ff;}
+    .feature .ic svg{width:22px;height:22px;}
+    .feature h3{margin:0 0 7px;font-size:17px;}
+    .feature p{margin:0;color:var(--muted);font-size:14px;}
+
+    /* pricing */
+    .prices{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:760px;margin:0 auto;}
+    @media(max-width:620px){.prices{grid-template-columns:1fr;}}
+    .price{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;}
+    .price.pro{border-color:var(--accent);box-shadow:0 24px 60px -30px var(--accent);}
+    .price .tag{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+    .price.pro .tag{color:var(--accent);}
+    .price .amt{font-size:38px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px;}
+    .price .amt span{font-size:15px;font-weight:500;color:var(--muted);}
+    .price ul{list-style:none;padding:0;margin:18px 0 22px;}
+    .price li{font-size:14px;padding:7px 0;border-bottom:1px solid var(--line);color:#cdd6f0;}
+    .price li::before{content:"✓";color:var(--green);font-weight:700;margin-right:9px;}
+
+    /* faq */
+    .faq{max-width:760px;margin:0 auto;}
+    details{border:1px solid var(--line);border-radius:14px;background:var(--surface);margin-bottom:12px;padding:4px 6px;}
+    summary{cursor:pointer;padding:16px 14px;font-weight:600;font-size:15px;list-style:none;}
+    summary::-webkit-details-marker{display:none;}
+    summary::after{content:"+";float:right;color:var(--muted);font-size:20px;line-height:1;}
+    details[open] summary::after{content:"–";}
+    details p{margin:0;padding:0 14px 16px;color:var(--muted);font-size:14px;}
+
+    .cta-band{text-align:center;padding:72px 0;}
+    footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:13px;}
+    footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+
+    /* ===== animated app preview ===== */
+    .appdemo{margin:56px auto 0;max-width:920px;border:1px solid var(--line);border-radius:18px;overflow:hidden;
+      background:linear-gradient(180deg,var(--surface),var(--surface2));
+      box-shadow:0 44px 100px -44px rgba(0,0,0,.85);text-align:left;
+      transform:perspective(1600px) rotateX(4deg);transform-origin:top center;}
+    .ad-chrome{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);}
+    .ad-dots{display:flex;gap:7px;} .ad-dots i{width:11px;height:11px;border-radius:50%;background:#2a3458;display:block;}
+    .ad-url{flex:1;text-align:center;font-size:12px;color:var(--muted);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:4px 12px;max-width:260px;margin:0 auto;}
+    .ad-window{display:grid;grid-template-columns:168px 1fr;min-height:340px;}
+    .ad-side{border-right:1px solid var(--line);padding:14px 10px;position:relative;background:rgba(0,0,0,.12);}
+    .ad-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:4px 8px 14px;}
+    .ad-brand img{width:24px;height:24px;}
+    .ad-nav{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:12.5px;color:var(--muted);position:relative;z-index:1;}
+    .ad-nav .ad-i{width:13px;height:13px;border-radius:4px;background:currentColor;opacity:.5;}
+    .ad-navsel{position:absolute;left:8px;right:8px;height:34px;border-radius:9px;background:var(--accent);opacity:.16;
+      top:52px;animation:adNav 9s infinite;z-index:0;}
+    @keyframes adNav{0%,14%{top:52px}18%,30%{top:91px}34%,46%{top:130px}50%,62%{top:169px}66%,96%{top:208px}100%{top:52px}}
+    .ad-main{padding:16px;display:flex;flex-direction:column;gap:14px;}
+    .ad-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+    .ad-kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;
+      opacity:0;transform:translateY(8px);animation:adIn .5s forwards;}
+    .ad-kpi:nth-child(1){animation-delay:.05s}.ad-kpi:nth-child(2){animation-delay:.13s}
+    .ad-kpi:nth-child(3){animation-delay:.21s}.ad-kpi:nth-child(4){animation-delay:.29s}
+    @keyframes adIn{to{opacity:1;transform:none}}
+    .ad-v{font-size:19px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+    .ad-l{font-size:11px;color:var(--muted);margin-top:2px;}
+    .ad-l em{font-style:normal;font-weight:700;font-size:10.5px;}
+    .up{color:#ff6b81;} .down{color:var(--green);}
+    .ad-row{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;flex:1;}
+    .ad-panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;}
+    .ad-ph{font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;}
+    .ad-bars{display:flex;align-items:flex-end;gap:10px;height:150px;}
+    .ad-bars span{flex:1;border-radius:7px 7px 3px 3px;height:0;align-self:flex-end;
+      background:linear-gradient(180deg,var(--accent2),var(--accent));
+      animation:adBar 9s cubic-bezier(.2,.7,.2,1) infinite;animation-delay:var(--d);}
+    @keyframes adBar{0%{height:0}10%,82%{height:var(--h)}92%,100%{height:0}}
+    .ad-type{font-size:13px;line-height:1.6;color:#cdd6f0;min-height:120px;}
+    .ad-type .row{display:block;margin-bottom:9px;}
+    .ad-type b{color:#fff;}
+    .ad-cursor{display:inline-block;width:7px;height:15px;background:var(--accent);vertical-align:-2px;margin-left:1px;animation:adBlink 1s steps(1) infinite;}
+    @keyframes adBlink{50%{opacity:0}}
+    @media(max-width:680px){
+      .appdemo{transform:none;margin-top:40px;}
+      .ad-window{grid-template-columns:1fr;}
+      .ad-side{display:none;}
+      .ad-kpis{grid-template-columns:1fr 1fr;}
+      .ad-row{grid-template-columns:1fr;}
+      .ad-bars{height:120px;}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .ad-kpi{opacity:1;transform:none;animation:none;}
+      .ad-bars span{height:var(--h);animation:none;}
+      .ad-navsel{animation:none;}
+    }
+
+    /* ===== mobile polish ===== */
+    @media(max-width:720px){
+      nav .wrap{height:58px;gap:10px;}
+      .brand{font-size:16px;} .brand img{width:30px;height:30px;}
+      nav a.ghost{display:none;}
+      .btn{padding:10px 15px;font-size:14px;}
+      .hero{padding:52px 0 32px;}
+      .hero .cta .btn{flex:1;justify-content:center;}
+      .hero .cta{gap:10px;}
+      section.block{padding:52px 0;}
+      .wrap{padding:0 18px;}
+    }
+    @media(max-width:340px){ .ad-kpis{grid-template-columns:1fr;} }
+  </style>
 </head>
 <body>
-  <div class="shell">
-    <!-- ============ Sidebar ============ -->
-    <aside class="sidebar">
-      <div class="brand">
-        <span class="logo">
-          <img src="assets/icon.svg" alt="Finalyze" />
-        </span>
-        <span class="name">Finalyze<small>Spending analyzer</small></span>
+  <nav>
+    <div class="wrap">
+      <a class="brand" href="#top"><img src="assets/icon.svg" alt="" />Finalyze</a>
+      <div class="links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
       </div>
-
-      <nav class="nav" id="nav"></nav>
-
-      <div class="side-spacer"></div>
-
-      <div class="side-foot">
-        <label class="btn primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Import statement
-          <input type="file" id="fileInput" accept=".qfx,.ofx,.qbo,.csv" multiple hidden />
-        </label>
-        <div class="side-actions">
-          <button class="btn ghost" id="exportBtn" title="Export backup">Backup</button>
-          <label class="btn ghost" title="Import backup">Restore<input type="file" id="importInput" accept=".json" hidden /></label>
-        </div>
-        <div class="side-actions">
-          <button class="btn ghost" id="settingsBtn" title="Manage categories & widgets">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Settings
-          </button>
-          <button class="btn ghost" id="themeBtn" title="Toggle theme">
-            <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-            <span id="themeLabel">Dark</span>
-          </button>
-        </div>
-        <div id="aiSlot" class="side-actions"></div>
-        <div class="side-actions">
-          <button class="btn ghost" id="censorBtn" title="Hide all dollar amounts" style="flex:1">
-            <svg id="censorIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span id="censorLabel">Hide $</span>
-          </button>
-        </div>
-        <div id="accountSlot" class="account-slot"></div>
-        <p class="side-note">All data stays on this device. Nothing is uploaded.</p>
-      </div>
-    </aside>
-
-    <!-- ============ Main ============ -->
-    <main>
-      <div class="page-head">
-        <div>
-          <button class="btn icon menu-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-          <h1>Spending overview</h1>
-          <div class="sub" id="rangeSub">Import a bank statement to begin.</div>
-        </div>
-        <div class="head-actions" id="dateControls" hidden>
-          <select id="datePreset" title="Quick date range" aria-label="Quick date range">
-            <option value="">Custom</option>
-            <option value="this-month">This Month</option>
-            <option value="last-month">Last Month</option>
-            <option value="this-quarter">This Quarter</option>
-            <option value="last-quarter">Last Quarter</option>
-            <option value="ytd">Year to Date</option>
-            <option value="last-year">Last Year</option>
-            <option value="all">All Time</option>
-          </select>
-          <div class="daterange">
-            <span class="dr-label">Date range</span>
-            <input type="date" id="dateFrom" title="From date" />
-            <span class="dr-sep">→</span>
-            <input type="date" id="dateTo" title="To date" />
-            <button class="btn" id="dateClear" title="Clear date filter">Clear</button>
-          </div>
-          <div class="amountrange">
-            <span class="dr-label">Amount</span>
-            <input type="number" id="amountMin" placeholder="Min" min="0" step="0.01" title="Minimum amount" />
-            <span class="dr-sep">–</span>
-            <input type="number" id="amountMax" placeholder="Max" min="0" step="0.01" title="Maximum amount" />
-          </div>
-          <select id="flowFilter" title="Transaction type" aria-label="Transaction type">
-            <option value="all">All types</option>
-            <option value="spend">Spend only</option>
-            <option value="payment">Payments only</option>
-            <option value="refund">Refunds only</option>
-          </select>
-          <select id="accountFilter" title="Account" aria-label="Account" hidden></select>
-          <label class="excl-toggle" id="exclTagWrap" title="Exclude business/reimbursable tagged transactions from spend">
-            <input type="checkbox" id="exclTags" /> Exclude tagged
-          </label>
-          <button class="btn" id="txnFilterClear" title="Clear amount and type filters">Clear filters</button>
-        </div>
-      </div>
-
-      <!-- Empty state -->
-      <section id="empty" class="dropzone">
-        <div class="dz-inner">
-          <span class="badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </span>
-          <h1>Drop your bank export here</h1>
-          <p>Drag a <code>.qfx</code>, <code>.ofx</code> or <code>.csv</code> file anywhere on this page, or use the button below.</p>
-          <p class="muted">Works with exports from most banks (Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase, and more). Everything stays on your machine — nothing is uploaded. Imports accumulate over time so you can compare month over month.</p>
-          <label class="btn primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Import statement
-            <input type="file" id="fileInput2" accept=".qfx,.ofx,.qbo,.csv" multiple hidden />
-          </label>
-        </div>
-      </section>
-
-      <!-- Dashboard -->
-      <section id="dashboard" hidden>
-        <div id="sizeBanner" class="size-banner" hidden></div>
-        <div id="filterBanner" class="filter-banner" hidden></div>
-        <div id="widgets"></div>
-      </section>
-
-      <!-- Preferences -->
-      <section id="prefs" hidden>
-        <div class="panel span-2" id="set-categories">
-          <div class="phead"><div><div class="eyebrow">Preferences</div><h2>Manage categories</h2></div></div>
-          <p class="muted" style="margin:0 0 14px">Add your own categories and recolor any category. Built-in categories can be recolored; custom ones can be removed.</p>
-          <div id="catManager"></div>
-          <div class="add-cat">
-            <input type="text" id="newCatName" placeholder="New category name" />
-            <input type="color" id="newCatColor" value="#5b5bf0" />
-            <select id="newCatType">
-              <option value="spend">Spending</option>
-              <option value="payment">Payment</option>
-              <option value="refund">Refund</option>
-            </select>
-            <button class="btn primary" id="addCatBtn">Add category</button>
-          </div>
-        </div>
-
-        <div class="panel span-2" id="set-rules">
-          <div class="phead"><div><div class="eyebrow">Rules</div><h2>Auto-categorization rules</h2></div><span class="hint">Run before built-in rules · drag to reorder</span></div>
-          <p class="muted" style="margin:0 0 14px">Match merchant text with a regular expression and assign a category. Rules are checked top-to-bottom, before the built-in keyword rules. Merchant overrides still win.</p>
-          <div id="ruleManager"></div>
-        </div>
-
-        <div class="panel span-2" id="set-groups">
-          <div class="phead"><div><div class="eyebrow">Groups</div><h2>Category groups</h2></div><span class="hint">Roll up categories for charts &amp; budgets</span></div>
-          <p class="muted" style="margin:0 0 14px">Combine categories like Dining + Groceries into “Food”. Use the category chart’s Groups view to see rollups. Each category can belong to one group.</p>
-          <div id="groupManager"></div>
-        </div>
-
-        <div class="panel span-2" id="set-budgets">
-          <div class="phead"><div><div class="eyebrow">Budgets</div><h2>Monthly budgets</h2></div><span class="hint">Alerts when the current month exceeds the limit</span></div>
-          <p class="muted" style="margin:0 0 14px">Set limits on groups (combined member spend) or individual categories not in a group.</p>
-          <div id="budgetManager"></div>
-        </div>
-
-        <div class="panel" id="set-accounts">
-          <div class="phead"><div><div class="eyebrow">Accounts</div><h2>Accounts &amp; storage</h2></div><span class="hint">Imports can be assigned to an account</span></div>
-          <p class="muted" style="margin:0 0 14px">Track multiple cards/accounts separately. Use the account filter in the header to scope the dashboard, or "All accounts" for household totals.</p>
-          <p class="muted" id="storageSize" style="margin:0 0 14px"></p>
-          <div id="accountManager"></div>
-        </div>
-
-        <div class="panel span-2" id="set-merchants">
-          <div class="phead"><div><div class="eyebrow">Merchants</div><h2>Merge merchants</h2></div><span class="hint">Tick two or more, then merge</span></div>
-          <p class="muted" style="margin:0 0 14px">Group differently-named merchants into one. The merge is remembered, so future imports with any of the old names roll up automatically.</p>
-          <div id="mergeManager"></div>
-        </div>
-
-        <div class="panel span-2" id="set-layout">
-          <div class="phead"><div><div class="eyebrow">Layout</div><h2>Show, hide &amp; reorder widgets</h2></div><span class="hint">Drag to reorder · toggle visibility</span></div>
-          <div id="widgetManager"></div>
-        </div>
-
-        <div class="panel danger-zone" id="set-danger">
-          <div class="phead"><div><div class="eyebrow">Danger zone</div><h2>Clear all data</h2></div></div>
-          <p class="muted" style="margin:0 0 14px">Permanently removes all imported transactions and every saved setting (categories, rules, budgets, tags, merges, accounts, layout) from this device. Export a backup first if you might want it back.</p>
-          <button class="btn ghost danger" id="clearBtn" title="Clear all data">Clear all data</button>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <div id="toast" class="toast"></div>
-
-  <!-- Generic modal (merchant drill-down, import account prompt) -->
-  <div id="modal" class="modal" hidden>
-    <div class="modal-backdrop" id="modalBackdrop"></div>
-    <div class="modal-panel" role="dialog" aria-modal="true">
-      <button class="icon-btn modal-close" id="modalClose" title="Close">×</button>
-      <div id="modalBody"></div>
+      <div class="spacer"></div>
+      <a class="btn ghost" href="app.html?signin=1">Log in</a>
+      <a class="btn primary" href="app.html">Open app</a>
     </div>
-  </div>
+  </nav>
 
-  <script src="vendor/chart.umd.js"></script>
-  <script src="js/config.js?v=16"></script>
-  <script src="js/auth.js?v=17"></script>
-  <script src="js/idb.js?v=15"></script>
-  <script src="js/parse.js?v=15"></script>
-  <script src="js/categorize.js?v=15"></script>
-  <script src="js/store.js?v=15"></script>
-  <script src="js/analyze.js?v=15"></script>
-  <script src="js/charts.js?v=15"></script>
-  <script src="js/app.js?v=20"></script>
-  <script src="js/account.js?v=20"></script>
-  <script src="js/ai.js?v=21"></script>
-  <script src="js/chat.js?v=20"></script>
-  <script src="js/aiui.js?v=20"></script>
+  <header class="hero" id="top">
+    <div class="wrap">
+      <span class="pill"><span class="dot"></span> Your data never leaves your device</span>
+      <h1>Your personal<br><span class="grad">AI financial analyst</span></h1>
+      <p class="lead">Finalyze understands where your money goes — and tells you what to do about it.
+        Import a statement, get instant insights, and ask your data anything. All on your machine.</p>
+      <div class="cta">
+        <a class="btn primary" href="app.html">Get started — it's free</a>
+        <a class="btn ghost" href="#how">See how it works</a>
+      </div>
+      <div class="note">No account required to start · Works offline · Open a <code>.qfx</code>/<code>.ofx</code>/<code>.csv</code></div>
+
+      <!-- animated app preview -->
+      <div class="appdemo" id="how" aria-hidden="true">
+        <div class="ad-chrome"><span class="ad-dots"><i></i><i></i><i></i></span><span class="ad-url">finalyze.app</span></div>
+        <div class="ad-window">
+          <aside class="ad-side">
+            <div class="ad-brand"><img src="assets/icon.svg" alt="" /><span>Finalyze</span></div>
+            <span class="ad-navsel"></span>
+            <a class="ad-nav"><span class="ad-i"></span>Overview</a>
+            <a class="ad-nav"><span class="ad-i"></span>By category</a>
+            <a class="ad-nav"><span class="ad-i"></span>Trend</a>
+            <a class="ad-nav"><span class="ad-i"></span>Recurring</a>
+            <a class="ad-nav"><span class="ad-i"></span>Finalyze AI</a>
+          </aside>
+          <main class="ad-main">
+            <div class="ad-kpis">
+              <div class="ad-kpi"><div class="ad-v" data-to="7631" data-prefix="$">$0</div><div class="ad-l">Net spend <em class="up">▲ 212%</em></div></div>
+              <div class="ad-kpi"><div class="ad-v" data-to="2914" data-prefix="$">$0</div><div class="ad-l">Shopping/Retail</div></div>
+              <div class="ad-kpi"><div class="ad-v" data-to="182" data-prefix="$">$0</div><div class="ad-l">Coffee this month</div></div>
+              <div class="ad-kpi"><div class="ad-v" data-to="87" data-prefix="$">$0</div><div class="ad-l">Subscriptions <em class="down">12 found</em></div></div>
+            </div>
+            <div class="ad-row">
+              <div class="ad-panel ad-chart">
+                <div class="ad-ph">Spend by category</div>
+                <div class="ad-bars">
+                  <span style="--h:82%;--d:.0s"></span><span style="--h:64%;--d:.08s"></span>
+                  <span style="--h:48%;--d:.16s"></span><span style="--h:71%;--d:.24s"></span>
+                  <span style="--h:38%;--d:.32s"></span><span style="--h:55%;--d:.4s"></span>
+                  <span style="--h:29%;--d:.48s"></span>
+                </div>
+              </div>
+              <div class="ad-panel ad-ai">
+                <div class="ad-ph">✦ AI insights</div>
+                <div class="ad-type" id="adType"></div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="eyebrow">Features</div>
+      <h2 class="title">Everything, analyzed — privately</h2>
+      <p class="sub">Powerful analysis that runs entirely in your browser. The AI models download once and work on-device.</p>
+      <div class="grid">
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z"/></svg></div>
+          <h3>AI categorization</h3><p>Transactions sorted automatically, learning from your corrections — Uber Eats → Restaurants, Costco → Groceries.</p></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+          <h3>Spending insights</h3><p>Plain-English observations: lifestyle creep, seasonal patterns, and where you can save the most.</p></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h3>Ask your data</h3><p>“How much do I spend on coffee?” “Can I afford a vacation to Italy?” Chat with your finances.</p></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg></div>
+          <h3>Subscription radar</h3><p>Every recurring charge surfaced, with price-increase and duplicate detection.</p></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <h3>Every bank</h3><p>Auto-detects exports from Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase and more — OFX/QFX/CSV.</p></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <h3>Private by design</h3><p>Transactions stay in your browser. No servers see your money — only your email, for updates.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="pricing" style="background:linear-gradient(180deg,transparent,rgba(124,77,255,.05));">
+    <div class="wrap">
+      <div class="eyebrow">Pricing</div>
+      <h2 class="title">Start free. Upgrade when ready.</h2>
+      <p class="sub">Your data is always yours and always local — on every plan.</p>
+      <div class="prices">
+        <div class="price">
+          <div class="tag">Free</div>
+          <div class="amt">$0</div>
+          <ul>
+            <li>3 months of history</li>
+            <li>Auto-categorization</li>
+            <li>Core dashboard &amp; charts</li>
+            <li>Basic AI insights</li>
+          </ul>
+          <a class="btn ghost" href="app.html" style="width:100%;justify-content:center;">Get started</a>
+        </div>
+        <div class="price pro">
+          <div class="tag">Pro</div>
+          <div class="amt">$7<span> / month</span></div>
+          <ul>
+            <li>Unlimited history</li>
+            <li>Advanced AI insights &amp; forecasting</li>
+            <li>Ask-your-data chat</li>
+            <li>Subscription detection &amp; savings simulator</li>
+            <li>Family mode</li>
+          </ul>
+          <a class="btn primary" href="app.html?signup=1" style="width:100%;justify-content:center;">Create account</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="faq">
+    <div class="wrap">
+      <div class="eyebrow">FAQ</div>
+      <h2 class="title">Questions, answered</h2>
+      <div class="faq">
+        <details open><summary>Where is my financial data stored?</summary><p>Entirely in your own browser (IndexedDB). Statements are never uploaded. The only thing stored on a server is your email address — used solely to send you product updates.</p></details>
+        <details><summary>How does the AI run without sending my data anywhere?</summary><p>The categorization and language models run on-device. They download once (opt-in) and then process your data locally — even offline.</p></details>
+        <details><summary>Which banks are supported?</summary><p>Most major North American banks and cards via OFX/QFX/CSV with automatic format detection — Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase, and more.</p></details>
+        <details><summary>Do I need an account?</summary><p>No — you can use Finalyze fully without one. An account just lets you receive updates and unlock Pro features.</p></details>
+        <details><summary>Can I export my data?</summary><p>Yes. Export a full JSON backup anytime and restore it on another device.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <h2 class="title">See where your money really goes.</h2>
+      <p class="sub">Import your first statement in under a minute.</p>
+      <a class="btn primary" href="app.html">Open Finalyze</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 Finalyze · Your money, analyzed privately.</span>
+      <span><a href="app.html">Open app</a> · <a href="#top">Back to top</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // KPI count-up, re-triggered on the 9s loop.
+      var kpis = [].slice.call(document.querySelectorAll('.ad-v'));
+      function countUp() {
+        kpis.forEach(function (el) {
+          var to = +el.dataset.to, pre = el.dataset.prefix || '', t0 = null, dur = 1100;
+          function step(ts) {
+            if (!t0) t0 = ts;
+            var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+            el.textContent = pre + Math.round(to * e).toLocaleString();
+            if (p < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        });
+      }
+      if (reduce) { kpis.forEach(function (el) { el.textContent = (el.dataset.prefix || '') + (+el.dataset.to).toLocaleString(); }); }
+      else { countUp(); setInterval(countUp, 9000); }
+
+      // Typewriter insights that cycle.
+      var lines = [
+        'You spent <b>$4,657 more</b> this month than last.',
+        'Dining out exceeded groceries by <b>$210</b>.',
+        'Canceling <b>2 unused</b> subscriptions saves <b>$24/mo</b>.',
+        'Top merchant: <b>Amazon</b> at <b>$1,663</b>.',
+        'Reducing restaurants 20% saves <b>$1,800/yr</b>.'
+      ];
+      var host = document.getElementById('adType');
+      if (host) {
+        if (reduce) { host.innerHTML = lines.map(function (l) { return '<span class="row">• ' + l + '</span>'; }).join(''); }
+        else {
+          var li = 0;
+          function typeLine() {
+            var raw = lines[li % lines.length];
+            // strip tags for char-stepping, then restore formatting at the end
+            var plain = raw.replace(/<[^>]+>/g, '');
+            var i = 0, row = document.createElement('span'); row.className = 'row';
+            var cur = document.createElement('span'); cur.className = 'ad-cursor';
+            // keep only the last 3 rows visible
+            while (host.children.length >= 3) host.removeChild(host.firstChild);
+            host.appendChild(row); row.textContent = '• '; row.appendChild(cur);
+            var iv = setInterval(function () {
+              if (i < plain.length) { cur.insertAdjacentText('beforebegin', plain[i++]); }
+              else { clearInterval(iv); row.innerHTML = '• ' + raw; li++; setTimeout(typeLine, 1500); }
+            }, 26);
+          }
+          typeLine();
+        }
+      }
+    })();
+  </script>
 </body>
 </html>
