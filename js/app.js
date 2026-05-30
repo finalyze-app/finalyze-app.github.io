@@ -284,6 +284,8 @@
           <input type="text" id="bulkCardholder" list="cardholderList" placeholder="Cardholder…" />
           <datalist id="cardholderList"></datalist>
           <button class="btn" id="bulkCardApply" disabled>Set cardholder on 0</button>
+          <span class="bulk-sep"></span>
+          <button class="btn danger" id="bulkDelete" disabled>Delete 0</button>
         </div>
         <div class="table-wrap"><table id="txnTable"><thead><tr>
           <th class="chk-cell"></th><th data-sort="date">Date</th><th data-sort="name">Merchant</th><th data-sort="cardmember">Cardmember</th>
@@ -293,6 +295,12 @@
   ];
   const WIDGET_MAP = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
   const DEFAULT_ORDER = WIDGETS.map((w) => w.id);
+  // Default sizes: dashboard widgets come up half-width (two per row); the
+  // transactions ledger stays full-width since it needs the room.
+  const DEFAULT_SIZES = Object.fromEntries(
+    DEFAULT_ORDER.filter((id) => id !== 'transactions').map((id) => [id, 'half'])
+  );
+  const effectiveSize = (id, sizes) => (sizes && sizes[id]) || DEFAULT_SIZES[id] || 'full';
 
   function getLayout() {
     const l = Store.getLayout() || {};
@@ -485,7 +493,7 @@
     const { sizes } = getLayout();
     container.innerHTML = ids.map((id) => {
       const w = WIDGET_MAP[id];
-      const half = sizes[id] === 'half' ? ' half' : '';
+      const half = effectiveSize(id, sizes) === 'half' ? ' half' : '';
       return `<section class="panel widget${half}" id="widget-${id}" data-widget="${id}">
         <div class="widget-head">
           <span class="drag-handle" title="Drag to reorder">${svg(GRIP)}</span>
@@ -905,6 +913,7 @@
     };
     $('#bulkApply').onclick = applyBulkRecategorize;
     $('#bulkCardApply').onclick = applyBulkCardholder;
+    $('#bulkDelete').onclick = applyBulkDelete;
     $('#bulkCardholder').oninput = updateBulkButton;
     $$('#txnTable th[data-sort]').forEach((th) => th.onclick = () => {
       const k = th.dataset.sort;
@@ -923,6 +932,9 @@
   function selectedTids() {
     return selectedRowChecks().map((cb) => decodeURIComponent(cb.dataset.tid));
   }
+  function selectedStoreKeys() {
+    return selectedRowChecks().map((cb) => decodeURIComponent(cb.dataset.storeKey));
+  }
   function updateBulkButton() {
     const btn = $('#bulkApply');
     if (btn) {
@@ -936,6 +948,21 @@
       cbtn.textContent = `Set cardholder on ${r}`;
       cbtn.disabled = r === 0 || !$('#bulkCardholder').value.trim();
     }
+    const dbtn = $('#bulkDelete');
+    if (dbtn) {
+      const r = selectedRowChecks().length;
+      dbtn.textContent = `Delete ${r}`;
+      dbtn.disabled = r === 0;
+    }
+  }
+  function applyBulkDelete() {
+    const keys = selectedStoreKeys();
+    if (!keys.length) return;
+    if (!confirm(`Delete ${keys.length} selected transaction${keys.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
+    let n = 0;
+    keys.forEach((k) => { if (Store.deleteTransaction(k)) n++; });
+    toast(`Deleted ${n} transaction${n === 1 ? '' : 's'}`);
+    render();
   }
   function applyBulkRecategorize() {
     const keys = selectedMerchantKeys();
@@ -1008,7 +1035,7 @@
         `<button class="tag-btn${has('business') ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="business" title="Business expense">Biz</button>` +
         `<button class="tag-btn${has('reimbursable') ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="reimbursable" title="Reimbursable">Reimb</button>`;
       return `<tr>
-        <td class="chk-cell"><input type="checkbox" class="row-check" data-merchant="${encodeURIComponent(t.merchantKey)}" data-tid="${encodeURIComponent(t.tid)}"></td>
+        <td class="chk-cell"><input type="checkbox" class="row-check" data-merchant="${encodeURIComponent(t.merchantKey)}" data-tid="${encodeURIComponent(t.tid)}" data-store-key="${encodeURIComponent(t.storeKey)}"></td>
         <td data-label="Date">${t.date}</td>
         <td class="txn-merch" data-label="Merchant"><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span><button type="button" class="icon-btn txn-edit" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Edit merchant">${svg(PENCIL)}</button></td>
         <td data-label="Cardmember">${t.cardmember}</td>
@@ -1417,7 +1444,7 @@
     const container = $('#widgetManager');
     container.innerHTML = order.map((id) => {
       const w = WIDGET_MAP[id];
-      const half = sizes[id] === 'half';
+      const half = effectiveSize(id, sizes) === 'half';
       return `<div class="wm-row" data-widget="${id}">
         <span class="drag-handle" title="Drag to reorder">${svg(GRIP)}</span>
         <span class="wm-name">${svg(NAV_ICON[id] || '')}${w.title}</span>
@@ -1443,7 +1470,10 @@
   }
   function setWidgetSize(id, size) {
     const { sizes } = getLayout();
-    if (size === 'half') sizes[id] = 'half'; else delete sizes[id];
+    // Persist only when it differs from the default, so the size picker can
+    // override either default (half or full) and storage stays minimal.
+    if (size === (DEFAULT_SIZES[id] || 'full')) delete sizes[id];
+    else sizes[id] = size;
     saveLayout({ sizes });
     toast(`“${WIDGET_MAP[id].title}” set to ${size} width`);
   }
@@ -1964,6 +1994,7 @@
   // ============ Theme ============
   function applyTheme(mode) {
     document.documentElement.dataset.theme = mode;
+    try { localStorage.setItem('finalyze.theme', mode); } catch (e) {} // share with the landing page
     const isDark = mode === 'dark';
     $('#themeLabel').textContent = isDark ? 'Light' : 'Dark';
     $('#themeIcon').innerHTML = isDark
@@ -2008,7 +2039,7 @@
     filtersHidden = storedFilters == null ? document.body.classList.contains('is-mobile') : storedFilters === '1';
     await Store.init();
     censored = await Store.getCensor();
-    const theme = (await Store.getTheme()) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const theme = (await Store.getTheme()) || localStorage.getItem('finalyze.theme') || 'light';
     applyTheme(theme);
     // Sync censor mode (chart defaults + button label) before the first render.
     if ($('#censorLabel')) $('#censorLabel').textContent = censored ? 'Show $' : 'Hide $';
