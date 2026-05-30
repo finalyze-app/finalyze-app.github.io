@@ -499,7 +499,7 @@
   const SETTINGS_TABS = [
     { id: 'categories', label: 'Categories & rules', panels: ['set-categories', 'set-rules', 'set-sub-rules', 'set-cards', 'set-groups', 'set-merchants'] },
     { id: 'budgets', label: 'Budgets', panels: ['set-budgets'] },
-    { id: 'accounts', label: 'Accounts & data', panels: ['set-accounts', 'set-danger'] },
+    { id: 'accounts', label: 'Accounts & data', panels: ['set-accounts', 'set-tours', 'set-danger'] },
     { id: 'layout', label: 'Layout', panels: ['set-layout'] },
   ];
 
@@ -2238,6 +2238,8 @@
         render(); toast('All data cleared');
       }
     });
+    $('#replayDashTour').addEventListener('click', startDashboardTour);
+    $('#replaySettingsTour').addEventListener('click', startSettingsTour);
     $('#clearTxnBtn').addEventListener('click', () => {
       if (confirm('Clear all imported transactions? Your settings (categories, rules, budgets, custom cards, accounts, layout) are kept. This cannot be undone.')) {
         Store.clearTransactions(); activeCategory = null; activeCardmember = null;
@@ -2304,6 +2306,24 @@
       { before: goTab('accounts'), sel: '#set-accounts', title: 'Accounts & data', body: 'Track multiple cards/accounts, check storage use, and back up or restore your data.' },
       { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, resize, and reorder every dashboard widget.' },
       { before: goTab('categories'), title: 'You’re all set', body: 'Tweak anything anytime from Settings. Enjoy Finalyze!', final: true },
+    ];
+    F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
+  }
+
+  // Non-destructive dashboard walkthrough (replayable on real data — unlike the
+  // demo tour, it doesn't clear anything).
+  function startDashboardTour() {
+    const toDash = () => { viewName = 'dashboard'; render(); };
+    if (!F.Demo || !F.Demo.runTour) { toDash(); return; }
+    const steps = [
+      { before: toDash, title: 'Your dashboard', body: 'A quick tour of what each section shows. Use the filters and date range up top to scope everything.' },
+      { before: toDash, sel: '#widget-overview', title: 'Spending overview', body: 'Totals at a glance — spend, refunds, payments, net, averages, plus any custom cards you add.' },
+      { before: toDash, sel: '#widget-category', title: 'Spend by category', body: 'Where your money goes. Tap a slice to filter the whole dashboard to that category.' },
+      { before: toDash, sel: '#widget-merchants', title: 'Top merchants', body: 'Who you pay most. Tap a bar for a merchant drill-down with history and average ticket.' },
+      { before: toDash, sel: '#widget-recurring', title: 'Recurring & subscriptions', body: 'Repeating charges, including keyword-matched subscriptions even when the amount varies.' },
+      { before: toDash, sel: '#widget-anomalies', title: 'Anomalies', body: 'Possible duplicates and unusually large charges, surfaced automatically.' },
+      { before: toDash, sel: '#widget-transactions', title: 'Transactions', body: 'Search, filter, retag, recategorise, and bulk-edit. Category changes are remembered per merchant.' },
+      { before: toDash, title: 'Ask the AI', body: 'The Finalyze AI button (sidebar) gives plain-English insights and a chat about your spending — all on-device. That’s the tour!', final: true },
     ];
     F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
   }
