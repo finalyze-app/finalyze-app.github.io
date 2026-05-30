@@ -103,6 +103,16 @@ These are **opt-in**: the models download only when you click *Download & enable
 Categorization uses a small embedding model (~30 MB); chat uses a WebLLM model (~1 GB, needs
 WebGPU). The Insights tab also works without any model via locally-computed observations.
 
+The chat is **strictly a spending-analysis tool** — it answers questions about your recorded
+transactions (totals, categories, merchants, trends, subscriptions, month-over-month changes).
+It deliberately does **not** answer affordability, budgeting, forecasting, or investment
+questions, because the app only holds past spend data — not income, savings, or balances. Use
+**Clear chat** to reset the conversation.
+
+> **Secure context required:** the on-device AI uses WebGPU and Cache Storage, which browsers
+> only expose over **HTTPS** or **localhost**. Over plain HTTP on a LAN IP, chat shows
+> "No WebGPU" and model caching is disabled. GitHub Pages (HTTPS) works out of the box.
+
 ## Privacy
 
 Your financial data never leaves your computer. By default there are no external requests —
