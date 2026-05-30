@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0a1228" />
   <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device — nothing is uploaded." />
-  <link rel="stylesheet" href="styles.css?v=36" />
+  <link rel="stylesheet" href="styles.css?v=37" />
 </head>
 <body>
   <div class="shell">
@@ -207,9 +207,18 @@
         </div>
 
         <div class="panel danger-zone" id="set-danger">
-          <div class="phead"><div><div class="eyebrow">Danger zone</div><h2>Clear all data</h2></div></div>
-          <p class="muted" style="margin:0 0 14px">Permanently removes all imported transactions and every saved setting (categories, rules, budgets, tags, merges, accounts, layout) from this device. Export a backup first if you might want it back.</p>
-          <button class="btn ghost danger" id="clearBtn" title="Clear all data">Clear all data</button>
+          <div class="phead"><div><div class="eyebrow">Danger zone</div><h2>Clear data</h2></div></div>
+          <p class="muted" style="margin:0 0 14px">Export a backup first if you might want any of this back.</p>
+          <div class="danger-actions">
+            <div class="danger-opt">
+              <div><strong>Clear transactions only</strong><div class="muted">Removes imported transactions, keeps all your settings (categories, rules, budgets, custom cards, accounts, layout).</div></div>
+              <button class="btn ghost danger" id="clearTxnBtn" title="Clear transactions only">Clear transactions</button>
+            </div>
+            <div class="danger-opt">
+              <div><strong>Clear everything</strong><div class="muted">Removes all transactions and every saved setting from this device.</div></div>
+              <button class="btn ghost danger" id="clearBtn" title="Clear all data">Clear all data</button>
+            </div>
+          </div>
         </div>
       </section>
     </main>
@@ -234,10 +243,10 @@
   <script src="js/parse.js?v=18"></script>
   <script src="js/pdfparse.js?v=3"></script>
   <script src="js/categorize.js?v=15"></script>
-  <script src="js/store.js?v=36"></script>
+  <script src="js/store.js?v=37"></script>
   <script src="js/analyze.js?v=34"></script>
   <script src="js/charts.js?v=15"></script>
-  <script src="js/app.js?v=36"></script>
+  <script src="js/app.js?v=37"></script>
   <script src="js/account.js?v=20"></script>
   <script src="js/ai.js?v=21"></script>
   <script src="js/chat.js?v=22"></script>

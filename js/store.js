@@ -538,6 +538,16 @@
       idb().del('censor');
     },
 
+    // Clear only imported financial data (transactions + their per-transaction
+    // annotations), keeping all settings: categories, rules, budgets, custom
+    // cards, groups, merges, accounts, layout, theme, etc.
+    clearTransactions() {
+      cache.transactions = {};
+      cache.txnTags = {};
+      cache.cardmemberOverrides = {};
+      persist();
+    },
+
     exportJSON() { return JSON.stringify(cache, null, 2); },
 
     importJSON(jsonText) {

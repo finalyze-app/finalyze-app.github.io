@@ -2236,6 +2236,15 @@
         render(); toast('All data cleared');
       }
     });
+    $('#clearTxnBtn').addEventListener('click', () => {
+      if (confirm('Clear all imported transactions? Your settings (categories, rules, budgets, custom cards, accounts, layout) are kept. This cannot be undone.')) {
+        Store.clearTransactions(); activeCategory = null; activeCardmember = null;
+        dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
+        excludeTagged = false; cmpInit = false; yrSelected = '';
+        viewName = 'dashboard';
+        render(); toast('Transactions cleared — settings kept');
+      }
+    });
     $('#addCatBtn').addEventListener('click', () => {
       const name = $('#newCatName').value.trim();
       if (!name) { toast('Enter a category name'); return; }

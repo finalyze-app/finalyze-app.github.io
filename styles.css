@@ -819,3 +819,10 @@ a.brand:hover { opacity: .85; }
 .cc-cond .cc-val { flex: 1; min-width: 120px; }
 .cc-actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
 .cc-sum { font-size: 12.5px; }
+
+/* Danger zone — two clear options */
+.danger-actions { display: flex; flex-direction: column; gap: 12px; }
+.danger-opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--line-2); }
+.danger-opt:first-child { border-top: none; }
+.danger-opt .muted { font-size: 12.5px; margin-top: 2px; }
+.danger-opt .btn { flex: none; }
