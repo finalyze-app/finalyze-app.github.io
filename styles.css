@@ -281,6 +281,11 @@ body.is-mobile #widgets .widget .canvas-wrap.tall { height: 260px; }
 body.is-mobile #widgets .patterns-grid { grid-template-columns: 1fr; }
 /* Wide tables scroll within the widget rather than forcing the page wider. */
 body.is-mobile #widgets .widget .table-wrap { overflow-x: auto; }
+/* Tighter, wrapping cells so more fits without constant horizontal scrolling.
+   (The transactions widget uses a card layout and overrides these via #id.) */
+body.is-mobile table { font-size: 12px; }
+body.is-mobile thead th { padding: 8px 8px; letter-spacing: .01em; }
+body.is-mobile tbody td { padding: 8px 8px; white-space: normal; overflow-wrap: anywhere; }
 
 /* ===== Mobile: header filter bar stacks vertically ===== */
 body.is-mobile .head-actions { flex-direction: column; align-items: stretch; gap: 10px; }
