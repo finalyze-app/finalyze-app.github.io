@@ -442,7 +442,7 @@
 
   // Settings is organised into tabs; each tab shows a subset of the prefs panels.
   const SETTINGS_TABS = [
-    { id: 'categories', label: 'Categories & rules', panels: ['set-categories', 'set-rules', 'set-groups', 'set-merchants'] },
+    { id: 'categories', label: 'Categories & rules', panels: ['set-categories', 'set-rules', 'set-sub-rules', 'set-groups', 'set-merchants'] },
     { id: 'budgets', label: 'Budgets', panels: ['set-budgets'] },
     { id: 'accounts', label: 'Accounts & data', panels: ['set-accounts', 'set-danger'] },
     { id: 'layout', label: 'Layout', panels: ['set-layout'] },
@@ -651,23 +651,24 @@
 
   function renderRecurring() {
     const subs = Store.getSubscriptions();
-    const rows = analyze.recurring(viewTxns, subs);
+    const rows = analyze.recurring(viewTxns, subs, Store.getSubscriptionRules());
     $('#recurringTable').innerHTML = rows.length
       ? `<thead><tr><th>Merchant</th><th>Category</th><th class="num">Charge</th><th class="num">Times</th><th class="num">Months</th><th>Last seen</th><th></th></tr></thead><tbody>` +
         rows.map((r) =>
-          `<tr><td>${maskMerch(r.merchant)}</td><td>${chip(r.category)}</td><td class="num">${fmt(r.amount)}</td>` +
+          `<tr><td>${maskMerch(r.merchant)}</td><td>${chip(r.category)}</td><td class="num">${r.varies ? '<span class="muted">varies</span>' : fmt(r.amount)}</td>` +
           `<td class="num">${r.count}</td><td class="num">${r.months}</td><td>${r.lastDate}</td>` +
-          `<td>${r.marked ? '<span class="tag marked">marked</span>' : ''}</td></tr>`
+          `<td>${r.byRule ? '<span class="tag marked">rule</span>' : r.marked ? '<span class="tag marked">marked</span>' : ''}</td></tr>`
         ).join('') + '</tbody>'
-      : '<tbody><tr><td class="muted-cell">No recurring charges. Tick the “Sub” box on a transaction to track one here.</td></tr></tbody>';
+      : '<tbody><tr><td class="muted-cell">No recurring charges. Tick the “Sub” box on a transaction, or add a keyword rule in Settings → Subscription rules.</td></tr></tbody>';
   }
 
   function renderAnomalies(txns) {
     // Exclude recurring/subscription groups and any merchants the user excluded.
     const subs = Store.getSubscriptions();
-    const subKeys = new Set(analyze.recurring(txns, subs).map((r) => r.key));
+    const subKeys = new Set(analyze.recurring(txns, subs, Store.getSubscriptionRules()).map((r) => r.key));
     const mExcl = Store.getMerchantAnomalyExcludes();
-    const isSub = (t) => mExcl[t.merchantKey] || subKeys.has(analyze.subKey(t.merchantKey, t.spend));
+    const subRe = analyze.compileSubRules(Store.getSubscriptionRules());
+    const isSub = (t) => mExcl[t.merchantKey] || analyze.matchesSubRule(t, subRe) || subKeys.has(analyze.subKey(t.merchantKey, t.spend));
     const rows = analyze.anomalies(txns, isSub);
     $('#anomalyTable').innerHTML = rows.length
       ? `<thead><tr><th>Type</th><th>Date</th><th>Merchant</th><th class="num">Amount</th></tr></thead><tbody>` +
@@ -1070,7 +1071,7 @@
 
   // ============ Preferences ============
   function renderPrefs() {
-    renderCatManager(); renderRuleManager(); renderGroupManager(); renderBudgetManager();
+    renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderGroupManager(); renderBudgetManager();
     renderAccountManager(); renderMergeManager(); renderWidgetManager(); renderAccountSize();
   }
 
@@ -1127,6 +1128,38 @@
       const cat = F.previewCategory(name);
       out.className = 'rule-test-out';
       out.innerHTML = '→ ' + chip(cat);
+    };
+  }
+
+  // ---- Subscription keyword rules ----
+  function renderSubRuleManager() {
+    const container = $('#subRuleManager');
+    if (!container) return;
+    const rules = Store.getSubscriptionRules();
+    container.innerHTML =
+      (rules.length
+        ? `<div class="rule-list">` + rules.map((r) =>
+            `<div class="rule-row">
+              <code class="rule-pat">/${(r.pattern || '').replace(/</g, '&lt;')}/${r.flags || 'i'}</code>
+              <span class="rule-arrow">→ recurring</span>
+              <button class="icon-btn subrule-del" data-id="${r.id}" title="Delete rule">${svg(TRASH)}</button>
+            </div>`).join('') + `</div>`
+        : `<p class="muted-cell" style="padding:6px 0 12px">No subscription rules yet.</p>`) +
+      `<div class="rule-add">
+        <input type="text" id="subRulePattern" placeholder="Keyword or regex, e.g. NETFLIX|SPOTIFY|GYM">
+        <label class="rule-ci" title="Case sensitive"><input type="checkbox" id="subRuleCase"> Aa</label>
+        <button class="btn primary" id="subRuleAddBtn">Add rule</button>
+      </div>`;
+
+    $$('.subrule-del', container).forEach((btn) => btn.onclick = () => {
+      Store.removeSubscriptionRule(btn.dataset.id); render(); toast('Rule removed');
+    });
+    $('#subRuleAddBtn').onclick = () => {
+      const pattern = $('#subRulePattern').value.trim();
+      const flags = $('#subRuleCase').checked ? '' : 'i';
+      if (!pattern) { toast('Enter a keyword or regex'); return; }
+      if (Store.addSubscriptionRule(pattern, flags)) { render(); toast('Subscription rule added'); }
+      else toast('Invalid regular expression');
     };
   }
 

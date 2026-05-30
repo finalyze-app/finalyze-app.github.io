@@ -10,7 +10,7 @@
     return {
       transactions: {}, overrides: {}, currency: 'CAD', balance: null, balanceAsOf: null,
       subscriptions: {}, customCategories: [], categoryColors: {}, categoryTypes: {},
-      categoryRenames: {}, merchantMerges: {}, customRules: [], budgets: {}, txnTags: {},
+      categoryRenames: {}, merchantMerges: {}, customRules: [], subscriptionRules: [], budgets: {}, txnTags: {},
       cardmemberOverrides: {}, merchantTags: {}, merchantAnomalyExcludes: {},
       mergeSuggestionsDismissed: {}, categoryGroups: [],
       accounts: [{ id: 'default', label: 'Default' }], layout: null, csvImportPrefs: null,
@@ -365,6 +365,23 @@
     reorderRules(ids) {
       const map = Object.fromEntries(this.getCustomRules().map((r) => [r.id, r]));
       cache.customRules = ids.map((id) => map[id]).filter(Boolean);
+      persist();
+    },
+
+    // Keyword/regex rules that mark matching merchants as recurring/subscriptions
+    // regardless of amount.
+    getSubscriptionRules() { return cache.subscriptionRules || (cache.subscriptionRules = []); },
+    addSubscriptionRule(pattern, flags) {
+      pattern = (pattern || '').trim();
+      if (!pattern) return false;
+      try { new RegExp(pattern, flags || 'i'); } catch (e) { return false; }
+      const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      this.getSubscriptionRules().push({ id, pattern, flags: flags || 'i' });
+      persist();
+      return true;
+    },
+    removeSubscriptionRule(id) {
+      cache.subscriptionRules = this.getSubscriptionRules().filter((x) => x.id !== id);
       persist();
     },
 

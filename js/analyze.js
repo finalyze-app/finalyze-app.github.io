@@ -125,13 +125,43 @@
   const subKey = (merchantKey, amount) => merchantKey + '||' + Number(amount).toFixed(2);
   const isAmazon = (t) => t.category === 'Online/Amazon' || /AMZN|AMAZON/i.test(t.merchantKey);
 
-  // Recurring: identical merchant + identical charge appearing 2+ times,
-  // OR a group the user has manually marked as a subscription. Amazon excluded.
-  function recurring(txns, subs) {
+  // Compile keyword/regex subscription rules once; test against the raw name and
+  // the normalized merchant key.
+  function compileSubRules(rules) {
+    return (rules || []).map((r) => {
+      try { return new RegExp(r.pattern, r.flags || 'i'); } catch (e) { return null; }
+    }).filter(Boolean);
+  }
+  function matchesSubRule(t, compiled) {
+    if (!compiled || !compiled.length) return false;
+    const hay = (t.name || '') + ' ' + (t.merchantKey || '');
+    return compiled.some((re) => re.test(hay));
+  }
+
+  // Recurring: identical merchant + identical charge appearing 2+ times, OR a
+  // group the user marked as a subscription, OR any merchant matched by a
+  // subscription keyword rule (grouped by merchant, any amount). Amazon excluded
+  // from the amount-based detection but a keyword rule can still include it.
+  function recurring(txns, subs, subRules) {
     subs = subs || {};
-    const map = {};
+    const compiled = compileSubRules(subRules);
+    const map = {};        // exact merchant+amount groups
+    const kw = {};         // keyword-rule groups, keyed by merchant (any amount)
     for (const t of txns) {
-      if (!t.isSpend || isAmazon(t)) continue;
+      if (!t.isSpend) continue;
+      if (matchesSubRule(t, compiled)) {
+        const m = (kw[t.merchantKey] = kw[t.merchantKey] || {
+          key: 'kw||' + t.merchantKey, merchant: t.merchantKey, category: t.category,
+          amounts: [], months: new Set(), dates: [], count: 0,
+        });
+        m.amounts.push(t.spend);
+        m.months.add(monthKey(t.date));
+        m.dates.push(t.date);
+        m.count += 1;
+        m.category = t.category;
+        continue; // keyword match takes precedence over exact-amount grouping
+      }
+      if (isAmazon(t)) continue;
       const key = subKey(t.merchantKey, t.spend);
       const m = (map[key] = map[key] || {
         key, merchant: t.merchantKey, category: t.category,
@@ -142,19 +172,23 @@
       m.count += 1;
       m.category = t.category;
     }
-    return Object.values(map)
+    const exact = Object.values(map)
       .filter((m) => m.count >= 2 || subs[m.key])
       .map((m) => ({
-        key: m.key,
-        merchant: m.merchant,
-        category: m.category,
-        amount: m.amount,
-        months: m.months.size,
-        count: m.count,
-        lastDate: m.dates.sort()[m.dates.length - 1],
-        marked: !!subs[m.key],
-      }))
-      .sort((a, b) => b.count - a.count || b.amount - a.amount);
+        key: m.key, merchant: m.merchant, category: m.category,
+        amount: m.amount, varies: false, months: m.months.size, count: m.count,
+        lastDate: m.dates.sort()[m.dates.length - 1], marked: !!subs[m.key], byRule: false,
+      }));
+    const keyword = Object.values(kw).map((m) => {
+      const uniq = [...new Set(m.amounts.map((a) => Number(a).toFixed(2)))];
+      const lastIdx = m.dates.map((d, i) => [d, i]).sort((a, b) => (a[0] < b[0] ? -1 : 1)).pop()[1];
+      return {
+        key: m.key, merchant: m.merchant, category: m.category,
+        amount: m.amounts[lastIdx], varies: uniq.length > 1, months: m.months.size,
+        count: m.count, lastDate: m.dates.slice().sort().pop(), marked: true, byRule: true,
+      };
+    });
+    return exact.concat(keyword).sort((a, b) => b.count - a.count || b.amount - a.amount);
   }
 
   // Anomalies: duplicates (same merchant+amount within 3 days) and category outliers.
@@ -425,6 +459,7 @@
   global.Finalyze.analyze = {
     summary, byCardmember, byCategory, byMerchant, spendOverTime,
     monthOverMonth, categoryMovers, recurring, anomalies, subKey,
+    compileSubRules, matchesSubRule,
     byDayOfWeek, byWeekOfMonth,
     monthSpan, yearsPresent, comparePeriods, yearInReview, merchantDetail,
     suggestMerchantMerges, dailySpendMap, heatmapMonths, byCategoryGroup, pairKey,
