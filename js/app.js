@@ -2265,6 +2265,12 @@
     });
 
     render();
+
+    // Deep link from the landing page: ?demo=1 loads the sample data + tour
+    // (only when there's no data yet, so it never clobbers a real import).
+    if (new URLSearchParams(location.search).get('demo') && !allTxns.length && F.Demo) {
+      F.Demo.start();
+    }
   }
 
   F.filterTxns = filterTxns;
