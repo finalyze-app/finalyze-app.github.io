@@ -8,6 +8,22 @@
   // Reward/loyalty lines often carry an integer point value that must NOT be read
   // as a dollar amount (they'd look like refunds). Skip them outright.
   const SKIP_REWARDS = /(reward|loyalty|aeroplan|air\s?miles|points?\s+(earned|redeemed|balance|total)|(points|rewards?)\s+(earned|redeemed|balance|summary)|cash\s?back\s+(earned|reward))/i;
+  // Summary/account lines that may carry a dollar amount but are NOT transactions.
+  const SKIP_SUMMARY = /(credit\s+limit|available\s+credit|cash\s+advance\s+limit|credit\s+available|amount\s+due|minimum\s+payment|payment\s+due|previous\s+balance|new\s+balance|balance\s+forward|statement\s+balance|outstanding\s+balance|annual\s+interest|interest\s+rate|interest\s+charged?|finance\s+charge|over[- ]?limit|past\s+due|rewards?\s+balance)/i;
+
+  // Detect the start of a transactions table (a column header / section title) and
+  // the end (totals / summary blocks). Used to bound parsing to the activity section.
+  function isSectionStart(line) {
+    const l = line.toLowerCase();
+    if (/\bdate\b/.test(l) && /(description|details|merchant|amount|transaction|activity|charges?)/.test(l)) return true;
+    if (/^(your\s+)?(transactions|transaction\s+details|account\s+activity|card\s+activity|new\s+transactions|purchases\s+and\s+(adjustments|other)|activity\s+detail|détails?\s+des\s+op)/.test(l)) return true;
+    return false;
+  }
+  function isSectionEnd(line) {
+    const l = line.toLowerCase();
+    return /\b(total\s+(new\s+)?(charges|purchases|payments|credits|for\s+this\s+period|of\b)|sub-?total|closing\s+balance|new\s+balance|previous\s+balance|balance\s+summary|interest\s+charges?|fees?\s+charged|payment\s+information|important\s+payment|how\s+(you\s+can|to)\s+avoid|minimum\s+payment|estimated\s+time|account\s+summary)\b/.test(l);
+  }
+
   const MONTH = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
   const MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
   let yearHint = new Date().getFullYear();
@@ -134,7 +150,7 @@
   function parseTableRow(cells) {
     if (!cells || cells.length < 2) return null;
     const line = cells.join(' ').trim();
-    if (!line || SKIP_LINE.test(line) || SKIP_REWARDS.test(line)) return null;
+    if (!line || SKIP_LINE.test(line) || SKIP_REWARDS.test(line) || SKIP_SUMMARY.test(line)) return null;
 
     // Find where the description starts. The date can be split across two cells
     // ("May" + "12"), and many statements have two leading dates (transaction +
@@ -245,11 +261,29 @@
     rows.forEach((c) => { const mm = c.join(' ').match(/\b(20\d{2})\b/g); if (mm) mm.forEach((y) => { years[y] = (years[y] || 0) + 1; }); });
     const top = Object.keys(years).sort((a, b) => years[b] - years[a])[0];
     if (top) yearHint = +top;
-    const txns = [];
+
+    // Pass 1 — only parse rows inside an activity/transactions section. A section
+    // header turns parsing on; a totals/summary line turns it off. This keeps
+    // summary blocks (credit limit, balances, payment due, etc.) out.
+    const sectioned = [];
+    let inSection = false, sawHeader = false;
     rows.forEach((cells) => {
+      const line = cells.join(' ').trim();
+      if (!line) return;
+      if (isSectionStart(line)) { inSection = true; sawHeader = true; return; }
+      if (isSectionEnd(line)) { inSection = false; return; }
+      if (!inSection) return;
       const t = parseTableRow(cells);
-      if (t) txns.push(t);
+      if (t) sectioned.push(t);
     });
+
+    // Pass 2 — fallback: if no section headers were found (or they yielded too
+    // little), parse the whole document. The per-row SKIP_* guards still apply.
+    let txns = sectioned;
+    if (!sawHeader || txns.length < 3) {
+      txns = [];
+      rows.forEach((cells) => { const t = parseTableRow(cells); if (t) txns.push(t); });
+    }
 
     // Line fallback on joined rows when table parse found little
     if (txns.length < 3) {
