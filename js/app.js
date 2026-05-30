@@ -1544,6 +1544,9 @@
   function handleFiles(fileList) {
     const files = [...fileList];
     if (!files.length) return;
+    const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name));
+    // PDF parsing is heuristic — show a review/fix step before importing.
+    if (pdfFiles.length && pdfFiles.length === files.length) { openPdfReview(files); return; }
     const csvFiles = files.filter((f) => /\.csv$/i.test(f.name));
     if (!csvFiles.length) { openImportModal(files, null); return; }
     const reader = new FileReader();
@@ -1718,6 +1721,127 @@
       }
     })).then(finish);
   }
+
+  // ---- PDF import review (parse → let the user fix formatting → import) ----
+  const readArrayBuffer = (file) => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('could not read file'));
+    r.readAsArrayBuffer(file);
+  });
+
+  function pdfRowToTxn(r) {
+    const amt = Number(r.amount) || 0;
+    return {
+      fitid: '', date: r.date, type: amt < 0 ? 'DEBIT' : 'CREDIT', amount: amt,
+      isSpend: amt < 0, spend: amt < 0 ? Math.abs(amt) : 0, refund: amt > 0 ? amt : 0,
+      name: (r.name || '').trim() || 'Unknown', cardmember: r.cardmember || 'Unknown',
+    };
+  }
+
+  async function openPdfReview(files) {
+    toast('Reading PDF…');
+    const rows = [], errors = [];
+    for (const f of files) {
+      try {
+        const parsed = await F.parsePDF(await readArrayBuffer(f));
+        parsed.transactions.forEach((t) => rows.push({
+          include: true, date: t.date, name: t.name, amount: t.amount, cardmember: t.cardmember || 'Unknown',
+        }));
+      } catch (e) { errors.push(f.name + ': ' + e.message); }
+    }
+    if (!rows.length) { toast('Import failed — ' + (errors[0] || 'no transactions found in PDF')); return; }
+    rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    renderPdfReview(rows, errors);
+  }
+
+  function renderPdfReview(rows, errors) {
+    const accounts = Store.getAccounts();
+    const errNote = errors.length
+      ? `<p class="muted">Couldn’t read ${errors.length} file(s). Scanned image-only PDFs have no text layer — CSV or OFX is more reliable.</p>` : '';
+
+    const body = openModal(
+      `<h2>Review PDF import</h2>
+      <p class="muted">PDF statements are parsed heuristically, so check the rows below. Edit any value, untick rows to skip, and import when it looks right.</p>
+      <div class="import-acct">
+        <select id="impAccount">${accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('')}<option value="__new">+ New account…</option></select>
+        <input type="text" id="impNewName" placeholder="New account label" hidden>
+      </div>
+      ${errNote}
+      <div class="pdf-review-bar">
+        <span class="muted" id="pdfReviewCount"></span>
+        <span class="dc-spacer"></span>
+        <button type="button" class="btn sm" id="pdfFlip" title="Flip the sign of every amount">⇅ Flip all signs</button>
+      </div>
+      <p class="muted pdf-hint">Amount: <strong>negative</strong> = money out (spend), <strong>positive</strong> = money in (refund/payment).</p>
+      <div class="table-wrap pdf-review-wrap"><table class="pdf-review"><thead><tr>
+        <th class="chk-cell"></th><th>Date</th><th>Description</th><th class="num">Amount</th><th>Type</th>
+      </tr></thead><tbody id="pdfReviewBody"></tbody></table></div>
+      <div class="import-actions"><button class="btn" id="impCancel">Cancel</button><button class="btn primary" id="impGo">Import</button></div>`);
+
+    const tbody = body.querySelector('#pdfReviewBody');
+    tbody.innerHTML = rows.map((r, i) => `<tr data-i="${i}">
+      <td class="chk-cell"><input type="checkbox" class="pdf-inc" ${r.include ? 'checked' : ''}></td>
+      <td data-label="Date"><input type="date" class="pdf-date" value="${r.date}"></td>
+      <td data-label="Description"><input type="text" class="pdf-name" value="${(r.name || '').replace(/"/g, '&quot;')}"></td>
+      <td class="num" data-label="Amount"><input type="number" step="0.01" class="pdf-amt" value="${r.amount}"></td>
+      <td data-label="Type"><span class="pdf-type ${r.amount < 0 ? 'amt-neg' : 'amt-pos'}">${r.amount < 0 ? 'Spend' : 'In'}</span></td>
+    </tr>`).join('');
+
+    const selA = body.querySelector('#impAccount'), newName = body.querySelector('#impNewName');
+    selA.onchange = () => { newName.hidden = selA.value !== '__new'; if (!newName.hidden) newName.focus(); };
+
+    const updateCount = () => {
+      const n = tbody.querySelectorAll('.pdf-inc:checked').length;
+      body.querySelector('#pdfReviewCount').textContent = `${n} of ${rows.length} transactions selected`;
+    };
+    const refreshType = (tr) => {
+      const amt = Number(tr.querySelector('.pdf-amt').value) || 0;
+      const tp = tr.querySelector('.pdf-type');
+      tp.textContent = amt < 0 ? 'Spend' : 'In';
+      tp.className = 'pdf-type ' + (amt < 0 ? 'amt-neg' : 'amt-pos');
+    };
+    tbody.addEventListener('input', (e) => {
+      const tr = e.target.closest('tr');
+      if (e.target.classList.contains('pdf-amt')) refreshType(tr);
+      if (e.target.classList.contains('pdf-inc')) updateCount();
+    });
+    body.querySelector('#pdfFlip').onclick = () => {
+      tbody.querySelectorAll('tr').forEach((tr) => {
+        const inp = tr.querySelector('.pdf-amt');
+        inp.value = String(-(Number(inp.value) || 0));
+        refreshType(tr);
+      });
+    };
+    updateCount();
+
+    body.querySelector('#impCancel').onclick = closeModal;
+    body.querySelector('#impGo').onclick = () => {
+      let accountId = selA.value;
+      if (accountId === '__new') {
+        accountId = Store.addAccount(newName.value.trim());
+        if (!accountId) { toast('Enter an account label'); return; }
+      }
+      const txns = [];
+      tbody.querySelectorAll('tr').forEach((tr, i) => {
+        if (!tr.querySelector('.pdf-inc').checked) return;
+        const date = tr.querySelector('.pdf-date').value;
+        if (!date) return;
+        txns.push(pdfRowToTxn({
+          date,
+          name: tr.querySelector('.pdf-name').value,
+          amount: tr.querySelector('.pdf-amt').value,
+          cardmember: rows[i] ? rows[i].cardmember : 'Unknown',
+        }));
+      });
+      if (!txns.length) { toast('Select at least one transaction to import'); return; }
+      const { added, duplicates } = Store.mergeTransactions({ transactions: txns, source: 'PDF' }, accountId);
+      closeModal();
+      render();
+      toast(`Imported ${added} new · ${duplicates} already in history · PDF`);
+    };
+  }
+
   function exportBackup() {
     const blob = new Blob([Store.exportJSON()], { type: 'application/json' });
     const a = document.createElement('a');

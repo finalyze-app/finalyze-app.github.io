@@ -787,3 +787,16 @@ body.modal-open { overflow: hidden; }
 .dc-spacer { flex: 1; }
 .dc-actions .ghost-dim { color: var(--muted); }
 .dc-actions .btn.sm.final { white-space: normal; }
+
+/* ============ PDF import review ============ */
+.pdf-review-bar { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; }
+.pdf-hint { font-size: 12px; margin: 0 0 10px; }
+.pdf-review-wrap { max-height: 50vh; overflow: auto; }
+.pdf-review th, .pdf-review td { padding: 6px 8px; }
+.pdf-review input.pdf-date, .pdf-review input.pdf-name, .pdf-review input.pdf-amt {
+  font: inherit; font-size: 12px; padding: 6px 8px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); color: var(--ink); width: 100%;
+}
+.pdf-review input.pdf-amt { text-align: right; max-width: 120px; }
+.pdf-review input.pdf-date { max-width: 160px; }
+.pdf-type { font-size: 12px; font-weight: 600; }
