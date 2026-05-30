@@ -800,3 +800,7 @@ body.modal-open { overflow: hidden; }
 .pdf-review input.pdf-amt { text-align: right; max-width: 120px; }
 .pdf-review input.pdf-date { max-width: 160px; }
 .pdf-type { font-size: 12px; font-weight: 600; }
+
+/* Sidebar brand acts as a home link back to the landing page */
+a.brand { text-decoration: none; cursor: pointer; transition: opacity .15s; }
+a.brand:hover { opacity: .85; }
