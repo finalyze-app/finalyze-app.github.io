@@ -408,4 +408,6 @@
   global.Finalyze.parseCSVWithMapping = parseCSVWithMapping;
   global.Finalyze.guessCSVMapping = guessCSVMapping;
   global.Finalyze.csvColLabel = colLabel;
+  global.Finalyze.normCSVDate = normCSVDate;
+  global.Finalyze.parseAmount = parseAmount;
 })(window);

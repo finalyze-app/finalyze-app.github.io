@@ -1558,7 +1558,11 @@
   function openImportModal(files, csvSampleText) {
     const accounts = Store.getAccounts();
     const csvFiles = files.filter((f) => /\.csv$/i.test(f.name));
+    const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name));
     const hasCsv = csvFiles.length > 0 && csvSampleText;
+    const pdfNote = pdfFiles.length && !hasCsv
+      ? '<p class="muted">PDF statements are parsed from extracted text (CIBC-style charge/payment columns supported). Scanned image-only PDFs won\'t work — CSV or OFX is more reliable.</p>'
+      : '';
 
     let preview = null, mapState = null;
     if (hasCsv) {
@@ -1605,6 +1609,7 @@
         <select id="impAccount">${accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('')}<option value="__new">+ New account…</option></select>
         <input type="text" id="impNewName" placeholder="New account label" hidden>
       </div>
+      ${pdfNote}
       ${mapSection}
       <div class="import-actions"><button class="btn" id="impCancel">Cancel</button><button class="btn primary" id="impGo">Import</button></div>`);
 
@@ -1666,35 +1671,52 @@
     };
   }
   function doImport(files, accountId, csvOpts) {
-    let totalAdded = 0, totalDup = 0, done = 0, emptyFiles = 0;
+    let totalAdded = 0, totalDup = 0, emptyFiles = 0;
     const errors = [], sources = new Set();
     const finish = () => {
       render();
       if (errors.length) { toast('Import failed — ' + errors[0]); return; }
       if (totalAdded === 0 && emptyFiles > 0) {
-        toast('No transactions found. Expecting an OFX/QFX export, or a CSV with Date, Description & Amount columns.');
+        toast('No transactions found. Expecting OFX/QFX, CSV, or a text-based PDF statement.');
         return;
       }
       const fmt = sources.size ? ' · ' + [...sources].join(', ') : '';
       toast(`Imported ${totalAdded} new · ${totalDup} already in history${fmt}`);
     };
-    files.forEach((file) => {
+
+    const readText = (file) => new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = /\.csv$/i.test(file.name)
-            ? (csvOpts ? F.parseCSVWithMapping(reader.result, csvOpts) : F.parseCSV(reader.result))
-            : parseQFX(reader.result);
-          if (parsed.source) sources.add(parsed.source);
-          if (!parsed.transactions.length) emptyFiles++;
-          const { added, duplicates } = Store.mergeTransactions(parsed, accountId);
-          totalAdded += added; totalDup += duplicates;
-        } catch (e) { errors.push(file.name + ': ' + e.message); }
-        if (++done === files.length) finish();
-      };
-      reader.onerror = () => { errors.push(file.name + ': could not read file'); if (++done === files.length) finish(); };
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('could not read file'));
       reader.readAsText(file);
     });
+    const readBuffer = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('could not read file'));
+      reader.readAsArrayBuffer(file);
+    });
+
+    Promise.all(files.map(async (file) => {
+      try {
+        let parsed;
+        if (/\.pdf$/i.test(file.name)) {
+          parsed = await F.parsePDF(await readBuffer(file));
+        } else if (/\.csv$/i.test(file.name)) {
+          const text = await readText(file);
+          parsed = csvOpts ? F.parseCSVWithMapping(text, csvOpts) : F.parseCSV(text);
+        } else {
+          parsed = parseQFX(await readText(file));
+        }
+        if (parsed.source) sources.add(parsed.source);
+        if (!parsed.transactions.length) emptyFiles++;
+        const { added, duplicates } = Store.mergeTransactions(parsed, accountId);
+        totalAdded += added;
+        totalDup += duplicates;
+      } catch (e) {
+        errors.push(file.name + ': ' + e.message);
+      }
+    })).then(finish);
   }
   function exportBackup() {
     const blob = new Blob([Store.exportJSON()], { type: 'application/json' });

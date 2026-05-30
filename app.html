@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0a1228" />
   <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device — nothing is uploaded." />
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=30" />
 </head>
 <body>
   <div class="shell">
@@ -30,7 +30,7 @@
         <label class="btn primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Import statement
-          <input type="file" id="fileInput" accept=".qfx,.ofx,.qbo,.csv" multiple hidden />
+          <input type="file" id="fileInput" accept=".qfx,.ofx,.qbo,.csv,.pdf" multiple hidden />
         </label>
         <div class="side-actions">
           <button class="btn ghost" id="exportBtn" title="Export backup">Backup</button>
@@ -115,18 +115,26 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </span>
           <h1>Drop your bank export here</h1>
-          <p>Drag a <code>.qfx</code>, <code>.ofx</code> or <code>.csv</code> file anywhere on this page, or use the button below.</p>
+          <p>Drag a <code>.qfx</code>, <code>.ofx</code>, <code>.csv</code>, or <code>.pdf</code> file anywhere on this page, or use the button below.</p>
           <p class="muted">Works with exports from most banks (Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase, and more). Everything stays on your machine — nothing is uploaded. Imports accumulate over time so you can compare month over month.</p>
-          <label class="btn primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Import statement
-            <input type="file" id="fileInput2" accept=".qfx,.ofx,.qbo,.csv" multiple hidden />
-          </label>
+          <div class="dz-actions">
+            <label class="btn primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Import statement
+              <input type="file" id="fileInput2" accept=".qfx,.ofx,.qbo,.csv,.pdf" multiple hidden />
+            </label>
+            <button class="btn" id="demoStartBtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 9 5 3-5 3z"/></svg>
+              Take a tour with sample data
+            </button>
+          </div>
+          <p class="muted" style="margin-top:12px">New here? The tour loads dummy May 2026 transactions so you can explore — no data of your own needed.</p>
         </div>
       </section>
 
       <!-- Dashboard -->
       <section id="dashboard" hidden>
+        <div id="demoBanner" class="demo-banner" hidden></div>
         <div id="sizeBanner" class="size-banner" hidden></div>
         <div id="filterBanner" class="filter-banner" hidden></div>
         <div id="widgets"></div>
@@ -207,18 +215,21 @@
   </div>
 
   <script src="vendor/chart.umd.js"></script>
+  <script src="vendor/pdf.min.js"></script>
   <script src="js/config.js?v=16"></script>
   <script src="js/auth.js?v=17"></script>
   <script src="js/idb.js?v=15"></script>
-  <script src="js/parse.js?v=17"></script>
+  <script src="js/parse.js?v=18"></script>
+  <script src="js/pdfparse.js?v=1"></script>
   <script src="js/categorize.js?v=15"></script>
   <script src="js/store.js?v=17"></script>
   <script src="js/analyze.js?v=15"></script>
   <script src="js/charts.js?v=15"></script>
-  <script src="js/app.js?v=28"></script>
+  <script src="js/app.js?v=29"></script>
   <script src="js/account.js?v=20"></script>
   <script src="js/ai.js?v=21"></script>
   <script src="js/chat.js?v=22"></script>
   <script src="js/aiui.js?v=22"></script>
+  <script src="js/demo.js?v=30"></script>
 </body>
 </html>

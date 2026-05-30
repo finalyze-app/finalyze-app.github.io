@@ -755,3 +755,35 @@ body.modal-open { overflow: hidden; }
 .ai-sugg-head { margin-bottom: 10px; }
 .ai-sugg-table .ai-cat { font: inherit; font-size: 12px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
 .ai-conf { font-size: 12px; font-weight: 600; }
+
+/* ============ First-run demo / tour ============ */
+.dz-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+.demo-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 12px;
+  padding: 10px 14px; margin-bottom: 16px; font-size: 13.5px; color: var(--ink);
+}
+.demo-banner-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.linkish { background: none; border: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
+.linkish:hover { text-decoration: underline; }
+
+.demo-target {
+  outline: 3px solid var(--accent); outline-offset: 4px; border-radius: var(--radius);
+  box-shadow: 0 0 0 9999px rgba(8, 11, 22, .5); position: relative; z-index: 50;
+}
+.demo-coach {
+  position: fixed; left: 0; right: 0; bottom: 0; display: none; justify-content: center;
+  z-index: 1200; padding: 16px; pointer-events: none;
+}
+.demo-coach.open { display: flex; }
+.demo-coach-card {
+  pointer-events: auto; width: 100%; max-width: 440px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-lg); padding: 18px 20px;
+}
+.dc-step { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.demo-coach-card h3 { margin: 6px 0 8px; font-size: 18px; letter-spacing: -.01em; }
+.demo-coach-card p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+.dc-actions { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+.dc-spacer { flex: 1; }
+.dc-actions .ghost-dim { color: var(--muted); }
+.dc-actions .btn.sm.final { white-space: normal; }
