@@ -260,7 +260,7 @@ code { background: var(--accent-soft); color: var(--accent); padding: 1px 7px; b
 
 /* ============ Widgets (draggable panels) ============ */
 #widgets { display: flex; flex-wrap: wrap; gap: 18px; align-items: stretch; }
-#widgets .widget { flex: 1 1 100%; margin-bottom: 0; }
+#widgets .widget { flex: 1 1 100%; margin-bottom: 0; min-width: 0; }
 #widgets .widget.half { flex: 1 1 calc(50% - 9px); min-width: 0; }
 @media (max-width: 760px) { #widgets .widget.half { flex-basis: 100%; } }
 /* Mobile: keep widgets full-width and stacked (one per row), just tidier. */
@@ -281,6 +281,72 @@ body.is-mobile #widgets .widget .canvas-wrap.tall { height: 260px; }
 body.is-mobile #widgets .patterns-grid { grid-template-columns: 1fr; }
 /* Wide tables scroll within the widget rather than forcing the page wider. */
 body.is-mobile #widgets .widget .table-wrap { overflow-x: auto; }
+
+/* ===== Mobile: header filter bar stacks vertically ===== */
+body.is-mobile .head-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+body.is-mobile .head-actions > select,
+body.is-mobile .head-actions > .btn { width: 100%; min-width: 0; }
+body.is-mobile .daterange,
+body.is-mobile .amountrange { flex-wrap: wrap; }
+body.is-mobile .daterange input[type="date"] { flex: 1; min-width: 0; }
+body.is-mobile .amountrange input { flex: 1; width: auto; min-width: 0; }
+body.is-mobile .excl-toggle { padding: 6px 0; }
+
+/* ===== Mobile: bigger touch targets ===== */
+body.is-mobile .icon-btn { width: 40px; height: 40px; }
+body.is-mobile .btn { padding: 11px 15px; }
+body.is-mobile .btn.sm { padding: 9px 12px; font-size: 13px; }
+body.is-mobile .tag-btn { padding: 8px 11px; font-size: 12px; }
+body.is-mobile .drag-handle { display: none; } /* drag-reorder isn't practical on touch */
+
+/* ===== Mobile: transactions table -> stacked cards ===== */
+body.is-mobile #widget-transactions .controls { flex-direction: column; align-items: stretch; }
+body.is-mobile #widget-transactions .controls .field,
+body.is-mobile #widget-transactions .controls input[type="search"],
+body.is-mobile #widget-transactions .controls select { width: 100%; min-width: 0; }
+body.is-mobile #widget-transactions .controls .count { margin-left: 0; }
+body.is-mobile #widget-transactions .bulk-bar { display: none; } /* desktop power-feature */
+body.is-mobile #widget-transactions .table-wrap { overflow-x: visible; border: 0; }
+body.is-mobile #widget-transactions table,
+body.is-mobile #widget-transactions tbody,
+body.is-mobile #widget-transactions tr,
+body.is-mobile #widget-transactions td { display: block; width: auto; }
+body.is-mobile #widget-transactions thead { display: none; }
+body.is-mobile #widget-transactions tbody tr {
+  border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
+  background: var(--surface-2, var(--surface));
+}
+body.is-mobile #widget-transactions .chk-cell { display: none; }
+body.is-mobile #widget-transactions td {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 6px 0; border: 0; white-space: normal; text-align: right;
+}
+body.is-mobile #widget-transactions td::before {
+  content: attr(data-label); color: var(--muted); font-size: 12px; font-weight: 600;
+  text-align: left; flex: none;
+}
+/* Merchant + amount get emphasis; merchant has no label and wraps full width. */
+body.is-mobile #widget-transactions td.txn-merch { justify-content: space-between; }
+body.is-mobile #widget-transactions td.txn-merch::before { display: none; }
+body.is-mobile #widget-transactions td.txn-merch .txn-name { font-weight: 700; font-size: 15px; text-align: left; }
+body.is-mobile #widget-transactions td.num { font-size: 16px; font-weight: 700; }
+body.is-mobile #widget-transactions td .cat-select { flex: 1; max-width: 60%; }
+body.is-mobile #widget-transactions td.tag-cell { justify-content: flex-end; gap: 8px; }
+body.is-mobile #widget-transactions td.txn-actions { justify-content: flex-end; padding-top: 2px; }
+body.is-mobile #widget-transactions td.txn-actions::before { display: none; }
+body.is-mobile #widget-transactions td.txn-merch .txn-edit { width: 36px; height: 36px; }
+
+/* ===== Mobile: modals become near-full-screen sheets ===== */
+body.is-mobile .modal-panel,
+body.is-mobile .acct-panel { width: calc(100vw - 24px); max-width: none; max-height: 92dvh; padding: 18px; border-radius: 16px; }
+body.is-mobile .ai-panel { width: 100%; max-width: none; height: 100dvh; border-radius: 0; }
+body.is-mobile .ai-modal { padding: 0; }
+body.is-mobile .ai-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+body.is-mobile .ai-tabs button[data-tab] { flex: none; white-space: nowrap; }
+body.is-mobile .ai-body { padding: 14px; }
+body.is-mobile .drill-table { max-height: 50vh; }
+body.is-mobile .modal { padding: 0; }
+
 .widget { position: relative; transition: box-shadow .15s, opacity .15s; }
 .widget.dragging { opacity: .45; }
 .widget.drag-over { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }

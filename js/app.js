@@ -1008,13 +1008,13 @@
         `<button class="tag-btn${has('reimbursable') ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="reimbursable" title="Reimbursable">Reimb</button>`;
       return `<tr>
         <td class="chk-cell"><input type="checkbox" class="row-check" data-merchant="${encodeURIComponent(t.merchantKey)}" data-tid="${encodeURIComponent(t.tid)}"></td>
-        <td>${t.date}</td>
-        <td class="txn-merch"><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span><button type="button" class="icon-btn txn-edit" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Edit merchant">${svg(PENCIL)}</button></td>
-        <td>${t.cardmember}</td>
-        <td><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td>
-        <td class="num ${amtCls}">${fmt(t.amount)}</td>
-        <td class="tag-cell">${tagCell}</td>
-        <td class="sub-cell">${subCell}</td>
+        <td data-label="Date">${t.date}</td>
+        <td class="txn-merch" data-label="Merchant"><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span><button type="button" class="icon-btn txn-edit" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Edit merchant">${svg(PENCIL)}</button></td>
+        <td data-label="Cardmember">${t.cardmember}</td>
+        <td data-label="Category"><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td>
+        <td class="num ${amtCls}" data-label="Amount">${fmt(t.amount)}</td>
+        <td class="tag-cell" data-label="Tags">${tagCell}</td>
+        <td class="sub-cell" data-label="Subscription">${subCell}</td>
         <td class="txn-actions"><button type="button" class="icon-btn txn-del danger" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Delete transaction">${svg(TRASH)}</button></td>
       </tr>`;
     }).join('');
@@ -1651,7 +1651,8 @@
     const ua = /Mobi|Android|iPhone|iPad|iPod|Windows Phone|BlackBerry/i.test(navigator.userAgent);
     const touch = matchMedia('(pointer:coarse)').matches;
     const narrow = matchMedia('(max-width:1024px)').matches;
-    document.body.classList.toggle('is-mobile', ua || (touch && narrow));
+    const phone = matchMedia('(max-width:640px)').matches;
+    document.body.classList.toggle('is-mobile', ua || phone || (touch && narrow));
   }
 
   async function init() {
@@ -1678,7 +1679,14 @@
     $('#exportBtn').addEventListener('click', exportBackup);
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#censorBtn').addEventListener('click', () => applyCensor(!censored));
-    $('#menuBtn').addEventListener('click', () => document.body.classList.toggle('nav-open'));
+    $('#menuBtn').addEventListener('click', (e) => { e.stopPropagation(); document.body.classList.toggle('nav-open'); });
+    // Mobile: tap outside the open sidebar (or press Escape) to close it.
+    document.addEventListener('click', (e) => {
+      if (!document.body.classList.contains('nav-open')) return;
+      if (e.target.closest('.sidebar') || e.target.closest('#menuBtn')) return;
+      document.body.classList.remove('nav-open');
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.body.classList.remove('nav-open'); });
     $('#filtersToggle').addEventListener('click', () => {
       filtersHidden = !filtersHidden;
       localStorage.setItem('finalyze.filtersHidden', filtersHidden ? '1' : '0');
