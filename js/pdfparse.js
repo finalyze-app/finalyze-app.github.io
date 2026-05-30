@@ -258,7 +258,11 @@
     // Infer the statement year from any explicit 4-digit year in the text so
     // month-name dates without a year ("May 12") resolve correctly.
     const years = {};
-    rows.forEach((c) => { const mm = c.join(' ').match(/\b(20\d{2})\b/g); if (mm) mm.forEach((y) => { years[y] = (years[y] || 0) + 1; }); });
+    const maxYear = new Date().getFullYear() + 1;
+    rows.forEach((c) => {
+      const mm = c.join(' ').match(/\b(20\d{2})\b/g);
+      if (mm) mm.forEach((y) => { const n = +y; if (n >= 2015 && n <= maxYear) years[y] = (years[y] || 0) + 1; });
+    });
     const top = Object.keys(years).sort((a, b) => years[b] - years[a])[0];
     if (top) yearHint = +top;
 
@@ -293,6 +297,11 @@
         if (t) txns.push(t);
       });
     }
+
+    // A real transaction has a merchant description with letters — drop rows whose
+    // "description" is empty, numeric, or the Unknown fallback (summary figures,
+    // account numbers, balances that slipped through).
+    txns = txns.filter((t) => /[A-Za-z]{2,}/.test(t.name || '') && !/^unknown$/i.test((t.name || '').trim()));
 
     const transactions = dedupeTxns(txns);
     if (!transactions.length) {
