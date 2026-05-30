@@ -23,6 +23,7 @@
   let categoryViewMode = 'categories'; // 'categories' | 'groups'
   let hmMonth = '';                    // YYYY-MM for heatmap widget
   let viewName = 'dashboard';          // 'dashboard' | 'prefs'
+  let filtersHidden = false;           // collapse the header filter bar
   // dated = date-filtered; catScope = dated + cardmember (base for category chart);
   // cardScope = dated + category (base for cardmember chart); view = dated + both.
   let allTxns = [], datedTxns = [], catScopeTxns = [], cardScopeTxns = [], viewTxns = [], ledgerTxns = [];
@@ -322,7 +323,13 @@
     $('#dashboard').hidden = !hasData || viewName === 'prefs';
     $('#prefs').hidden = viewName !== 'prefs';
 
-    $('#dateControls').hidden = !hasData || viewName === 'prefs';
+    const showHead = hasData && viewName !== 'prefs';
+    const ftBtn = $('#filtersToggle');
+    ftBtn.hidden = !showHead;
+    ftBtn.classList.toggle('collapsed', filtersHidden);
+    ftBtn.setAttribute('aria-expanded', String(!filtersHidden));
+    $('#filtersToggleLabel').textContent = filtersHidden ? 'Show filters' : 'Filters';
+    $('#dateControls').hidden = !showHead || filtersHidden;
 
     document.body.classList.toggle('settings-mode', viewName === 'prefs');
     const h1 = document.querySelector('.page-head h1');
@@ -1616,6 +1623,9 @@
     Store.onSaveError((e) => toast('Could not save: ' + (e.message || 'storage error')));
     detectMobile();
     addEventListener('resize', detectMobile);
+    // Filter bar starts collapsed on mobile (it's cramped); remembers your choice.
+    const storedFilters = localStorage.getItem('finalyze.filtersHidden');
+    filtersHidden = storedFilters == null ? document.body.classList.contains('is-mobile') : storedFilters === '1';
     await Store.init();
     censored = await Store.getCensor();
     const theme = (await Store.getTheme()) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -1634,6 +1644,15 @@
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#censorBtn').addEventListener('click', () => applyCensor(!censored));
     $('#menuBtn').addEventListener('click', () => document.body.classList.toggle('nav-open'));
+    $('#filtersToggle').addEventListener('click', () => {
+      filtersHidden = !filtersHidden;
+      localStorage.setItem('finalyze.filtersHidden', filtersHidden ? '1' : '0');
+      const btn = $('#filtersToggle');
+      btn.classList.toggle('collapsed', filtersHidden);
+      btn.setAttribute('aria-expanded', String(!filtersHidden));
+      $('#filtersToggleLabel').textContent = filtersHidden ? 'Show filters' : 'Filters';
+      $('#dateControls').hidden = filtersHidden;
+    });
     $('#settingsBtn').addEventListener('click', () => { viewName = viewName === 'prefs' ? 'dashboard' : 'prefs'; render(); });
     $('#datePreset').addEventListener('change', (e) => {
       const range = datePresetRange(e.target.value);

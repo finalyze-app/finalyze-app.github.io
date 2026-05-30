@@ -153,6 +153,13 @@ input[type="date"]:focus { outline: none; border-color: var(--accent); box-shado
 
 .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); }
 
+/* Filter bar toggle */
+.filters-toggle { align-self: center; }
+.filters-toggle.collapsed { color: var(--muted); }
+.filters-toggle svg { transition: transform .15s; }
+.filters-toggle.collapsed svg { opacity: .7; }
+body.is-mobile .filters-toggle { width: 100%; justify-content: center; margin-top: 4px; }
+
 /* ============ KPI cards ============ */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 26px; }
 .card {
