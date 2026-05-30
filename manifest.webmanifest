@@ -1,0 +1,13 @@
+{
+  "name": "Finalyze — Spending Analyzer",
+  "short_name": "Finalyze",
+  "description": "Analyze your bank and credit-card spending. Your data stays on your device.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0a1228",
+  "theme_color": "#0a1228",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

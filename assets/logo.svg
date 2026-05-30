@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Finalyze">
+  <defs>
+    <linearGradient id="fg" x1="20" y1="8" x2="46" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1c2c5e"/>
+      <stop offset=".55" stop-color="#2f6bd6"/>
+      <stop offset="1" stop-color="#4f9bff"/>
+    </linearGradient>
+    <linearGradient id="fgFacet" x1="30" y1="10" x2="30" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5fa8ff"/>
+      <stop offset="1" stop-color="#2f6bd6"/>
+    </linearGradient>
+  </defs>
+  <!-- stem -->
+  <polygon points="18,9 30,9 30,55 18,55" fill="url(#fg)"/>
+  <!-- top arm with angled flag -->
+  <polygon points="30,9 51,9 43,21 30,21" fill="url(#fg)"/>
+  <!-- middle arm -->
+  <polygon points="30,28 45,28 39,40 30,40" fill="url(#fg)"/>
+  <!-- light facets for depth -->
+  <polygon points="30,9 36,9 30,21" fill="url(#fgFacet)" opacity=".55"/>
+  <polygon points="30,28 35,28 30,40" fill="url(#fgFacet)" opacity=".55"/>
+</svg>
