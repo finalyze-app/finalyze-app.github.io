@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0a1228" />
   <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device — nothing is uploaded." />
-  <link rel="stylesheet" href="styles.css?v=34" />
+  <link rel="stylesheet" href="styles.css?v=36" />
 </head>
 <body>
   <div class="shell">
@@ -170,6 +170,12 @@
           <div id="subRuleManager"></div>
         </div>
 
+        <div class="panel span-2" id="set-cards">
+          <div class="phead"><div><div class="eyebrow">Overview</div><h2>Custom cards</h2></div><span class="hint">Shown in Spending overview · totalled for the selected period</span></div>
+          <p class="muted" style="margin:0 0 14px">Build a KPI card from criteria on your transactions (e.g. Category is Health AND Description contains “cpap”). The card appears in the Spending overview and totals matching transactions for whatever period is selected (This Month, Last Year, a custom range…), with the period appended to its name.</p>
+          <div id="cardManager"></div>
+        </div>
+
         <div class="panel span-2" id="set-groups">
           <div class="phead"><div><div class="eyebrow">Groups</div><h2>Category groups</h2></div><span class="hint">Roll up categories for charts &amp; budgets</span></div>
           <p class="muted" style="margin:0 0 14px">Combine categories like Dining + Groceries into “Food”. Use the category chart’s Groups view to see rollups. Each category can belong to one group.</p>
@@ -228,10 +234,10 @@
   <script src="js/parse.js?v=18"></script>
   <script src="js/pdfparse.js?v=3"></script>
   <script src="js/categorize.js?v=15"></script>
-  <script src="js/store.js?v=34"></script>
+  <script src="js/store.js?v=36"></script>
   <script src="js/analyze.js?v=34"></script>
   <script src="js/charts.js?v=15"></script>
-  <script src="js/app.js?v=35"></script>
+  <script src="js/app.js?v=36"></script>
   <script src="js/account.js?v=20"></script>
   <script src="js/ai.js?v=21"></script>
   <script src="js/chat.js?v=22"></script>

@@ -27,6 +27,7 @@
   // dated = date-filtered; catScope = dated + cardmember (base for category chart);
   // cardScope = dated + category (base for cardmember chart); view = dated + both.
   let allTxns = [], datedTxns = [], catScopeTxns = [], cardScopeTxns = [], viewTxns = [], ledgerTxns = [];
+  let periodTxns = [];                 // account + date-range scoped only (for custom cards)
 
   // ---- icons ----
   const ICON = {
@@ -39,6 +40,7 @@
     median: '<line x1="4" y1="12" x2="20" y2="12"/><circle cx="12" cy="12" r="3"/>',
     balance: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
     calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    custom: '<path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>',
   };
   const NAV_ICON = {
     overview: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
@@ -109,6 +111,50 @@
       if (range[0] === from && range[1] === to) return preset;
     }
     return '';
+  }
+  const PRESET_LABEL = {
+    'this-month': 'This Month', 'last-month': 'Last Month', 'this-quarter': 'This Quarter',
+    'last-quarter': 'Last Quarter', 'ytd': 'Year to Date', 'last-year': 'Last Year', 'all': 'All Time',
+  };
+  // Human label for the active period, appended to custom card names.
+  function periodLabel() {
+    if (!dateFrom && !dateTo) return 'All Time';
+    const preset = detectDatePreset(dateFrom, dateTo);
+    if (preset) return PRESET_LABEL[preset];
+    return `${dateFrom || '…'} → ${dateTo || '…'}`;
+  }
+  // Does an (enriched) transaction satisfy a custom-card rule?
+  function cardMatch(t, card) {
+    const conds = (card.conditions || []).filter((c) => c && c.field);
+    if (!conds.length) return false;
+    const test = (c) => {
+      const v = (c.value == null ? '' : String(c.value)).trim();
+      switch (c.field) {
+        case 'category': return t.category === c.value;
+        case 'type': return t.flow === c.value;
+        case 'cardmember':
+          return c.op === 'contains'
+            ? (t.cardmember || '').toLowerCase().includes(v.toLowerCase())
+            : (t.cardmember || '') === c.value;
+        case 'description': {
+          const hay = ((t.name || '') + ' ' + (t.merchantKey || '')).toLowerCase();
+          if (c.op === 'not-contains') return !hay.includes(v.toLowerCase());
+          if (c.op === 'matches') { try { return new RegExp(v, 'i').test(hay); } catch (e) { return false; } }
+          return hay.includes(v.toLowerCase());
+        }
+        case 'amount': {
+          const amt = Math.abs(t.amount); const n = Number(v);
+          if (isNaN(n)) return false;
+          if (c.op === 'lt') return amt < n;
+          if (c.op === 'gte') return amt >= n;
+          if (c.op === 'lte') return amt <= n;
+          if (c.op === 'eq') return Math.abs(amt - n) < 0.005;
+          return amt > n; // gt
+        }
+        default: return false;
+      }
+    };
+    return card.match === 'any' ? conds.some(test) : conds.every(test);
   }
   function toast(msg) {
     const t = $('#toast');
@@ -355,6 +401,7 @@
     syncFilterInputs();
     syncAccountFilter();
     const accountTxns = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
+    periodTxns = filterTxns(accountTxns, { dateFrom, dateTo });
     datedTxns = filterTxns(accountTxns, { dateFrom, dateTo, amountMin, amountMax, flowFilter });
     if (activeCategory && !datedTxns.some((t) => txnMatchesSlice(t, activeCategory))) activeCategory = null;
     if (activeCardmember && !datedTxns.some((t) => t.cardmember === activeCardmember)) activeCardmember = null;
@@ -450,7 +497,7 @@
 
   // Settings is organised into tabs; each tab shows a subset of the prefs panels.
   const SETTINGS_TABS = [
-    { id: 'categories', label: 'Categories & rules', panels: ['set-categories', 'set-rules', 'set-sub-rules', 'set-groups', 'set-merchants'] },
+    { id: 'categories', label: 'Categories & rules', panels: ['set-categories', 'set-rules', 'set-sub-rules', 'set-cards', 'set-groups', 'set-merchants'] },
     { id: 'budgets', label: 'Budgets', panels: ['set-budgets'] },
     { id: 'accounts', label: 'Accounts & data', panels: ['set-accounts', 'set-danger'] },
     { id: 'layout', label: 'Layout', panels: ['set-layout'] },
@@ -553,6 +600,15 @@
     if (reimbTotal > 0) cards.push(card(ICON.refund, 'Reimbursable', fmt(reimbTotal), 'small'));
     if (!activeCategory && bal != null) cards.push(card(ICON.balance, 'Statement balance', fmt(bal), bal < 0 ? 'neg' : ''));
     if (s.dateFrom) cards.push(card(ICON.calendar, 'Date range', `${s.dateFrom}<br>→ ${s.dateTo}`, 'small'));
+
+    // Custom KPI cards — totals over the active period (account + date range).
+    const period = periodLabel();
+    Store.getCustomCards().forEach((cc) => {
+      const matched = periodTxns.filter((t) => cardMatch(t, cc));
+      const total = matched.reduce((a, t) => a + Math.abs(t.amount), 0);
+      cards.push(card(ICON.custom, `${cc.name} · ${period}`, fmt(total), 'small'));
+    });
+
     $('#summaryCards').innerHTML = cards.join('');
 
     renderBudgetAlerts();
@@ -1098,7 +1154,7 @@
 
   // ============ Preferences ============
   function renderPrefs() {
-    renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderGroupManager(); renderBudgetManager();
+    renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderCardManager(); renderGroupManager(); renderBudgetManager();
     renderAccountManager(); renderMergeManager(); renderWidgetManager(); renderAccountSize();
   }
 
@@ -1187,6 +1243,88 @@
       if (!pattern) { toast('Enter a keyword or regex'); return; }
       if (Store.addSubscriptionRule(pattern, flags)) { render(); toast('Subscription rule added'); }
       else toast('Invalid regular expression');
+    };
+  }
+
+  // ---- Custom KPI cards (Spending overview) ----
+  const CC_FIELD_LABELS = { category: 'Category', description: 'Description/Merchant', cardmember: 'Cardmember', amount: 'Amount', type: 'Type' };
+  const CC_FIELD_OPS = { category: ['is'], description: ['contains', 'not-contains', 'matches'], cardmember: ['is', 'contains'], amount: ['gt', 'lt', 'gte', 'lte', 'eq'], type: ['is'] };
+  const CC_OP_LABELS = { is: 'is', contains: 'contains', 'not-contains': "doesn't contain", matches: 'matches regex', gt: '>', lt: '<', gte: '≥', lte: '≤', eq: '=' };
+  const ccEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let cardDraft = null;
+
+  function ccDefaultValue(field) {
+    if (field === 'category') return getCategories()[0] || '';
+    if (field === 'type') return 'spend';
+    return '';
+  }
+  function ccValueControl(cond) {
+    if (cond.field === 'category') return `<select class="cc-val">${catOptions(cond.value)}</select>`;
+    if (cond.field === 'type') return `<select class="cc-val">${['spend', 'payment', 'refund'].map((v) => `<option value="${v}"${v === cond.value ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
+    if (cond.field === 'amount') return `<input type="number" step="0.01" class="cc-val" value="${ccEsc(cond.value)}" placeholder="0.00">`;
+    return `<input type="text" class="cc-val" value="${ccEsc(cond.value)}" placeholder="${cond.field === 'description' ? 'e.g. cpap' : 'value'}">`;
+  }
+  function ccCondRow(cond, i) {
+    const ops = CC_FIELD_OPS[cond.field] || ['is'];
+    return `<div class="cc-cond" data-i="${i}">
+      <select class="cc-field">${Object.keys(CC_FIELD_LABELS).map((f) => `<option value="${f}"${f === cond.field ? ' selected' : ''}>${CC_FIELD_LABELS[f]}</option>`).join('')}</select>
+      <select class="cc-op">${ops.map((o) => `<option value="${o}"${o === cond.op ? ' selected' : ''}>${CC_OP_LABELS[o]}</option>`).join('')}</select>
+      ${ccValueControl(cond)}
+      <button class="icon-btn cc-cond-del" title="Remove condition">${svg(TRASH)}</button>
+    </div>`;
+  }
+  function ccReadDraft(container) {
+    const name = container.querySelector('#ccName').value.trim();
+    const match = container.querySelector('#ccMatch').value;
+    const conditions = [...container.querySelectorAll('.cc-cond')].map((row) => ({
+      field: row.querySelector('.cc-field').value,
+      op: row.querySelector('.cc-op').value,
+      value: row.querySelector('.cc-val').value,
+    }));
+    cardDraft = { name, match, conditions };
+  }
+  function ccSummary(cc) {
+    return (cc.conditions || []).map((x) => `${CC_FIELD_LABELS[x.field] || x.field} ${CC_OP_LABELS[x.op] || x.op} ${x.value}`).join(cc.match === 'any' ? ' OR ' : ' AND ');
+  }
+  function renderCardManager() {
+    const container = $('#cardManager');
+    if (!container) return;
+    if (!cardDraft) cardDraft = { name: '', match: 'all', conditions: [{ field: 'category', op: 'is', value: ccDefaultValue('category') }] };
+    const cards = Store.getCustomCards();
+    container.innerHTML =
+      (cards.length
+        ? `<div class="rule-list">` + cards.map((cc) =>
+            `<div class="rule-row"><strong>${ccEsc(cc.name)}</strong><span class="rule-arrow">·</span><span class="muted cc-sum">${ccEsc(ccSummary(cc))}</span><button class="icon-btn cc-del" data-id="${cc.id}" title="Delete card">${svg(TRASH)}</button></div>`).join('') + `</div>`
+        : `<p class="muted-cell" style="padding:6px 0 12px">No custom cards yet. Build one below — it appears in the Spending overview, totalled over the selected period.</p>`) +
+      `<div class="cc-builder">
+        <div class="cc-head-row">
+          <input type="text" id="ccName" placeholder="Card name, e.g. CPAP Spend" value="${ccEsc(cardDraft.name)}">
+          <label class="cc-match">Match <select id="ccMatch"><option value="all"${cardDraft.match === 'all' ? ' selected' : ''}>All conditions</option><option value="any"${cardDraft.match === 'any' ? ' selected' : ''}>Any condition</option></select></label>
+        </div>
+        <div id="ccConds">${cardDraft.conditions.map((c, i) => ccCondRow(c, i)).join('')}</div>
+        <div class="cc-actions"><button type="button" class="btn sm" id="ccAddCond">+ Add condition</button><button type="button" class="btn primary" id="ccCreate">Create card</button></div>
+      </div>`;
+
+    $$('.cc-del', container).forEach((b) => b.onclick = () => { Store.removeCustomCard(b.dataset.id); render(); toast('Card removed'); });
+    container.querySelector('#ccName').oninput = (e) => { cardDraft.name = e.target.value; };
+    container.querySelector('#ccMatch').onchange = (e) => { cardDraft.match = e.target.value; };
+    container.querySelector('#ccAddCond').onclick = () => { ccReadDraft(container); cardDraft.conditions.push({ field: 'description', op: 'contains', value: '' }); renderCardManager(); };
+    $$('.cc-cond', container).forEach((row) => {
+      const i = +row.dataset.i;
+      row.querySelector('.cc-field').onchange = (e) => { ccReadDraft(container); const f = e.target.value; cardDraft.conditions[i] = { field: f, op: (CC_FIELD_OPS[f] || ['is'])[0], value: ccDefaultValue(f) }; renderCardManager(); };
+      row.querySelector('.cc-op').onchange = () => ccReadDraft(container);
+      row.querySelector('.cc-val').oninput = () => ccReadDraft(container);
+      row.querySelector('.cc-val').onchange = () => ccReadDraft(container);
+      row.querySelector('.cc-cond-del').onclick = () => { ccReadDraft(container); if (cardDraft.conditions.length > 1) cardDraft.conditions.splice(i, 1); renderCardManager(); };
+    });
+    container.querySelector('#ccCreate').onclick = () => {
+      ccReadDraft(container);
+      if (!cardDraft.name) { toast('Name your card'); return; }
+      const valid = cardDraft.conditions.filter((c) => c.field && (c.field === 'amount' ? c.value !== '' : String(c.value).trim() !== '' || c.field === 'category' || c.field === 'type'));
+      if (!valid.length) { toast('Add at least one condition'); return; }
+      Store.addCustomCard({ name: cardDraft.name, match: cardDraft.match, conditions: valid });
+      cardDraft = null;
+      render(); toast('Custom card created');
     };
   }
 

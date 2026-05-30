@@ -808,3 +808,14 @@ a.brand:hover { opacity: .85; }
 .pdf-review td[data-label="Type"] { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
 .pdf-flip-row { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 7px; cursor: pointer; font-size: 13px; line-height: 1; padding: 4px 7px; }
 .pdf-flip-row:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ============ Custom KPI cards builder ============ */
+.cc-builder { margin-top: 14px; border-top: 1px solid var(--line-2); padding-top: 14px; }
+.cc-head-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.cc-head-row #ccName { flex: 1; min-width: 180px; font: inherit; font-size: 13px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
+.cc-match { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.cc-cond { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.cc-cond select, .cc-cond input { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
+.cc-cond .cc-val { flex: 1; min-width: 120px; }
+.cc-actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.cc-sum { font-size: 12.5px; }

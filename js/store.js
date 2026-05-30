@@ -10,7 +10,7 @@
     return {
       transactions: {}, overrides: {}, currency: 'CAD', balance: null, balanceAsOf: null,
       subscriptions: {}, customCategories: [], categoryColors: {}, categoryTypes: {},
-      categoryRenames: {}, merchantMerges: {}, customRules: [], subscriptionRules: [], budgets: {}, txnTags: {},
+      categoryRenames: {}, merchantMerges: {}, customRules: [], subscriptionRules: [], customCards: [], budgets: {}, txnTags: {},
       cardmemberOverrides: {}, merchantTags: {}, merchantAnomalyExcludes: {},
       mergeSuggestionsDismissed: {}, categoryGroups: [],
       accounts: [{ id: 'default', label: 'Default' }], layout: null, csvImportPrefs: null,
@@ -382,6 +382,27 @@
     },
     removeSubscriptionRule(id) {
       cache.subscriptionRules = this.getSubscriptionRules().filter((x) => x.id !== id);
+      persist();
+    },
+
+    // Custom KPI cards shown in the Spending overview, defined by criteria.
+    getCustomCards() { return cache.customCards || (cache.customCards = []); },
+    addCustomCard(card) {
+      if (!card || !card.name) return false;
+      const id = 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      this.getCustomCards().push({ id, name: card.name, match: card.match || 'all', conditions: card.conditions || [] });
+      persist();
+      return id;
+    },
+    updateCustomCard(id, patch) {
+      const c = this.getCustomCards().find((x) => x.id === id);
+      if (!c) return false;
+      Object.assign(c, patch || {});
+      persist();
+      return true;
+    },
+    removeCustomCard(id) {
+      cache.customCards = this.getCustomCards().filter((x) => x.id !== id);
       persist();
     },
 
