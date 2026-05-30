@@ -5,7 +5,55 @@
   const parseAmount = (s) => global.Finalyze.parseAmount(s);
 
   const SKIP_LINE = /^(page\s+\d+|continued|statement\s+period|account\s+(number|summary)|opening\s+balance|closing\s+balance|previous\s+balance|new\s+balance|total\s+(charges|payments|amount)|subtotal|payment\s+due|minimum\s+payment|interest\s+charge|annual\s+fee|credit\s+limit|available\s+credit|transaction\s+date|posting\s+date|date\s+transaction|amount\s+\(\$|description|charges|payments|card\s+#|card\s+number)/i;
+  // Reward/loyalty lines often carry an integer point value that must NOT be read
+  // as a dollar amount (they'd look like refunds). Skip them outright.
+  const SKIP_REWARDS = /(reward|loyalty|aeroplan|air\s?miles|points?\s+(earned|redeemed|balance|total)|(points|rewards?)\s+(earned|redeemed|balance|summary)|cash\s?back\s+(earned|reward))/i;
   const MONTH = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
+  const MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  let yearHint = new Date().getFullYear();
+
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  // Parse month-name dates with an inferred year when the statement omits it:
+  // "May 12", "May 12, 2026", "12 May 2026", "Sept. 3".
+  function monthDate(str) {
+    if (!str) return null;
+    const s = String(str).trim();
+    let m;
+    if ((m = /^([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?$/.exec(s))) {
+      const mo = MON[m[1].slice(0, 3).toLowerCase()];
+      if (mo == null) return null;
+      return `${m[3] ? +m[3] : yearHint}-${pad2(mo + 1)}-${pad2(m[2])}`;
+    }
+    if ((m = /^(\d{1,2})\s+([A-Za-z]{3,9})\.?(?:,?\s+(\d{4}))?$/.exec(s))) {
+      const mo = MON[m[2].slice(0, 3).toLowerCase()];
+      if (mo == null) return null;
+      return `${m[3] ? +m[3] : yearHint}-${pad2(mo + 1)}-${pad2(m[1])}`;
+    }
+    // Numeric MM/DD or DD/MM with NO year — use the inferred statement year
+    // (prevents new Date("05/12") defaulting to 2001).
+    if ((m = /^(\d{1,2})[-/](\d{1,2})$/.exec(s))) {
+      let mo = +m[1], da = +m[2];
+      if (mo > 12 && da <= 12) { const t = mo; mo = da; da = t; } // looked like DD/MM
+      if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31) return `${yearHint}-${pad2(mo)}-${pad2(da)}`;
+    }
+    // Numeric MM/DD/YY (2-digit year) — assume 20YY.
+    if ((m = /^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/.exec(s))) {
+      let mo = +m[1], da = +m[2];
+      if (mo > 12 && da <= 12) { const t = mo; mo = da; da = t; }
+      if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31) return `20${m[3]}-${pad2(mo)}-${pad2(da)}`;
+    }
+    return null;
+  }
+
+  // Only treat a token as money if it has cents (e.g. 12.34) — this prevents
+  // integer reward-point totals like "2,450" from being parsed as amounts.
+  function currencyAmount(s) {
+    if (s == null) return null;
+    if (!/\d\.\d{2}\)?\s*(cr|dr)?\s*$/i.test(String(s).trim()) && !/\d\.\d{2}/.test(String(s))) return null;
+    if (!/\.\d{2}/.test(String(s))) return null;
+    return parseAmount(s);
+  }
 
   function mkTxn(amount, dateStr, name, cardmember) {
     return {
@@ -80,55 +128,49 @@
 
   function parseDateToken(s) {
     if (!s) return null;
-    return normCSVDate(s) || normCSVDate(s.replace(/\./g, ''));
-  }
-
-  function splitChargePayment(cells, date, nameStart, nameEnd) {
-    const name = cells.slice(nameStart, nameEnd).join(' ').trim();
-    const ch = parseAmount(cells[nameEnd]);
-    const pay = parseAmount(cells[nameEnd + 1]);
-    const card = cells[nameEnd + 2];
-    const cm = cardLabel(card);
-    if (ch != null && ch !== 0) return mkTxn(-Math.abs(ch), date, name, cm);
-    if (pay != null && pay !== 0) return mkTxn(Math.abs(pay), date, name, cm);
-    return null;
+    return monthDate(s) || normCSVDate(s) || normCSVDate(s.replace(/\./g, ''));
   }
 
   function parseTableRow(cells) {
     if (!cells || cells.length < 2) return null;
     const line = cells.join(' ').trim();
-    if (!line || SKIP_LINE.test(line)) return null;
+    if (!line || SKIP_LINE.test(line) || SKIP_REWARDS.test(line)) return null;
 
-    const date = parseDateToken(cells[0]);
+    // Find where the description starts. The date can be split across two cells
+    // ("May" + "12"), and many statements have two leading dates (transaction +
+    // posting) — skip the second so it doesn't land in the merchant name.
+    let date = parseDateToken(cells[0]);
+    let nameStart = 1;
+    if (!date && cells.length >= 3) {
+      const combo = parseDateToken(cells[0] + ' ' + cells[1]);
+      if (combo) { date = combo; nameStart = 2; }
+    }
     if (!date) return null;
+    if (cells[nameStart] != null && parseDateToken(cells[nameStart])) nameStart++;
 
-    // CIBC-style: Date | Description | Charges | Payments | Card #
-    if (cells.length >= 4) {
-      const ch = parseAmount(cells[cells.length - 2]);
-      const pay = parseAmount(cells[cells.length - 1]);
-      const lastIsCard = cells.length >= 5 && looksLikeCard(cells[cells.length - 1]);
-      if (lastIsCard) {
-        const txn = splitChargePayment(cells, date, 1, cells.length - 3);
-        if (txn) return txn;
-      }
-      if ((ch != null && ch !== 0) || (pay != null && pay !== 0)) {
-        if (ch != null && ch !== 0 && (pay == null || pay === 0)) {
-          return mkTxn(-Math.abs(ch), date, cells.slice(1, -1).join(' ').trim(), cardLabel(cells[cells.length - 1]));
-        }
-        if (pay != null && pay !== 0 && (ch == null || ch === 0)) {
-          return mkTxn(Math.abs(pay), date, cells.slice(1, -1).join(' ').trim(), cardLabel(cells[cells.length - 1]));
-        }
+    // Charges | Payments split columns, optionally trailing Card # (CIBC-style).
+    if (cells.length >= nameStart + 2) {
+      const last = cells.length - 1;
+      const lastIsCard = looksLikeCard(cells[last]);
+      const chIdx = lastIsCard ? last - 2 : last - 1;
+      const payIdx = lastIsCard ? last - 1 : last;
+      const ch = currencyAmount(cells[chIdx]);
+      const pay = currencyAmount(cells[payIdx]);
+      if (chIdx > nameStart - 1 && ((ch != null && ch !== 0) || (pay != null && pay !== 0))) {
+        const name = cells.slice(nameStart, chIdx).join(' ').trim();
+        const cm = lastIsCard ? cardLabel(cells[last]) : 'Unknown';
+        if (ch != null && ch !== 0) return mkTxn(-Math.abs(ch), date, name, cm);
+        if (pay != null && pay !== 0) return mkTxn(Math.abs(pay), date, name, cm);
       }
     }
 
-    // Date | Description | Amount
-    for (let i = cells.length - 1; i >= 1; i--) {
-      const amt = parseAmount(cells[i]);
+    // Date | Description | Amount (single signed/currency column).
+    for (let i = cells.length - 1; i >= nameStart; i--) {
+      const amt = currencyAmount(cells[i]);
       if (amt == null) continue;
-      const name = cells.slice(1, i).join(' ').trim();
+      const name = cells.slice(nameStart, i).join(' ').trim();
       if (!name) continue;
-      const signed = inferSignedAmount(amt, name, line);
-      return mkTxn(signed, date, name, 'Unknown');
+      return mkTxn(inferSignedAmount(amt, name, line), date, name, 'Unknown');
     }
     return null;
   }
@@ -149,7 +191,7 @@
   // Fallback when table columns merge into one line of text.
   function parseTextLine(line) {
     line = line.replace(/\s+/g, ' ').trim();
-    if (!line || SKIP_LINE.test(line)) return null;
+    if (!line || SKIP_LINE.test(line) || SKIP_REWARDS.test(line)) return null;
 
     const dateRe = new RegExp(
       '^(' +
@@ -197,6 +239,12 @@
 
   async function parsePDF(arrayBuffer) {
     const rows = await extractRows(arrayBuffer);
+    // Infer the statement year from any explicit 4-digit year in the text so
+    // month-name dates without a year ("May 12") resolve correctly.
+    const years = {};
+    rows.forEach((c) => { const mm = c.join(' ').match(/\b(20\d{2})\b/g); if (mm) mm.forEach((y) => { years[y] = (years[y] || 0) + 1; }); });
+    const top = Object.keys(years).sort((a, b) => years[b] - years[a])[0];
+    if (top) yearHint = +top;
     const txns = [];
     rows.forEach((cells) => {
       const t = parseTableRow(cells);

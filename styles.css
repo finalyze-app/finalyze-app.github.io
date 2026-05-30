@@ -804,3 +804,7 @@ body.modal-open { overflow: hidden; }
 /* Sidebar brand acts as a home link back to the landing page */
 a.brand { text-decoration: none; cursor: pointer; transition: opacity .15s; }
 a.brand:hover { opacity: .85; }
+
+.pdf-review td[data-label="Type"] { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.pdf-flip-row { border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 7px; cursor: pointer; font-size: 13px; line-height: 1; padding: 4px 7px; }
+.pdf-flip-row:hover { color: var(--accent); border-color: var(--accent); }

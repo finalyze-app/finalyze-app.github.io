@@ -1785,7 +1785,7 @@
       <td data-label="Date"><input type="date" class="pdf-date" value="${r.date}"></td>
       <td data-label="Description"><input type="text" class="pdf-name" value="${(r.name || '').replace(/"/g, '&quot;')}"></td>
       <td class="num" data-label="Amount"><input type="number" step="0.01" class="pdf-amt" value="${r.amount}"></td>
-      <td data-label="Type"><span class="pdf-type ${r.amount < 0 ? 'amt-neg' : 'amt-pos'}">${r.amount < 0 ? 'Spend' : 'In'}</span></td>
+      <td data-label="Type"><span class="pdf-type ${r.amount < 0 ? 'amt-neg' : 'amt-pos'}">${r.amount < 0 ? 'Spend' : 'In'}</span><button type="button" class="pdf-flip-row" title="Flip this transaction’s sign">⇅</button></td>
     </tr>`).join('');
 
     const selA = body.querySelector('#impAccount'), newName = body.querySelector('#impNewName');
@@ -1805,6 +1805,13 @@
       const tr = e.target.closest('tr');
       if (e.target.classList.contains('pdf-amt')) refreshType(tr);
       if (e.target.classList.contains('pdf-inc')) updateCount();
+    });
+    tbody.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('pdf-flip-row')) return;
+      const tr = e.target.closest('tr');
+      const inp = tr.querySelector('.pdf-amt');
+      inp.value = String(-(Number(inp.value) || 0));
+      refreshType(tr);
     });
     body.querySelector('#pdfFlip').onclick = () => {
       tbody.querySelectorAll('tr').forEach((tr) => {
