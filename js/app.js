@@ -1886,6 +1886,7 @@
       }
       const fmt = sources.size ? ' · ' + [...sources].join(', ') : '';
       toast(`Imported ${totalAdded} new · ${totalDup} already in history${fmt}`);
+      if (totalAdded > 0) maybeOfferSettingsTour();
     };
 
     const readText = (file) => new Promise((resolve, reject) => {
@@ -2047,6 +2048,7 @@
       closeModal();
       render();
       toast(`Imported ${added} new · ${duplicates} already in history · PDF`);
+      if (added > 0) maybeOfferSettingsTour();
     };
   }
 
@@ -2271,6 +2273,39 @@
     if (new URLSearchParams(location.search).get('demo') && !allTxns.length && F.Demo) {
       F.Demo.start();
     }
+  }
+
+  // ---- First-import: offer a guided tour of Settings ----
+  function maybeOfferSettingsTour() {
+    if (F.Demo && F.Demo.active && F.Demo.active()) return;     // skip during demo data
+    if (localStorage.getItem('finalyze.settingsTourOffered')) return;
+    if (!allTxns.length) return;
+    localStorage.setItem('finalyze.settingsTourOffered', '1');
+    const body = openModal(
+      `<h2>Make Finalyze yours</h2>
+       <p class="muted">Nice — your statement is in! Want a quick tour of Settings to set up categories, rules, budgets and custom cards the way you like?</p>
+       <div class="import-actions"><button class="btn" id="tourNo">Not now</button><button class="btn primary" id="tourYes">Show me around</button></div>`);
+    body.querySelector('#tourNo').onclick = closeModal;
+    body.querySelector('#tourYes').onclick = () => { closeModal(); startSettingsTour(); };
+  }
+
+  function startSettingsTour() {
+    const goTab = (tab) => () => { viewName = 'prefs'; settingsTab = tab; render(); };
+    if (!F.Demo || !F.Demo.runTour) { goTab('categories')(); return; }
+    const steps = [
+      { before: goTab('categories'), title: 'Welcome to Settings', body: 'A 30-second tour of what you can customize. Change any of this anytime from Settings.' },
+      { before: goTab('categories'), sel: '#set-categories', title: 'Categories', body: 'Add your own categories, recolor them, and set each as spending, payment, or refund.' },
+      { before: goTab('categories'), sel: '#set-rules', title: 'Auto-categorization rules', body: 'Match merchant text with a keyword or regex and assign a category — applied before the built-in rules.' },
+      { before: goTab('categories'), sel: '#set-sub-rules', title: 'Subscription rules', body: 'Flag a merchant as recurring by keyword, even when the charge amount changes each cycle.' },
+      { before: goTab('categories'), sel: '#set-cards', title: 'Custom cards', body: 'Build KPI cards from criteria (e.g. Health + “cpap”). They appear in the overview, totalled for the selected period.' },
+      { before: goTab('categories'), sel: '#set-groups', title: 'Category groups', body: 'Roll up categories (e.g. Dining + Groceries → Food) for charts and budgets.' },
+      { before: goTab('categories'), sel: '#set-merchants', title: 'Merge merchants', body: 'Combine differently-named merchants into one — remembered for future imports.' },
+      { before: goTab('budgets'), sel: '#set-budgets', title: 'Budgets', body: 'Set monthly limits per category or group. The overview warns at 80% and over.' },
+      { before: goTab('accounts'), sel: '#set-accounts', title: 'Accounts & data', body: 'Track multiple cards/accounts, check storage use, and back up or restore your data.' },
+      { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, resize, and reorder every dashboard widget.' },
+      { before: goTab('categories'), title: 'You’re all set', body: 'Tweak anything anytime from Settings. Enjoy Finalyze!', final: true },
+    ];
+    F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
   }
 
   F.filterTxns = filterTxns;

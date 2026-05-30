@@ -29,6 +29,7 @@
   ];
 
   let idx = 0, coach = null, target = null;
+  let steps = STEPS, onFinal = null, finalLabel = '';
 
   function active() { return localStorage.getItem(DEMO_KEY) === '1'; }
 
@@ -42,7 +43,7 @@
       localStorage.setItem(DEMO_KEY, '1');
       F.render && F.render();
       updateBanner();
-      idx = 0; openCoach();
+      startDemoTour();
     } catch (e) {
       F.toast && F.toast('Demo failed: ' + (e.message || e));
     }
@@ -68,7 +69,7 @@
       $('#dcSkip', coach).onclick = endTour;
       $('#dcBack', coach).onclick = () => go(idx - 1);
       $('#dcNext', coach).onclick = () => {
-        if (STEPS[idx].final) { clearAndImport(); return; }
+        if (steps[idx].final) { (onFinal || endTour)(); return; }
         go(idx + 1);
       };
     }
@@ -76,10 +77,24 @@
     go(0);
   }
 
+  // Run an arbitrary coachmark tour. Each step: { sel, title, body, final?, before? }.
+  function runTour(stepList, finalFn, label) {
+    steps = stepList && stepList.length ? stepList : STEPS;
+    onFinal = finalFn || endTour;
+    finalLabel = label || 'Done';
+    idx = 0;
+    openCoach();
+  }
+  function startDemoTour() {
+    steps = STEPS; onFinal = clearAndImport; finalLabel = 'Clear demo & import my data';
+    idx = 0; openCoach();
+  }
+
   function go(n) {
-    idx = Math.max(0, Math.min(STEPS.length - 1, n));
-    const step = STEPS[idx];
+    idx = Math.max(0, Math.min(steps.length - 1, n));
+    const step = steps[idx];
     clearTarget();
+    if (typeof step.before === 'function') { try { step.before(); } catch (e) {} }
     if (step.sel) {
       target = document.querySelector(step.sel);
       if (target) {
@@ -87,13 +102,13 @@
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
-    $('#dcStep', coach).textContent = `Step ${idx + 1} of ${STEPS.length}`;
+    $('#dcStep', coach).textContent = `Step ${idx + 1} of ${steps.length}`;
     $('#dcTitle', coach).textContent = step.title;
     $('#dcBody', coach).textContent = step.body;
     $('#dcBack', coach).style.visibility = idx === 0 ? 'hidden' : 'visible';
-    $('#dcNext', coach).textContent = step.final ? 'Clear demo & import my data' : 'Next';
+    $('#dcNext', coach).textContent = step.final ? finalLabel : 'Next';
     $('#dcNext', coach).classList.toggle('final', !!step.final);
-    $('#dcSkip', coach).style.visibility = step.final ? 'hidden' : 'visible';
+    $('#dcSkip', coach).style.visibility = 'visible';
   }
 
   function clearTarget() { if (target) { target.classList.remove('demo-target'); target = null; } }
@@ -114,7 +129,7 @@
         <button class="linkish" id="demoReplay" type="button">Replay tour</button>
         <button class="btn sm primary" id="demoClear" type="button">Clear demo &amp; import my data</button>
       </span>`;
-    $('#demoReplay').onclick = () => { idx = 0; openCoach(); };
+    $('#demoReplay').onclick = () => { startDemoTour(); };
     $('#demoClear').onclick = clearAndImport;
   }
 
@@ -140,7 +155,7 @@
     }
   }
 
-  F.Demo = { start, active, clearAndImport, _updateBanner: updateBanner };
+  F.Demo = { start, active, clearAndImport, runTour, endTour, _updateBanner: updateBanner };
   // Store.init() is async; run after it (DOMContentLoaded + a tick is enough since
   // app.js init awaits Store.init before first render, and the banner only needs
   // the button wired immediately).
