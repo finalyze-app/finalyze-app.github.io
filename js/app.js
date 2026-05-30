@@ -497,7 +497,8 @@
 
   // Settings is organised into tabs; each tab shows a subset of the prefs panels.
   const SETTINGS_TABS = [
-    { id: 'categories', label: 'Categories & rules', panels: ['set-categories', 'set-rules', 'set-sub-rules', 'set-cards', 'set-groups', 'set-merchants'] },
+    { id: 'categories', label: 'Categories', panels: ['set-categories', 'set-cards', 'set-groups', 'set-merchants'] },
+    { id: 'rules', label: 'Rules', panels: ['set-rules', 'set-sub-rules', 'set-merge-rules'] },
     { id: 'budgets', label: 'Budgets', panels: ['set-budgets'] },
     { id: 'accounts', label: 'Accounts & data', panels: ['set-accounts', 'set-tours', 'set-danger'] },
     { id: 'layout', label: 'Layout', panels: ['set-layout'] },
@@ -1154,7 +1155,7 @@
 
   // ============ Preferences ============
   function renderPrefs() {
-    renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderCardManager(); renderGroupManager(); renderBudgetManager();
+    renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderMergeRuleManager(); renderCardManager(); renderGroupManager(); renderBudgetManager();
     renderAccountManager(); renderMergeManager(); renderWidgetManager(); renderAccountSize();
   }
 
@@ -1242,6 +1243,41 @@
       const flags = $('#subRuleCase').checked ? '' : 'i';
       if (!pattern) { toast('Enter a keyword or regex'); return; }
       if (Store.addSubscriptionRule(pattern, flags)) { render(); toast('Subscription rule added'); }
+      else toast('Invalid regular expression');
+    };
+  }
+
+  // ---- Auto-merge rules ----
+  function renderMergeRuleManager() {
+    const container = $('#mergeRuleManager');
+    if (!container) return;
+    const rules = Store.getMergeRules();
+    container.innerHTML =
+      (rules.length
+        ? `<div class="rule-list">` + rules.map((r) =>
+            `<div class="rule-row">
+              <code class="rule-pat">/${(r.pattern || '').replace(/</g, '&lt;')}/${r.flags || 'i'}</code>
+              <span class="rule-arrow">→</span>
+              <span class="merge-rule-target">${(r.target || '').replace(/</g, '&lt;')}</span>
+              <button class="icon-btn mergerule-del" data-id="${r.id}" title="Delete rule">${svg(TRASH)}</button>
+            </div>`).join('') + `</div>`
+        : `<p class="muted-cell" style="padding:6px 0 12px">No auto-merge rules yet.</p>`) +
+      `<div class="rule-add">
+        <input type="text" id="mergeRulePattern" placeholder="Match (keyword/regex), e.g. AMZN|AMAZON">
+        <label class="rule-ci" title="Case sensitive"><input type="checkbox" id="mergeRuleCase"> Aa</label>
+        <input type="text" id="mergeRuleTarget" placeholder="Merge into… e.g. Amazon">
+        <button class="btn primary" id="mergeRuleAddBtn">Add rule</button>
+      </div>`;
+
+    $$('.mergerule-del', container).forEach((btn) => btn.onclick = () => {
+      Store.removeMergeRule(btn.dataset.id); render(); toast('Rule removed');
+    });
+    $('#mergeRuleAddBtn').onclick = () => {
+      const pattern = $('#mergeRulePattern').value.trim();
+      const target = $('#mergeRuleTarget').value.trim();
+      const flags = $('#mergeRuleCase').checked ? '' : 'i';
+      if (!pattern || !target) { toast('Enter a pattern and a merge-into name'); return; }
+      if (Store.addMergeRule(pattern, target, flags)) { render(); toast('Auto-merge rule added'); }
       else toast('Invalid regular expression');
     };
   }
@@ -2297,11 +2333,12 @@
     const steps = [
       { before: goTab('categories'), title: 'Welcome to Settings', body: 'A 30-second tour of what you can customize. Change any of this anytime from Settings.' },
       { before: goTab('categories'), sel: '#set-categories', title: 'Categories', body: 'Add your own categories, recolor them, and set each as spending, payment, or refund.' },
-      { before: goTab('categories'), sel: '#set-rules', title: 'Auto-categorization rules', body: 'Match merchant text with a keyword or regex and assign a category — applied before the built-in rules.' },
-      { before: goTab('categories'), sel: '#set-sub-rules', title: 'Subscription rules', body: 'Flag a merchant as recurring by keyword, even when the charge amount changes each cycle.' },
       { before: goTab('categories'), sel: '#set-cards', title: 'Custom cards', body: 'Build KPI cards from criteria (e.g. Health + “cpap”). They appear in the overview, totalled for the selected period.' },
       { before: goTab('categories'), sel: '#set-groups', title: 'Category groups', body: 'Roll up categories (e.g. Dining + Groceries → Food) for charts and budgets.' },
       { before: goTab('categories'), sel: '#set-merchants', title: 'Merge merchants', body: 'Combine differently-named merchants into one — remembered for future imports.' },
+      { before: goTab('rules'), sel: '#set-rules', title: 'Auto-categorization rules', body: 'Match merchant text with a keyword or regex and assign a category — applied before the built-in rules.' },
+      { before: goTab('rules'), sel: '#set-sub-rules', title: 'Subscription rules', body: 'Flag a merchant as recurring by keyword, even when the charge amount changes each cycle.' },
+      { before: goTab('rules'), sel: '#set-merge-rules', title: 'Auto-merge rules', body: 'Automatically fold matching merchant names into one canonical name — applied to every import.' },
       { before: goTab('budgets'), sel: '#set-budgets', title: 'Budgets', body: 'Set monthly limits per category or group. The overview warns at 80% and over.' },
       { before: goTab('accounts'), sel: '#set-accounts', title: 'Accounts & data', body: 'Track multiple cards/accounts, check storage use, and back up or restore your data.' },
       { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, resize, and reorder every dashboard widget.' },

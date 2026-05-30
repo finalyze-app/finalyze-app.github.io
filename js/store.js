@@ -10,7 +10,7 @@
     return {
       transactions: {}, overrides: {}, currency: 'CAD', balance: null, balanceAsOf: null,
       subscriptions: {}, customCategories: [], categoryColors: {}, categoryTypes: {},
-      categoryRenames: {}, merchantMerges: {}, customRules: [], subscriptionRules: [], customCards: [], budgets: {}, txnTags: {},
+      categoryRenames: {}, merchantMerges: {}, mergeRules: [], customRules: [], subscriptionRules: [], customCards: [], budgets: {}, txnTags: {},
       cardmemberOverrides: {}, merchantTags: {}, merchantAnomalyExcludes: {},
       mergeSuggestionsDismissed: {}, categoryGroups: [],
       accounts: [{ id: 'default', label: 'Default' }], layout: null, csvImportPrefs: null,
@@ -382,6 +382,22 @@
     },
     removeSubscriptionRule(id) {
       cache.subscriptionRules = this.getSubscriptionRules().filter((x) => x.id !== id);
+      persist();
+    },
+
+    // Auto-merge rules: regex/keyword -> canonical merchant name.
+    getMergeRules() { return cache.mergeRules || (cache.mergeRules = []); },
+    addMergeRule(pattern, target, flags) {
+      pattern = (pattern || '').trim(); target = (target || '').trim();
+      if (!pattern || !target) return false;
+      try { new RegExp(pattern, flags || 'i'); } catch (e) { return false; }
+      const id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      this.getMergeRules().push({ id, pattern, target, flags: flags || 'i' });
+      persist();
+      return true;
+    },
+    removeMergeRule(id) {
+      cache.mergeRules = this.getMergeRules().filter((x) => x.id !== id);
       persist();
     },
 
