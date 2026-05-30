@@ -143,6 +143,55 @@
     getTransactions() { return Object.values(cache.transactions); },
     getOverrides() { return cache.overrides },
 
+    transactionStoreKey(t) {
+      const accountId = t.accountId || 'default';
+      const tid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
+      return (accountId === 'default' ? '' : accountId + ':') + tid;
+    },
+
+    _migrateTxnMeta(oldTid, newTid) {
+      if (!oldTid || oldTid === newTid) return;
+      const tags = this.getTxnTags();
+      if (tags[oldTid]) {
+        tags[newTid] = tags[oldTid];
+        delete tags[oldTid];
+      }
+      const cm = this.getCardmemberOverrides();
+      if (cm[oldTid]) {
+        cm[newTid] = cm[oldTid];
+        delete cm[oldTid];
+      }
+    },
+
+    updateTransactionMerchant(storeKey, newName) {
+      newName = (newName || '').trim();
+      if (!storeKey || !newName) return false;
+      const t = cache.transactions[storeKey];
+      if (!t || t.name === newName) return !!t;
+      const oldTid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
+      t.name = newName;
+      const newKey = this.transactionStoreKey(t);
+      if (newKey !== storeKey) {
+        delete cache.transactions[storeKey];
+        cache.transactions[newKey] = t;
+      }
+      const newTid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
+      this._migrateTxnMeta(oldTid, newTid);
+      persist();
+      return true;
+    },
+
+    deleteTransaction(storeKey) {
+      const t = cache.transactions[storeKey];
+      if (!t) return false;
+      const tid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
+      delete cache.transactions[storeKey];
+      delete this.getTxnTags()[tid];
+      delete this.getCardmemberOverrides()[tid];
+      persist();
+      return true;
+    },
+
     setOverride(merchantKey, category) {
       if (!merchantKey) return;
       if (category) cache.overrides[merchantKey] = category;

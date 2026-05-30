@@ -202,6 +202,7 @@
       const category = categorize(t.name, overrides);
       const type = categoryType(category);
       const row = { ...t, merchantKey: merchantKeyOf(t.name), category };
+      row.storeKey = Store.transactionStoreKey(t);
       row.tid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
       // Tags = per-transaction tags ∪ merchant-level tags.
       const mTags = Store.getMerchantTags()[row.merchantKey] || [];
@@ -286,7 +287,7 @@
         </div>
         <div class="table-wrap"><table id="txnTable"><thead><tr>
           <th class="chk-cell"></th><th data-sort="date">Date</th><th data-sort="name">Merchant</th><th data-sort="cardmember">Cardmember</th>
-          <th data-sort="category">Category</th><th data-sort="amount" class="num">Amount</th><th class="tag-cell">Tags</th><th class="sub-cell">Sub</th>
+          <th data-sort="category">Category</th><th data-sort="amount" class="num">Amount</th><th class="tag-cell">Tags</th><th class="sub-cell">Sub</th><th class="txn-actions"></th>
         </tr></thead><tbody></tbody></table></div>`,
       render: renderTransactions },
   ];
@@ -952,6 +953,32 @@
     render();
   }
 
+  function editTransactionMerchant(storeKey, currentName) {
+    const next = prompt('Edit merchant name:', currentName);
+    if (next == null) return;
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === currentName) return;
+    if (!Store.updateTransactionMerchant(storeKey, trimmed)) {
+      toast('Could not update merchant');
+      return;
+    }
+    toast('Merchant updated');
+    render();
+  }
+
+  function deleteTransactionRow(storeKey, label) {
+    const msg = label
+      ? `Delete this transaction?\n\n${label}`
+      : 'Delete this transaction?';
+    if (!confirm(msg)) return;
+    if (!Store.deleteTransaction(storeKey)) {
+      toast('Could not delete transaction');
+      return;
+    }
+    toast('Transaction deleted');
+    render();
+  }
+
   function renderTxnTable() {
     if (!$('#txnTable')) return;
     const subs = Store.getSubscriptions();
@@ -982,12 +1009,13 @@
       return `<tr>
         <td class="chk-cell"><input type="checkbox" class="row-check" data-merchant="${encodeURIComponent(t.merchantKey)}" data-tid="${encodeURIComponent(t.tid)}"></td>
         <td>${t.date}</td>
-        <td><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span></td>
+        <td class="txn-merch"><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span><button type="button" class="icon-btn txn-edit" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Edit merchant">${svg(PENCIL)}</button></td>
         <td>${t.cardmember}</td>
         <td><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td>
         <td class="num ${amtCls}">${fmt(t.amount)}</td>
         <td class="tag-cell">${tagCell}</td>
         <td class="sub-cell">${subCell}</td>
+        <td class="txn-actions"><button type="button" class="icon-btn txn-del danger" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Delete transaction">${svg(TRASH)}</button></td>
       </tr>`;
     }).join('');
 
@@ -1010,6 +1038,13 @@
       render();
     });
     tb.querySelectorAll('.txn-name').forEach((el) => el.onclick = () => openMerchantDrill(decodeURIComponent(el.dataset.merchant)));
+    tb.querySelectorAll('.txn-edit').forEach((btn) => btn.onclick = (e) => {
+      e.stopPropagation();
+      editTransactionMerchant(decodeURIComponent(btn.dataset.storeKey), decodeURIComponent(btn.dataset.name));
+    });
+    tb.querySelectorAll('.txn-del').forEach((btn) => btn.onclick = () => {
+      deleteTransactionRow(decodeURIComponent(btn.dataset.storeKey), decodeURIComponent(btn.dataset.name));
+    });
     updateBulkButton();
   }
 
