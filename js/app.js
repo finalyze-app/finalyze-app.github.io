@@ -1602,8 +1602,20 @@
   }
 
   // ============ Init ============
+  // Treat real touch devices (phones/tablets) as "mobile" so the dashboard can
+  // pack widgets two-up to fit narrow screens. UA + coarse-pointer, not just a
+  // small desktop window.
+  function detectMobile() {
+    const ua = /Mobi|Android|iPhone|iPad|iPod|Windows Phone|BlackBerry/i.test(navigator.userAgent);
+    const touch = matchMedia('(pointer:coarse)').matches;
+    const narrow = matchMedia('(max-width:1024px)').matches;
+    document.body.classList.toggle('is-mobile', ua || (touch && narrow));
+  }
+
   async function init() {
     Store.onSaveError((e) => toast('Could not save: ' + (e.message || 'storage error')));
+    detectMobile();
+    addEventListener('resize', detectMobile);
     await Store.init();
     censored = await Store.getCensor();
     const theme = (await Store.getTheme()) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');

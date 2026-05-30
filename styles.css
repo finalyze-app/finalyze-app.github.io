@@ -256,6 +256,22 @@ code { background: var(--accent-soft); color: var(--accent); padding: 1px 7px; b
 #widgets .widget { flex: 1 1 100%; margin-bottom: 0; }
 #widgets .widget.half { flex: 1 1 calc(50% - 9px); min-width: 0; }
 @media (max-width: 760px) { #widgets .widget.half { flex-basis: 100%; } }
+/* On real mobile devices, pack every widget two-up so they fit the screen. */
+body.is-mobile #widgets { gap: 10px; }
+body.is-mobile #widgets .widget,
+body.is-mobile #widgets .widget.half { flex: 1 1 calc(50% - 5px); min-width: 0; }
+body.is-mobile #widgets .widget { padding: 13px; }
+body.is-mobile #widgets .widget-head h2 { font-size: 13.5px; }
+body.is-mobile #widgets .widget-head .hint { display: none; }
+body.is-mobile #widgets .widget .canvas-wrap { height: 150px; }
+body.is-mobile #widgets .widget .canvas-wrap.tall { height: 200px; }
+body.is-mobile #widgets .patterns-grid { grid-template-columns: 1fr; }
+/* Inner KPI/summary card grids can't hold their 190px min in a half widget — stack them. */
+body.is-mobile #widgets .widget .cards { grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
+body.is-mobile #widgets .widget .card { padding: 12px 13px; }
+body.is-mobile #widgets .widget .card .value { font-size: 19px; }
+/* Tables stay readable by scrolling within their widget rather than overflowing it. */
+body.is-mobile #widgets .widget .table-wrap { overflow-x: auto; }
 .widget { position: relative; transition: box-shadow .15s, opacity .15s; }
 .widget.dragging { opacity: .45; }
 .widget.drag-over { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
