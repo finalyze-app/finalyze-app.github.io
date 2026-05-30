@@ -69,11 +69,16 @@
   function renderChat(body) {
     const enabled = AIChat && AIChat.ready();
     body.innerHTML = `
-      <div class="ai-chat-log" id="aiChatLog">${chatLog.map(msgHtml).join('') || '<div class="ai-empty">Ask anything about your spending — e.g. “how much did I spend on coffee?”, “what changed from last month?”, “can I afford a $60k car?”</div>'}</div>
+      <div class="ai-head"><h3>Chat</h3>
+        <button class="btn sm" id="aiClear" ${chatLog.length ? '' : 'disabled'}>Clear chat</button>
+      </div>
+      <div class="ai-chat-log" id="aiChatLog">${chatLog.map(msgHtml).join('') || '<div class="ai-empty">Ask about your recorded spending — e.g. “how much did I spend on coffee?”, “what changed from last month?”, “which subscriptions cost the most?”, “what are my top merchants?”</div>'}</div>
       <form class="ai-chat-form" id="aiChatForm">
         <input id="aiChatInput" placeholder="${enabled ? 'Ask your data…' : 'Enable the chat model in Models →'}" ${enabled ? '' : 'disabled'} autocomplete="off" />
         <button class="btn primary" ${enabled ? '' : 'disabled'}>Send</button>
       </form>`;
+    const clr = $('#aiClear');
+    if (clr) clr.onclick = () => { chatLog.length = 0; renderChat(body); };
     const log = $('#aiChatLog');
     log.scrollTop = log.scrollHeight;
     $('#aiChatForm').onsubmit = async (e) => {
