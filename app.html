@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0a1228" />
   <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device — nothing is uploaded." />
-  <link rel="stylesheet" href="styles.css?v=40" />
+  <link rel="stylesheet" href="styles.css?v=42" />
 </head>
 <body>
   <div class="shell">
@@ -32,10 +32,6 @@
           Import statement
           <input type="file" id="fileInput" accept=".qfx,.ofx,.qbo,.csv,.pdf" multiple hidden />
         </label>
-        <div class="side-actions">
-          <button class="btn ghost" id="exportBtn" title="Export backup">Backup</button>
-          <label class="btn ghost" title="Import backup">Restore<input type="file" id="importInput" accept=".json" hidden /></label>
-        </div>
         <div class="side-actions">
           <button class="btn ghost" id="settingsBtn" title="Manage categories & widgets">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -199,6 +195,13 @@
           <p class="muted" style="margin:0 0 14px">Track multiple cards/accounts separately. Use the account filter in the header to scope the dashboard, or "All accounts" for household totals.</p>
           <p class="muted" id="storageSize" style="margin:0 0 14px"></p>
           <div id="accountManager"></div>
+          <div class="backup-row">
+            <div><strong>Backup &amp; restore</strong><div class="muted">Save a JSON copy of all your data, or restore it on another browser/device.</div></div>
+            <div class="backup-btns">
+              <button class="btn" id="exportBtn" title="Export backup">Backup</button>
+              <label class="btn" title="Import backup">Restore<input type="file" id="importInput" accept=".json" hidden /></label>
+            </div>
+          </div>
         </div>
 
         <div class="panel span-2" id="set-merchants">

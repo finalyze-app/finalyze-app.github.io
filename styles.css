@@ -828,3 +828,6 @@ a.brand:hover { opacity: .85; }
 .danger-opt .btn { flex: none; }
 
 .tour-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.backup-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-2); }
+.backup-btns { display: flex; gap: 10px; flex: none; }
