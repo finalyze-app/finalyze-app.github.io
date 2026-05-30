@@ -21,7 +21,7 @@
   }
   function isSectionEnd(line) {
     const l = line.toLowerCase();
-    return /\b(total\s+(new\s+)?(charges|purchases|payments|credits|for\s+this\s+period|of\b)|sub-?total|closing\s+balance|new\s+balance|previous\s+balance|balance\s+summary|interest\s+charges?|fees?\s+charged|payment\s+information|important\s+payment|how\s+(you\s+can|to)\s+avoid|minimum\s+payment|estimated\s+time|account\s+summary)\b/.test(l);
+    return /\b(total\s+(new\s+)?(charges|purchases|payments|credits|for\b|for\s+this\s+period|of\b)|sub-?total|closing\s+balance|new\s+balance|previous\s+balance|balance\s+summary|interest\s+charges?|fees?\s+charged|payment\s+information|important\s+payment|how\s+(you\s+can|to)\s+avoid|minimum\s+payment|estimated\s+time|account\s+summary)\b/.test(l);
   }
 
   const MONTH = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
@@ -147,6 +147,13 @@
     return monthDate(s) || normCSVDate(s) || normCSVDate(s.replace(/\./g, ''));
   }
 
+  // Some statements (e.g. CIBC) append a "Spend Categories" column to the
+  // description. Strip a trailing known category label so merchant names stay clean.
+  const SPEND_CAT_TAIL = /\s+(Retail and Grocery|Health and Education|Professional and Financial Services|Home\s*&\s*Office Improvement|Foreign Currency Transactions|Travel\s*&\s*Entertainment|Personal and Household Expenses|Recurring Payments|Transportation|Restaurants)\s*$/i;
+  function cleanName(name) {
+    return (name || '').replace(SPEND_CAT_TAIL, '').replace(/\s+/g, ' ').trim();
+  }
+
   function parseTableRow(cells) {
     if (!cells || cells.length < 2) return null;
     const line = cells.join(' ').trim();
@@ -164,34 +171,37 @@
     if (!date) return null;
     if (cells[nameStart] != null && parseDateToken(cells[nameStart])) nameStart++;
 
-    // Charges | Payments split columns, optionally trailing Card # (CIBC-style).
-    if (cells.length >= nameStart + 2) {
-      const last = cells.length - 1;
-      const lastIsCard = looksLikeCard(cells[last]);
-      const chIdx = lastIsCard ? last - 2 : last - 1;
-      const payIdx = lastIsCard ? last - 1 : last;
-      const ch = currencyAmount(cells[chIdx]);
-      const pay = currencyAmount(cells[payIdx]);
-      if (chIdx > nameStart - 1 && ((ch != null && ch !== 0) || (pay != null && pay !== 0))) {
-        const name = cells.slice(nameStart, chIdx).join(' ').trim();
-        const cm = lastIsCard ? cardLabel(cells[last]) : 'Unknown';
-        if (ch != null && ch !== 0) return mkTxn(-Math.abs(ch), date, name, cm);
-        if (pay != null && pay !== 0) return mkTxn(Math.abs(pay), date, name, cm);
-      }
+    const last = cells.length - 1;
+    const lastIsCard = looksLikeCard(cells[last]);
+    const amtEnd = lastIsCard ? last - 1 : last;      // index of the last amount cell
+
+    // Two-column Charges | Payments layout: only when BOTH trailing cells are
+    // currency amounts. (A single Amount column falls through to the loop below,
+    // where the sign is inferred from payment/credit keywords.)
+    const aEnd = currencyAmount(cells[amtEnd]);
+    const aPrev = currencyAmount(cells[amtEnd - 1]);
+    if (aEnd != null && aPrev != null && amtEnd - 1 >= nameStart) {
+      const name = cleanName(cells.slice(nameStart, amtEnd - 1).join(' '));
+      const cm = lastIsCard ? cardLabel(cells[last]) : 'Unknown';
+      if (aPrev !== 0) return mkTxn(-Math.abs(aPrev), date, name, cm);   // charges column
+      if (aEnd !== 0) return mkTxn(Math.abs(aEnd), date, name, cm);      // payments column
     }
 
-    // Date | Description | Amount (single signed/currency column).
-    for (let i = cells.length - 1; i >= nameStart; i--) {
+    // Single Amount column: find the last currency cell; sign by keyword.
+    for (let i = amtEnd; i >= nameStart; i--) {
       const amt = currencyAmount(cells[i]);
       if (amt == null) continue;
-      const name = cells.slice(nameStart, i).join(' ').trim();
+      const name = cleanName(cells.slice(nameStart, i).join(' '));
       if (!name) continue;
       return mkTxn(inferSignedAmount(amt, name, line), date, name, 'Unknown');
     }
     return null;
   }
 
+  // A card-number cell: 4–19 digits, no letters, and no decimal point (so an
+  // amount like "200.00" is never mistaken for a card number).
   function looksLikeCard(s) {
+    if (/[.,]\d{2}\b/.test(String(s || ''))) return false;
     const digits = String(s || '').replace(/\D/g, '');
     return digits.length >= 4 && digits.length <= 19 && !/[a-z]/i.test(s);
   }
