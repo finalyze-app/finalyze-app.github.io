@@ -11,9 +11,15 @@
   function ymd(d) { return d ? d.toISOString().slice(0, 10) : null; }
 
   // MEMO carries the cardmember, e.g. "MOUNIR EL-CHOUEIRI-92004".
+  // CIBC CSV puts a card number in the last column — label it by last four digits.
   function parseCardmember(memo) {
     if (!memo) return 'Unknown';
-    return String(memo).replace(/-\d+\s*$/, '').trim() || 'Unknown';
+    const s = String(memo).trim();
+    const digits = s.replace(/\D/g, '');
+    if (digits.length >= 4 && digits.length <= 19 && !/[a-z]/i.test(s)) {
+      return 'Card ••••' + digits.slice(-4);
+    }
+    return s.replace(/-\d+\s*$/, '').trim() || 'Unknown';
   }
 
   // Build a normalized transaction from a signed amount (debit negative = spend).
@@ -114,6 +120,7 @@
     s = String(s || '').trim();
     if (!s) return null;
     let m;
+    if ((m = /^(\d{4})(\d{2})(\d{2})$/.exec(s))) return `${m[1]}-${m[2]}-${m[3]}`;
     if ((m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(s))) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
     if ((m = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/.exec(s))) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
     // Fallback for formats like "15 Jan 2026". Reject bare numbers/amounts so an
@@ -172,12 +179,57 @@
     return { di, ni, ci, debitI, creditI, ai };
   }
 
+  // Trailing column of 4–19 digit card numbers (CIBC puts card # last).
+  function looksLikeCardColumn(rows, colIdx) {
+    let cardish = 0, total = 0;
+    for (const r of rows) {
+      const v = r[colIdx]; if (v == null || v === '') continue;
+      total++;
+      const digits = String(v).replace(/\D/g, '');
+      if (digits.length >= 4 && digits.length <= 19 && !/[a-z]/i.test(v)) cardish++;
+    }
+    return total > 0 && cardish / total >= 0.7;
+  }
+
+  // CIBC credit card CSV: no header — Date, Description, Charges, Payments/refunds, Card #.
+  function detectCIBCHeaderless(rows) {
+    const sample = rows.slice(0, Math.min(40, rows.length)).filter((r) => r.length >= 4);
+    if (sample.length < 2) return null;
+    const colCount = Math.max(...sample.map((r) => r.length));
+    if (colCount < 4 || colCount > 6) return null;
+
+    let dates = 0, desc = 0, hasCharge = 0, hasPayment = 0, dual = 0;
+    for (const r of sample) {
+      if (normCSVDate(r[0])) dates++;
+      if (r[1] && parseAmount(r[1]) == null && r[1].length > 1) desc++;
+      const ch = parseAmount(r[2]);
+      const pay = parseAmount(r[3]);
+      if (ch != null && ch !== 0) hasCharge++;
+      if (pay != null && pay !== 0) hasPayment++;
+      if (ch != null && ch !== 0 && pay != null && pay !== 0) dual++;
+    }
+    const n = sample.length;
+    if (dates / n < 0.75 || desc / n < 0.6) return null;
+    if (hasCharge + hasPayment < n * 0.5) return null;
+    if (dual / n > 0.05) return null;
+
+    const ci = colCount >= 5 && looksLikeCardColumn(sample, 4) ? 4 : -1;
+    return { di: 0, ni: 1, debitI: 2, creditI: 3, ci, ai: -1 };
+  }
+
   // Infer columns when there is no header. Handles single-amount files and
   // Debit/Credit/Balance layouts (TD, CIBC, Simplii) by detecting the sparse,
   // mutually-exclusive debit & credit columns and ignoring a trailing balance.
   function colsHeaderless(rows) {
+    const cibc = detectCIBCHeaderless(rows);
+    if (cibc) return cibc;
+
     const n = rows.length;
     const colCount = Math.max(...rows.map((r) => r.length));
+    const cardCols = new Set();
+    for (let c = colCount - 1; c >= 0; c--) {
+      if (looksLikeCardColumn(rows, c)) { cardCols.add(c); break; }
+    }
     const stat = [];
     for (let c = 0; c < colCount; c++) {
       let dates = 0, nums = 0, filled = 0, textLen = 0;
@@ -185,66 +237,140 @@
         const v = r[c]; if (v == null || v === '') return;
         filled++;
         if (normCSVDate(v)) dates++;
-        else if (parseAmount(v) != null) nums++;
-        else textLen += v.length;
+        else if (!cardCols.has(c) && parseAmount(v) != null) nums++;
+        else textLen += String(v).length;
       });
       stat.push({ c, dates, nums, filled, textLen });
     }
     let di = stat.slice().sort((a, b) => b.dates - a.dates)[0];
     di = di && di.dates > 0 ? di.c : 0;
-    const numeric = stat.filter((x) => x.c !== di && x.nums > 0).sort((a, b) => a.c - b.c);
+    const numeric = stat.filter((x) => x.c !== di && !cardCols.has(x.c) && x.nums > 0).sort((a, b) => a.c - b.c);
     let debitI = -1, creditI = -1, ai = -1;
     const sparse = numeric.filter((x) => x.nums / n < 0.95);
     if (sparse.length >= 2) { debitI = sparse[0].c; creditI = sparse[1].c; }
     else if (numeric.length) { ai = numeric[0].c; }
-    const ni = stat.filter((x) => x.c !== di && x.c !== ai && x.c !== debitI && x.c !== creditI)
-      .sort((a, b) => b.textLen - a.textLen)[0];
-    return { di, ni: ni ? ni.c : -1, ci: -1, debitI, creditI, ai };
+    const skip = new Set([di, ai, debitI, creditI, ...cardCols]);
+    const ni = stat.filter((x) => !skip.has(x.c)).sort((a, b) => b.textLen - a.textLen)[0];
+    const ci = cardCols.size ? [...cardCols][0] : -1;
+    return { di, ni: ni ? ni.c : -1, ci, debitI, creditI, ai };
   }
 
-  function parseCSV(content) {
+  function readCSVRows(content) {
     const rawLines = content.split(/\r?\n/).filter((l) => l.trim().length);
     if (!rawLines.length) throw new Error('Empty CSV file.');
     const delim = detectDelimiter(rawLines.slice(0, 5).join('\n'));
     const rows = rawLines.map((l) => splitLine(l, delim).map((c) => c.trim()));
+    return { rows, delim };
+  }
 
+  function detectHeaderRow(rows) {
     const DATE_RE = /date/i;
     const AMT_RE = /amount|amt|debit|credit|withdraw|deposit|money|paid|value|charge|cad|montant|retrait|dépôt|depot|débit|crédit/i;
-    let headerIdx = -1;
     for (let i = 0; i < Math.min(rows.length, 15); i++) {
       const cells = rows[i].map((c) => c.toLowerCase());
-      if (cells.some((c) => DATE_RE.test(c)) && cells.some((c) => AMT_RE.test(c))) { headerIdx = i; break; }
+      if (cells.some((c) => DATE_RE.test(c)) && cells.some((c) => AMT_RE.test(c))) return i;
     }
+    return -1;
+  }
 
-    let cols, issuer = null, source = 'CSV';
-    if (headerIdx >= 0) {
-      const H = rows[headerIdx].map((c) => c.toLowerCase());
-      cols = colsFromHeader(H);
-      issuer = detectIssuer(H.join(' '));
+  function guessCSVMapping(rows, hasHeader) {
+    let mapping, source = 'CSV';
+    if (hasHeader) {
+      const H = rows[0].map((c) => c.toLowerCase());
+      const cols = colsFromHeader(H);
+      mapping = {
+        date: cols.di, description: cols.ni, debit: cols.debitI, credit: cols.creditI,
+        amount: cols.ai, cardmember: cols.ci,
+      };
+      const issuer = detectIssuer(H.join(' '));
       if (issuer) source = issuer.name;
     } else {
-      cols = colsHeaderless(rows);
-      if (cols.debitI >= 0 || cols.creditI >= 0) source = 'Bank CSV';
+      const cols = colsHeaderless(rows);
+      mapping = {
+        date: cols.di, description: cols.ni, debit: cols.debitI, credit: cols.creditI,
+        amount: cols.ai, cardmember: cols.ci,
+      };
+      if (detectCIBCHeaderless(rows)) source = 'CIBC';
+      else if (cols.debitI >= 0 || cols.creditI >= 0) source = 'Bank CSV';
     }
-    const { di, ni, ci, debitI, creditI, ai } = cols;
-    const start = headerIdx >= 0 ? headerIdx + 1 : 0;
-    const split = debitI >= 0 || creditI >= 0;
+    return { mapping, source };
+  }
 
-    // Sign convention for single-amount files: issuer override, else infer from data.
-    let sign = 'as-is';
+  function colCount(rows) {
+    return rows.length ? Math.max(...rows.map((r) => r.length)) : 0;
+  }
+
+  function colLabel(rows, colIdx, hasHeader) {
+    if (hasHeader && rows[0] && rows[0][colIdx]) return rows[0][colIdx];
+    const sample = rows[hasHeader ? 1 : 0];
+    const v = sample && sample[colIdx];
+    if (!v) return 'Column ' + (colIdx + 1);
+    return 'Column ' + (colIdx + 1) + ' (' + (v.length > 22 ? v.slice(0, 20) + '…' : v) + ')';
+  }
+
+  function inferAmountSign(rows, start, ai, issuerSign) {
+    if (issuerSign && issuerSign !== 'split') return issuerSign;
+    let pos = 0, neg = 0;
+    for (let i = start; i < rows.length; i++) {
+      const v = parseAmount(rows[i][ai]); if (v == null) continue;
+      if (v < 0) neg++; else if (v > 0) pos++;
+    }
+    return neg >= pos ? 'as-is' : 'charge-pos';
+  }
+
+  function previewCSV(content) {
+    const { rows, delim } = readCSVRows(content);
+    const headerRow = detectHeaderRow(rows);
+    const hasHeaderGuess = headerRow === 0;
+    const { mapping, source } = guessCSVMapping(rows, hasHeaderGuess);
+    const cols = colCount(rows);
+    let amountSign = 'auto';
+    const split = mapping.debit >= 0 || mapping.credit >= 0;
+    if (!split && mapping.amount >= 0) {
+      const issuer = hasHeaderGuess ? detectIssuer(rows[0].join(' ').toLowerCase()) : null;
+      amountSign = inferAmountSign(rows, hasHeaderGuess ? 1 : 0, mapping.amount, issuer && issuer.sign);
+    } else if (split) amountSign = 'split';
+    return {
+      rows: rows.slice(0, 8),
+      totalRows: rows.length,
+      colCount: cols,
+      delim,
+      hasHeaderGuess,
+      mapping,
+      source,
+      amountSign,
+    };
+  }
+
+  function parseCSVWithMapping(content, opts) {
+    opts = opts || {};
+    const { rows } = readCSVRows(content);
+    const hasHeader = !!opts.hasHeader;
+    const start = hasHeader ? 1 : 0;
+    const m = opts.mapping || {};
+    const di = m.date, ni = m.description;
+    const debitI = m.debit == null || m.debit < 0 ? -1 : m.debit;
+    const creditI = m.credit == null || m.credit < 0 ? -1 : m.credit;
+    const ai = m.amount == null || m.amount < 0 ? -1 : m.amount;
+    const ci = m.cardmember == null || m.cardmember < 0 ? -1 : m.cardmember;
+
+    if (di == null || di < 0) throw new Error('Map a Date column.');
+    if (ni == null || ni < 0) throw new Error('Map a Description column.');
+    const split = debitI >= 0 || creditI >= 0;
+    if (!split && ai < 0) throw new Error('Map Amount or Charges/Payments columns.');
+
+    let sign = opts.amountSign || 'auto';
     if (!split && ai >= 0) {
-      if (issuer && issuer.sign !== 'split') sign = issuer.sign;
-      else {
-        let pos = 0, neg = 0;
-        for (let i = start; i < rows.length; i++) { const v = parseAmount(rows[i][ai]); if (v == null) continue; if (v < 0) neg++; else if (v > 0) pos++; }
-        sign = neg >= pos ? 'as-is' : 'charge-pos';
+      if (sign === 'auto') {
+        const issuer = hasHeader ? detectIssuer(rows[0].join(' ').toLowerCase()) : null;
+        sign = inferAmountSign(rows, start, ai, issuer && issuer.sign);
       }
     }
 
     const transactions = [];
     for (let i = start; i < rows.length; i++) {
       const r = rows[i]; if (!r || r.length < 2) continue;
-      const date = di != null ? normCSVDate(r[di]) : null;
+      const date = normCSVDate(r[di]);
       if (!date) continue;
       let amount = null;
       if (split) {
@@ -253,19 +379,33 @@
         if (d) amount = -Math.abs(d);
         else if (c) amount = Math.abs(c);
         else continue;
-      } else if (ai >= 0) {
+      } else {
         const v = parseAmount(r[ai]); if (v == null) continue;
-        amount = sign === 'charge-pos' ? -v : v;
-      } else continue;
+        amount = sign === 'charge-pos' ? -Math.abs(v) : v;
+      }
       if (!isFinite(amount)) continue;
-      transactions.push(mkTxn(amount, date, '', null, ni >= 0 ? r[ni] : '', ci >= 0 ? r[ci] : ''));
+      transactions.push(mkTxn(amount, date, '', null, r[ni] || '', ci >= 0 ? r[ci] : ''));
     }
 
-    if (!transactions.length) throw new Error('No transactions found in CSV. Expected Date, Description and Amount (or Debit/Credit) columns.');
-    return { currency: null, balance: null, balanceAsOf: null, transactions, source };
+    if (!transactions.length) throw new Error('No transactions found with this column mapping.');
+    return {
+      currency: null, balance: null, balanceAsOf: null, transactions,
+      source: opts.sourceLabel || 'CSV',
+    };
+  }
+
+  function parseCSV(content) {
+    const { rows } = readCSVRows(content);
+    const hasHeader = detectHeaderRow(rows) === 0;
+    const { mapping, source } = guessCSVMapping(rows, hasHeader);
+    return parseCSVWithMapping(content, { hasHeader, mapping, sourceLabel: source, amountSign: 'auto' });
   }
 
   global.Finalyze = global.Finalyze || {};
   global.Finalyze.parseQFX = parseQFX;
   global.Finalyze.parseCSV = parseCSV;
+  global.Finalyze.previewCSV = previewCSV;
+  global.Finalyze.parseCSVWithMapping = parseCSVWithMapping;
+  global.Finalyze.guessCSVMapping = guessCSVMapping;
+  global.Finalyze.csvColLabel = colLabel;
 })(window);

@@ -477,6 +477,11 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
   .menu-btn { display: inline-flex; }
   main { padding: 18px 16px 50px; }
   .grid { grid-template-columns: 1fr; }
+  /* In the slide-in sidebar: scroll the section links, keep the footer pinned. */
+  .sidebar { height: 100vh; height: 100dvh; }
+  .sidebar .nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .sidebar .side-spacer { display: none; }
+  .sidebar .side-foot { flex: none; }
 }
 
 /* ============ Rule editor (Feature 1) ============ */
@@ -562,6 +567,24 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
 .import-acct select { flex: 1; }
 .import-acct input { flex: 1; }
 .import-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+/* CSV import column mapping */
+.csv-import { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.csv-import h3 { margin: 0 0 8px; font-size: 16px; }
+.csv-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; margin: 10px 0; cursor: pointer; }
+.csv-preview-wrap { margin: 10px 0 14px; max-height: 160px; }
+.csv-preview { font-size: 12px; }
+.csv-preview th { font-weight: 600; color: var(--muted); background: var(--surface2); position: sticky; top: 0; }
+.csv-preview td { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csv-preview tr.csv-header-row td { font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+.csv-map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 10px; }
+@media (max-width: 560px) { .csv-map-grid { grid-template-columns: 1fr; } }
+.csv-map-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+.csv-map-grid select { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.csv-map-grid .req { color: var(--red); font-weight: 700; }
+.csv-hint { font-size: 13px; margin: 0 0 10px; }
+.csv-map-extra { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.csv-map-extra select { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
 body.modal-open { overflow: hidden; }
 
 /* clickable KPI card (year-in-review biggest day) */

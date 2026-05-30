@@ -1481,23 +1481,170 @@
   }
 
   // ============ Import / backup ============
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  }
+
+  function csvColOptions(rows, colCount, hasHeader, selected) {
+    let html = '<option value="-1">— Skip —</option>';
+    for (let i = 0; i < colCount; i++) {
+      const label = F.csvColLabel(rows, i, hasHeader);
+      html += `<option value="${i}"${selected === i ? ' selected' : ''}>${escHtml(label)}</option>`;
+    }
+    return html;
+  }
+
+  function readCsvMappingForm(body, rows) {
+    const val = (id) => Number(body.querySelector('#' + id).value);
+    return {
+      hasHeader: body.querySelector('#csvHasHeader').checked,
+      mapping: {
+        date: val('mapDate'),
+        description: val('mapDesc'),
+        debit: val('mapDebit'),
+        credit: val('mapCredit'),
+        amount: val('mapAmount'),
+        cardmember: val('mapCard'),
+      },
+      amountSign: body.querySelector('#csvAmountSign').value,
+      remember: body.querySelector('#csvRemember').checked,
+    };
+  }
+
+  function validateCsvMapping(m) {
+    if (m.mapping.date < 0) return 'Choose a Date column.';
+    if (m.mapping.description < 0) return 'Choose a Description column.';
+    const split = m.mapping.debit >= 0 || m.mapping.credit >= 0;
+    if (!split && m.mapping.amount < 0) return 'Choose Amount or Charges/Payments columns.';
+    return null;
+  }
+
+  function refreshCsvMappingForm(body, rows, colCount, state) {
+    const hasHeader = state.hasHeader;
+    const m = state.mapping;
+    const split = m.debit >= 0 || m.credit >= 0;
+    body.querySelector('#mapDate').innerHTML = csvColOptions(rows, colCount, hasHeader, m.date);
+    body.querySelector('#mapDesc').innerHTML = csvColOptions(rows, colCount, hasHeader, m.description);
+    body.querySelector('#mapDebit').innerHTML = csvColOptions(rows, colCount, hasHeader, m.debit);
+    body.querySelector('#mapCredit').innerHTML = csvColOptions(rows, colCount, hasHeader, m.credit);
+    body.querySelector('#mapAmount').innerHTML = csvColOptions(rows, colCount, hasHeader, m.amount);
+    body.querySelector('#mapCard').innerHTML = csvColOptions(rows, colCount, hasHeader, m.cardmember);
+    body.querySelector('#csvAmountSign').disabled = split;
+    const prev = body.querySelector('#csvPreview');
+    if (prev) {
+      prev.innerHTML = rows.slice(0, 6).map((r, ri) => {
+        const cells = [];
+        for (let c = 0; c < colCount; c++) cells.push(`<td>${escHtml(r[c] || '')}</td>`);
+        const cls = hasHeader && ri === 0 ? ' class="csv-header-row"' : '';
+        return `<tr${cls}>${cells.join('')}</tr>`;
+      }).join('');
+    }
+  }
+
   function handleFiles(fileList) {
     const files = [...fileList];
     if (!files.length) return;
-    openImportModal(files);
+    const csvFiles = files.filter((f) => /\.csv$/i.test(f.name));
+    if (!csvFiles.length) { openImportModal(files, null); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { openImportModal(files, reader.result); }
+      catch (e) { toast('Could not read CSV: ' + e.message); openImportModal(files, null); }
+    };
+    reader.onerror = () => toast('Could not read CSV file');
+    reader.readAsText(csvFiles[0]);
   }
-  function openImportModal(files) {
+
+  function openImportModal(files, csvSampleText) {
     const accounts = Store.getAccounts();
+    const csvFiles = files.filter((f) => /\.csv$/i.test(f.name));
+    const hasCsv = csvFiles.length > 0 && csvSampleText;
+
+    let preview = null, mapState = null;
+    if (hasCsv) {
+      preview = F.previewCSV(csvSampleText);
+      const saved = Store.getCsvImportPrefs();
+      mapState = {
+        hasHeader: saved ? saved.hasHeader : preview.hasHeaderGuess,
+        mapping: saved ? Object.assign({}, preview.mapping, saved.mapping) : preview.mapping,
+        amountSign: saved && saved.amountSign ? saved.amountSign : preview.amountSign,
+      };
+      if (mapState.amountSign === 'split') mapState.amountSign = 'auto';
+    }
+
+    const mapSection = hasCsv ? `
+      <div class="csv-import">
+        <h3>Column mapping</h3>
+        <p class="muted">Match your file’s columns to Finalyze. Auto-detect is pre-filled — adjust if anything looks wrong.${csvFiles.length > 1 ? ' Same mapping applies to all CSV files in this import.' : ''}</p>
+        <label class="csv-check"><input type="checkbox" id="csvHasHeader"${mapState.hasHeader ? ' checked' : ''}> First row is column headers</label>
+        <div class="table-wrap csv-preview-wrap"><table class="csv-preview"><thead><tr>${Array.from({ length: preview.colCount }, (_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead><tbody id="csvPreview"></tbody></table></div>
+        <div class="csv-map-grid">
+          <label>Date <span class="req">*</span><select id="mapDate"></select></label>
+          <label>Description <span class="req">*</span><select id="mapDesc"></select></label>
+          <label>Charges / debits<select id="mapDebit"></select></label>
+          <label>Payments / credits<select id="mapCredit"></select></label>
+          <label>Amount (single column)<select id="mapAmount"></select></label>
+          <label>Card / cardmember<select id="mapCard"></select></label>
+        </div>
+        <p class="muted csv-hint">Use <strong>Amount</strong> for a single signed column, or <strong>Charges</strong> + <strong>Payments</strong> for split columns (typical for CIBC).</p>
+        <div class="csv-map-extra">
+          <label>Amount sign <select id="csvAmountSign">
+            <option value="auto"${mapState.amountSign === 'auto' ? ' selected' : ''}>Auto-detect</option>
+            <option value="charge-pos"${mapState.amountSign === 'charge-pos' ? ' selected' : ''}>Positive numbers are charges</option>
+            <option value="as-is"${mapState.amountSign === 'as-is' ? ' selected' : ''}>Use sign in file</option>
+          </select></label>
+          <button type="button" class="btn" id="csvAutoDetect">Reset to auto-detect</button>
+          <label class="csv-check"><input type="checkbox" id="csvRemember"${Store.getCsvImportPrefs() ? ' checked' : ''}> Remember mapping for next import</label>
+        </div>
+      </div>` : '';
+
     const body = openModal(
       `<h2>Import ${files.length} file${files.length > 1 ? 's' : ''}</h2>
-      <p class="muted">Assign these transactions to an account.</p>
+      <p class="muted">Assign these transactions to an account${hasCsv ? ' and confirm CSV columns' : ''}.</p>
       <div class="import-acct">
         <select id="impAccount">${accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('')}<option value="__new">+ New account…</option></select>
         <input type="text" id="impNewName" placeholder="New account label" hidden>
       </div>
+      ${mapSection}
       <div class="import-actions"><button class="btn" id="impCancel">Cancel</button><button class="btn primary" id="impGo">Import</button></div>`);
+
     const selA = body.querySelector('#impAccount'), newName = body.querySelector('#impNewName');
     selA.onchange = () => { newName.hidden = selA.value !== '__new'; if (!newName.hidden) newName.focus(); };
+
+    if (hasCsv) {
+      const rows = preview.rows;
+      const colCount = preview.colCount;
+      const syncForm = () => refreshCsvMappingForm(body, rows, colCount, mapState);
+      syncForm();
+
+      body.querySelector('#csvHasHeader').onchange = (e) => {
+        mapState.hasHeader = e.target.checked;
+        const guessed = F.guessCSVMapping(rows, mapState.hasHeader);
+        mapState.mapping = guessed.mapping;
+        syncForm();
+      };
+
+      ['mapDate', 'mapDesc', 'mapDebit', 'mapCredit', 'mapAmount', 'mapCard'].forEach((id) => {
+        body.querySelector('#' + id).onchange = () => {
+          const m = readCsvMappingForm(body, rows);
+          mapState.hasHeader = m.hasHeader;
+          mapState.mapping = m.mapping;
+          mapState.amountSign = m.amountSign;
+          syncForm();
+        };
+      });
+
+      body.querySelector('#csvAutoDetect').onclick = () => {
+        mapState.hasHeader = preview.hasHeaderGuess;
+        body.querySelector('#csvHasHeader').checked = mapState.hasHeader;
+        const guessed = F.guessCSVMapping(rows, mapState.hasHeader);
+        mapState.mapping = guessed.mapping;
+        mapState.amountSign = preview.amountSign === 'split' ? 'auto' : preview.amountSign;
+        body.querySelector('#csvAmountSign').value = mapState.amountSign;
+        syncForm();
+      };
+    }
+
     body.querySelector('#impCancel').onclick = closeModal;
     body.querySelector('#impGo').onclick = () => {
       let accountId = selA.value;
@@ -1505,11 +1652,20 @@
         accountId = Store.addAccount(newName.value.trim());
         if (!accountId) { toast('Enter an account label'); return; }
       }
+      let csvOpts = null;
+      if (hasCsv) {
+        const m = readCsvMappingForm(body, preview.rows);
+        const err = validateCsvMapping(m);
+        if (err) { toast(err); return; }
+        csvOpts = { hasHeader: m.hasHeader, mapping: m.mapping, amountSign: m.amountSign, sourceLabel: 'CSV' };
+        if (m.remember) Store.setCsvImportPrefs({ hasHeader: m.hasHeader, mapping: m.mapping, amountSign: m.amountSign });
+        else Store.setCsvImportPrefs(null);
+      }
       closeModal();
-      doImport(files, accountId);
+      doImport(files, accountId, csvOpts);
     };
   }
-  function doImport(files, accountId) {
+  function doImport(files, accountId, csvOpts) {
     let totalAdded = 0, totalDup = 0, done = 0, emptyFiles = 0;
     const errors = [], sources = new Set();
     const finish = () => {
@@ -1526,7 +1682,9 @@
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const parsed = /\.csv$/i.test(file.name) ? F.parseCSV(reader.result) : parseQFX(reader.result);
+          const parsed = /\.csv$/i.test(file.name)
+            ? (csvOpts ? F.parseCSVWithMapping(reader.result, csvOpts) : F.parseCSV(reader.result))
+            : parseQFX(reader.result);
           if (parsed.source) sources.add(parsed.source);
           if (!parsed.transactions.length) emptyFiles++;
           const { added, duplicates } = Store.mergeTransactions(parsed, accountId);

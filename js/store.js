@@ -13,7 +13,7 @@
       categoryRenames: {}, merchantMerges: {}, customRules: [], budgets: {}, txnTags: {},
       cardmemberOverrides: {}, merchantTags: {}, merchantAnomalyExcludes: {},
       mergeSuggestionsDismissed: {}, categoryGroups: [],
-      accounts: [{ id: 'default', label: 'Default' }], layout: null,
+      accounts: [{ id: 'default', label: 'Default' }], layout: null, csvImportPrefs: null,
     };
   }
 
@@ -486,6 +486,12 @@
 
     getLayout() { return cache.layout; },
     setLayout(layout) { cache.layout = layout; persist(); },
+
+    getCsvImportPrefs() { return cache.csvImportPrefs; },
+    setCsvImportPrefs(prefs) {
+      cache.csvImportPrefs = prefs || null;
+      persist();
+    },
 
     clearAll() {
       cache = blank();
