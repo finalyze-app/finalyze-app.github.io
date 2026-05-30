@@ -370,9 +370,35 @@
     return order.filter((id) => !hidden.includes(id) && widgetAvailable(id));
   }
 
+  // Accounts gate: when a backend is configured, signed-out users can only run
+  // the demo. (No gate when accounts aren't configured — there'd be no way in.)
+  function requiresSignIn() {
+    return !!(F.Auth && F.Auth.enabled() && !F.Auth.isSignedIn());
+  }
+
   // ============ Top-level render ============
   function render() {
     allTxns = enriched();
+
+    // Sign-in gate — block the app for signed-out users, unless they're in the demo.
+    const demoActive = !!(F.Demo && F.Demo.active && F.Demo.active());
+    if (requiresSignIn() && !demoActive) {
+      const gate = $('#authGate');
+      if (gate) gate.hidden = false;
+      $('#empty').hidden = true;
+      $('#dashboard').hidden = true;
+      $('#prefs').hidden = true;
+      $('#filtersToggle').hidden = true;
+      $('#dateControls').hidden = true;
+      document.body.classList.remove('settings-mode');
+      $('#nav').innerHTML = '';
+      const h1g = document.querySelector('.page-head h1');
+      if (h1g) h1g.textContent = 'Welcome to Finalyze';
+      $('#rangeSub').textContent = 'Sign in to import and analyze your statements.';
+      return;
+    }
+    if ($('#authGate')) $('#authGate').hidden = true;
+
     const hasData = allTxns.length > 0;
     $('#empty').hidden = hasData || viewName === 'prefs';
     $('#dashboard').hidden = !hasData || viewName === 'prefs';
@@ -1781,6 +1807,11 @@
   function handleFiles(fileList) {
     const files = [...fileList];
     if (!files.length) return;
+    if (requiresSignIn()) {
+      toast('Sign in to import your statements');
+      if (F.Account && F.Account.openSignIn) F.Account.openSignIn();
+      return;
+    }
     const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name));
     // PDF parsing is heuristic — show a review/fix step before importing.
     if (pdfFiles.length && pdfFiles.length === files.length) { openPdfReview(files); return; }
@@ -2276,6 +2307,10 @@
     });
     $('#replayDashTour').addEventListener('click', startDashboardTour);
     $('#replaySettingsTour').addEventListener('click', startSettingsTour);
+    // Auth gate buttons + re-render when sign-in state changes.
+    const gateSignIn = $('#gateSignIn'); if (gateSignIn) gateSignIn.addEventListener('click', () => F.Account && F.Account.openSignIn && F.Account.openSignIn());
+    const gateDemo = $('#gateDemo'); if (gateDemo) gateDemo.addEventListener('click', () => F.Demo && F.Demo.start());
+    if (F.Auth && F.Auth.onChange) F.Auth.onChange(() => render());
     $('#clearTxnBtn').addEventListener('click', () => {
       if (confirm('Clear all imported transactions? Your settings (categories, rules, budgets, custom cards, accounts, layout) are kept. This cannot be undone.')) {
         Store.clearTransactions(); activeCategory = null; activeCardmember = null;
