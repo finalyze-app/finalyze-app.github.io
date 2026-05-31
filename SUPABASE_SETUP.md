@@ -75,9 +75,34 @@ Existing users without a code: the app calls `ensure_referral_code()` RPC on acc
   - OFF (fastest for testing): users are signed in immediately on sign-up.
 - **Password policy** (Authentication → Policies): the client enforces a minimum
   of 8 characters; set the server minimum to match.
-- **Authentication → URL Configuration**: add your hosted URL (and
-  `http://localhost:8755` for local testing) to **Site URL / Redirect URLs**
-  (used by confirmation/reset emails).
+- **Authentication → URL Configuration**: set **Site URL** to your production
+  domain (`https://finalyze.cc`) and add **Redirect URLs** for every origin you
+  use: `https://finalyze.cc`, `https://www.finalyze.cc`,
+  `https://finalyze-app.github.io`, and `http://localhost:8755` for local testing.
+
+## 3b. Custom SMTP (Resend) — required for production email
+Supabase's built-in email is rate-limited (~2–4/hour) and not for production, so
+confirmation/reset emails get throttled. Use Resend:
+
+1. **Resend → Domains → Add Domain** (e.g. `finalyze.cc` or `send.finalyze.cc`).
+   Add the **SPF / DKIM / DMARC** DNS records Resend shows, and **Verify**.
+2. **Resend → API Keys → Create** (Sending access). Copy the `re_…` key — it's the
+   SMTP password.
+3. **Supabase → Authentication → Emails → SMTP Settings → Enable Custom SMTP:**
+   | Field | Value |
+   |---|---|
+   | Host | `smtp.resend.com` |
+   | Port | `465` (SSL) or `587` (STARTTLS) |
+   | Username | `resend` |
+   | Password | your `re_…` API key |
+   | Sender email | `no-reply@finalyze.cc` (must be on the verified domain) |
+   | Sender name | `Finalyze` |
+4. **Supabase → Authentication → Rate Limits:** raise **Emails per hour** (the low
+   default was the throttle). Resend free tier ≈ 100/day, 3,000/month.
+5. Test: create a fresh account → the confirmation should arrive in seconds from
+   `no-reply@finalyze.cc`, not spam. Check **Resend → Emails** logs on failure.
+
+This same SMTP also powers magic-link and password-reset emails.
 
 ## 4. Tracking your user base
 Every signed-in user has a row in `public.profiles`. To email updates, export
