@@ -578,7 +578,40 @@ p.sub {
   transition: opacity .15s;
 }
 .bank-logos img:hover { opacity: 1; }
-html[data-theme="light"] .bank-logos img { opacity: 1; }
+html[data-theme="light"] .bank-logos,
+html:not([data-theme="light"]) .bank-logos {
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 32px 40px;
+  border-radius: 20px;
+}
+html:not([data-theme="light"]) .bank-logos {
+  border: 1px solid rgba(255, 255, 255, .1);
+  background:
+    radial-gradient(120% 80% at 50% -15%, rgba(147, 197, 253, .22), transparent 55%),
+    radial-gradient(70% 55% at 100% 50%, rgba(167, 139, 250, .14), transparent 50%),
+    radial-gradient(70% 55% at 0% 50%, rgba(147, 197, 253, .16), transparent 50%),
+    linear-gradient(165deg, #3a4a72 0%, #334366 50%, #2d3a5c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    0 20px 48px -28px rgba(0, 0, 0, .4);
+}
+html[data-theme="light"] .bank-logos {
+  border: 1px solid rgba(59, 130, 246, .14);
+  background:
+    radial-gradient(120% 80% at 50% -15%, rgba(59, 130, 246, .14), transparent 55%),
+    radial-gradient(70% 55% at 100% 50%, rgba(124, 77, 255, .1), transparent 50%),
+    radial-gradient(70% 55% at 0% 50%, rgba(59, 130, 246, .1), transparent 50%),
+    linear-gradient(165deg, #ffffff 0%, #f4f7fd 50%, #e9effa 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .95),
+    0 16px 40px -24px rgba(59, 130, 246, .14);
+}
+html[data-theme="light"] .bank-logos img,
+html:not([data-theme="light"]) .bank-logos img {
+  opacity: 1;
+}
 .format-pills {
   display: flex;
   flex-wrap: wrap;
@@ -864,6 +897,8 @@ details p a { color: var(--accent); font-weight: 600; }
   .grid,
   .features-grid { grid-template-columns: 1fr; }
   .bank-logos { gap: 20px 24px; }
+  html[data-theme="light"] .bank-logos,
+  html:not([data-theme="light"]) .bank-logos { padding: 24px 20px; }
   .bank-logos img { height: 24px; }
 }
 

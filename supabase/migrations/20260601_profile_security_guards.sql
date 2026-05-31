@@ -61,10 +61,15 @@ end;
 $$;
 
 -- Block client writes to license and stripe_customer_id (webhook/service_role only).
+-- Dashboard/SQL editor (postgres) may grant Pro for support — see 20260602 migration.
 create or replace function public.guard_profile_billing_fields() returns trigger
   language plpgsql as $$
+declare
+  v_jwt_role text := coalesce(auth.jwt()->>'role', '');
+  v_admin boolean := current_user in ('postgres', 'supabase_admin')
+    or current_setting('app.bypass_billing_guard', true) = '1';
 begin
-  if coalesce(auth.jwt()->>'role', '') = 'service_role' then
+  if v_admin or v_jwt_role = 'service_role' then
     return new;
   end if;
 
