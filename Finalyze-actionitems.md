@@ -53,6 +53,16 @@ Financial transactions never leave the device (IndexedDB).
 - [ ] Authentication → URL Configuration: add the hosted URL and
       `http://localhost:8755` to **Site URL / Redirect URLs**
       (for confirmation / password-reset emails).
+- [ ] Also add the **`/app.html` redirect URLs** for Google sign-in:
+      `https://finalyze.cc/app.html`, `https://www.finalyze.cc/app.html`,
+      `https://finalyze-app.github.io/app.html`, `http://localhost:8755/app.html`.
+
+### 3a. Google sign-in (OAuth) — see `SUPABASE_SETUP.md` §3a
+- [x] Google Cloud → OAuth client ID (Web app); redirect URI
+      `https://<project-ref>.supabase.co/auth/v1/callback`.
+- [x] Supabase → Authentication → Providers → **Google**: enabled, Client ID + Secret set.
+- [ ] Confirm the `/app.html` redirect URLs are allow-listed (above) so the
+      round-trip back to the app succeeds in production.
 
 ### 4. Hosting
 - [ ] Publish the static folder to Netlify / Vercel / GitHub Pages (no backend

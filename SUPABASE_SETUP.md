@@ -79,6 +79,28 @@ Existing users without a code: the app calls `ensure_referral_code()` RPC on acc
   domain (`https://finalyze.cc`) and add **Redirect URLs** for every origin you
   use: `https://finalyze.cc`, `https://www.finalyze.cc`,
   `https://finalyze-app.github.io`, and `http://localhost:8755` for local testing.
+  For Google sign-in, also allow-list the **`/app.html` paths** (that's where the
+  app sends users back to): `https://finalyze.cc/app.html`,
+  `https://www.finalyze.cc/app.html`, `https://finalyze-app.github.io/app.html`,
+  `http://localhost:8755/app.html`.
+
+## 3a. Google sign-in (OAuth)
+The auth modal shows a **"Continue with Google"** button. It's dependency-free:
+`Auth.signInWithGoogle()` redirects to Supabase's `/auth/v1/authorize?provider=google`
+endpoint; Supabase handles the Google handshake and redirects back with tokens in
+the URL hash, which `Auth.init()` picks up and then cleans out of the address bar.
+
+To turn it on:
+1. **Google Cloud Console → APIs & Services → Credentials → Create OAuth client ID**
+   (type: *Web application*). Under **Authorized redirect URIs**, add Supabase's
+   callback: `https://<your-project-ref>.supabase.co/auth/v1/callback`.
+2. **Supabase → Authentication → Providers → Google**: enable it and paste the
+   **Client ID** and **Client Secret** from step 1.
+3. Make sure the **`/app.html` redirect URLs** above are allow-listed (§3) so the
+   round-trip back to the app succeeds.
+4. No client config needed — the button uses the same `SUPABASE_URL` /
+   `SUPABASE_ANON_KEY` already in `js/config.js`. New Google users get a `profiles`
+   row from the same `on_auth_user_created` trigger and run the onboarding wizard.
 
 ## 3b. Custom SMTP (Resend) — required for production email
 Supabase's built-in email is rate-limited (~2–4/hour) and not for production, so
