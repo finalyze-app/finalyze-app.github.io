@@ -23,7 +23,7 @@
   let categoryViewMode = 'categories'; // 'categories' | 'groups'
   let hmMonth = '';                    // YYYY-MM for heatmap widget
   let trendMode = 'time';              // 'time' | 'merchants' for the Trend widget
-  let trendTopN = 10;                  // top-N merchants when trendMode === 'merchants'
+  let trendTopN = 5;                   // top-N merchants when trendMode === 'merchants'
   let viewName = 'dashboard';          // 'dashboard' | 'prefs'
   let filtersHidden = false;           // collapse the header filter bar
   let userLicense = 'free';            // 'free' | 'pro' (from the signed-in profile)
@@ -289,7 +289,7 @@
     { id: 'trend', nav: 'Trend', eyebrow: 'Trend', title: 'Spend over time',
       body: `<div class="trend-controls">
           <label>View <select id="trendMode"><option value="time">Spend over time</option><option value="merchants">Top merchants</option></select></label>
-          <label id="trendTopWrap" hidden>Show top <input type="number" id="trendTopN" min="1" max="50" step="1" value="10"> merchants</label>
+          <label id="trendTopWrap" hidden>Show top <input type="number" id="trendTopN" min="1" max="50" step="1" value="5"> merchants</label>
         </div>
         <div class="canvas-wrap"><canvas id="chartTrend"></canvas></div>`,
       render: renderTrend },
@@ -871,12 +871,12 @@
       topN.onchange = topN.oninput = () => {
         const v = Math.max(1, Math.min(50, parseInt(topN.value, 10) || 1));
         trendTopN = v;
-        if (trendMode === 'merchants') charts.trendMerchants(analyze.byMerchant(viewTxns, trendTopN));
+        if (trendMode === 'merchants') charts.trendMerchants(analyze.topMerchantsOverTime(viewTxns, trendTopN));
       };
     }
     const head = document.querySelector('#widget-trend .widget-head h2');
-    if (head) head.textContent = trendMode === 'merchants' ? `Top ${trendTopN} merchants` : 'Spend over time';
-    if (trendMode === 'merchants') charts.trendMerchants(analyze.byMerchant(viewTxns, trendTopN));
+    if (head) head.textContent = trendMode === 'merchants' ? `Top ${trendTopN} merchants over time` : 'Spend over time';
+    if (trendMode === 'merchants') charts.trendMerchants(analyze.topMerchantsOverTime(viewTxns, trendTopN));
     else charts.spendLine(analyze.spendOverTime(viewTxns));
   }
 

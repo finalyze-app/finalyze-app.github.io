@@ -121,19 +121,26 @@
     last.trendMerchants = null;
   }
 
-  // Alternate view for the Trend widget: top merchants as a horizontal bar, drawn
-  // into the same #chartTrend canvas. Clicking a bar opens that merchant.
-  function trendMerchants(byMerchant) {
-    last.trendMerchants = byMerchant;
+  // Alternate view for the Trend widget: spend over time, one line per top
+  // merchant. `data` = { labels:[dates], series:[{merchant, data:[…]}] }.
+  function trendMerchants(data) {
+    last.trendMerchants = data;
     last.spendLine = null;
-    const labels = censored ? byMerchant.map((_, i) => 'Merchant ' + (i + 1)) : byMerchant.map((m) => m.merchant);
+    const datasets = data.series.map((s, i) => {
+      const color = PALETTE[i % PALETTE.length];
+      return {
+        label: censored ? 'Merchant ' + (i + 1) : s.merchant,
+        data: s.data, borderColor: color, backgroundColor: color + '22',
+        borderWidth: 2, tension: 0.35, pointRadius: 0, pointHoverRadius: 4, fill: false,
+      };
+    });
     draw('chartTrend', {
-      type: 'bar',
-      data: { labels, datasets: [{ label: 'Spend', data: byMerchant.map((m) => m.spend), backgroundColor: theme().accent, borderRadius: 6, maxBarThickness: 22 }] },
+      type: 'line',
+      data: { labels: data.labels, datasets },
       options: {
-        indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: gridScale(true), y: gridScale() },
-        onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
-        onClick: (e, els) => { if (!els.length || !onMerchantClick) return; onMerchantClick(byMerchant[els[0].index].merchant); },
+        plugins: { legend: { display: !censored, position: 'bottom' } },
+        scales: { x: gridScale(), y: gridScale(true) },
+        interaction: { mode: 'index', intersect: false },
       },
     });
   }

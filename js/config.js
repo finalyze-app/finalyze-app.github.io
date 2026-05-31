@@ -22,7 +22,7 @@
     // Stripe Customer Portal login link (Stripe → Settings → Billing → Customer
     // portal → "Get a link"). Powers the "Manage subscription" button (cancel /
     // switch monthly↔annual). Leave blank to hide that button.
-    STRIPE_PORTAL_URL: '',
+    STRIPE_PORTAL_URL: 'https://billing.stripe.com/p/login/7sY4gyaww7Yl7RI0NI3Nm00',
 
     // Where the magic-link should send the user back to. Defaults to this page.
     get REDIRECT_URL() {
