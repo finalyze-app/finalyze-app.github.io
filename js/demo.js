@@ -124,7 +124,7 @@
     if (!host) return;
     if (!active()) { host.hidden = true; host.innerHTML = ''; return; }
     host.hidden = false;
-    host.innerHTML = `<span><strong>Demo mode</strong> — showing sample data.</span>
+    host.innerHTML = `<span><strong>Demo mode</strong> — sample data · Pro features unlocked.</span>
       <span class="demo-banner-actions">
         <button class="linkish" id="demoReplay" type="button">Replay tour</button>
         <button class="btn sm primary" id="demoClear" type="button">Clear demo &amp; import my data</button>

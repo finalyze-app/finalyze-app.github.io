@@ -181,14 +181,17 @@
         profile = await Auth.getProfile();
       } catch (e) { /* RPC missing until migration is applied */ }
     }
-    const license = (profile && profile.license) || 'free';
+    const demoPro = F.Demo && F.Demo.active && F.Demo.active();
+    const license = demoPro ? 'pro' : ((profile && profile.license) || 'free');
     const isPro = license === 'pro';
     const portal = (F.config && F.config.STRIPE_PORTAL_URL) || '';
     const refCode = (profile && profile.referral_code) || '';
     const refCount = (profile && profile.referral_count) || 0;
     const rewardsEarned = (profile && profile.rewards_earned) || 0;
     const shareLink = refCode && F.Referral ? F.Referral.shareUrl(refCode) : '';
-    const billingBtn = isPro
+    const billingBtn = demoPro
+      ? ''
+      : isPro
       ? (portal ? `<button class="btn" id="acctManage">Manage subscription</button>` : '')
       : `<button class="btn primary" id="acctUpgrade">Upgrade to Pro</button>`;
     const panel = modal(`
@@ -198,6 +201,7 @@
         <h2>${u ? u.email : ''}</h2>
       </div>
       <div class="acct-rows">
+        ${demoPro ? `<div class="acct-row"><span>Demo</span><strong class="muted">Pro preview — sample data only</strong></div>` : ''}
         <div class="acct-row"><span>Plan</span><strong class="acct-plan ${license}">${isPro ? 'Pro' : 'Free'}</strong></div>
         ${profile && profile.country ? `<div class="acct-row"><span>Country</span><strong>${profile.country}</strong></div>` : ''}
       </div>

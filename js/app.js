@@ -388,7 +388,12 @@
     return !!(F.Auth && F.Auth.enabled() && !F.Auth.isSignedIn());
   }
   // Free plan: signed-in users without Pro only see the last FREE_MONTHS months.
+  // Demo mode previews the full Pro experience.
+  function isDemoActive() {
+    return !!(F.Demo && F.Demo.active && F.Demo.active());
+  }
   function isFreeGated() {
+    if (isDemoActive()) return false;
     return !!(F.Auth && F.Auth.enabled() && F.Auth.isSignedIn() && userLicense !== 'pro');
   }
   function isPro() { return !isFreeGated(); }
@@ -497,7 +502,7 @@
     if ($('#authGate')) $('#authGate').hidden = true;
     renderUpgradeSlot();
     const proBadge = $('#proBadge');
-    if (proBadge) proBadge.hidden = !(F.Auth && F.Auth.enabled() && F.Auth.isSignedIn() && userLicense === 'pro');
+    if (proBadge) proBadge.hidden = !(demoActive || (F.Auth && F.Auth.enabled() && F.Auth.isSignedIn() && userLicense === 'pro'));
 
     // Free plan: only the FREE_MONTHS most recent months of data are accessible
     const fullTxns = allTxns;
