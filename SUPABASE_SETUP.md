@@ -26,7 +26,10 @@ create table public.profiles (
   household_size int,
   goals          jsonb default '[]'::jsonb,
   license        text default 'free',
-  referral_code  text,
+  referral_code  text unique,
+  referred_by    text,
+  referral_count int default 0,
+  rewards_earned int default 0,
   onboarded      boolean default false,
   created_at     timestamptz default now(),
   updated_at     timestamptz default now()
@@ -42,18 +45,23 @@ create policy "own profile - insert" on public.profiles
 create policy "own profile - update" on public.profiles
   for update using (auth.uid() = id);
 
--- Auto-create a profile row when a user signs up.
-create function public.handle_new_user() returns trigger
-  language plpgsql security definer set search_path = public as $$
-begin
-  insert into public.profiles (id, email) values (new.id, new.email)
-  on conflict (id) do nothing;
-  return new;
-end; $$;
+-- Auto-create a profile row when a user signs up (referral_code + referred_by).
+-- See supabase/migrations/20260530_referrals.sql for the full referral schema,
+-- referral_rewards ledger, and guard triggers. Run that file in SQL Editor on
+-- existing projects; new projects can paste it after the table above.
+```
 
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
+## 2b. Referrals (existing projects)
+If you already created `profiles`, run [`supabase/migrations/20260530_referrals.sql`](supabase/migrations/20260530_referrals.sql) in the SQL Editor. It adds:
+- `referred_by`, `referral_count`, `rewards_earned` on `profiles`
+- `referral_rewards` ledger (webhook-only writes)
+- Signup trigger that generates `referral_code` and validates `referred_by` from signup metadata
+- Guard trigger so clients cannot rewrite referral fields
+
+Sign-up passes `data: { referred_by: 'CODE' }` in auth metadata; the trigger validates the code exists on another profile.
+
+```sql
+-- (full script in supabase/migrations/20260530_referrals.sql)
 ```
 
 ## 3. Configure auth (email + password)

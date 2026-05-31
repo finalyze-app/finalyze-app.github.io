@@ -45,11 +45,16 @@
   function openSignIn(mode) {
     mode = mode === 'signup' ? 'signup' : 'signin';
     const isSignup = mode === 'signup';
+    const ref = (F.Referral && F.Referral.getRef && F.Referral.getRef()) || '';
+    const refNote = isSignup && ref
+      ? '<p class="acct-ref-note muted">Referred by a friend — your 2nd month of Pro is free when you upgrade.</p>'
+      : '';
     const panel = modal(`
       <button class="acct-close" aria-label="Close">×</button>
       <div class="acct-head">
         <h2>${isSignup ? 'Create your Finalyze account' : 'Sign in to Finalyze'}</h2>
         <p class="muted">Your financial data stays on this device — only your email is stored on the server.</p>
+        ${refNote}
       </div>
       <form id="acctForm" class="acct-form">
         <input type="email" id="acctEmail" placeholder="you@example.com" required autocomplete="email" />
@@ -173,6 +178,10 @@
     const license = (profile && profile.license) || 'free';
     const isPro = license === 'pro';
     const portal = (F.config && F.config.STRIPE_PORTAL_URL) || '';
+    const refCode = (profile && profile.referral_code) || '';
+    const refCount = (profile && profile.referral_count) || 0;
+    const rewardsEarned = (profile && profile.rewards_earned) || 0;
+    const shareLink = refCode && F.Referral ? F.Referral.shareUrl(refCode) : '';
     const billingBtn = isPro
       ? (portal ? `<button class="btn" id="acctManage">Manage subscription</button>` : '')
       : `<button class="btn primary" id="acctUpgrade">Upgrade to Pro</button>`;
@@ -185,8 +194,17 @@
       <div class="acct-rows">
         <div class="acct-row"><span>Plan</span><strong class="acct-plan ${license}">${isPro ? 'Pro' : 'Free'}</strong></div>
         ${profile && profile.country ? `<div class="acct-row"><span>Country</span><strong>${profile.country}</strong></div>` : ''}
-        ${profile && profile.referral_code ? `<div class="acct-row"><span>Referral code</span><strong>${profile.referral_code}</strong></div>` : ''}
       </div>
+      ${refCode ? `
+      <div class="acct-referrals">
+        <div class="eyebrow">Referrals</div>
+        <p class="muted acct-ref-desc">Give a month, get a month. When a friend upgrades to Pro, you both get $7 off your next bill.</p>
+        <div class="acct-ref-stats"><span><strong>${refCount}</strong> friend${refCount === 1 ? '' : 's'} upgraded</span><span><strong>${rewardsEarned}</strong> month${rewardsEarned === 1 ? '' : 's'} earned</span></div>
+        <div class="acct-ref-link">
+          <input type="text" id="acctRefLink" readonly value="${shareLink.replace(/"/g, '&quot;')}" />
+          <button class="btn primary" id="acctRefCopy" type="button">Copy link</button>
+        </div>
+      </div>` : ''}
       ${billingBtn ? `<div class="acct-billing">${billingBtn}${isPro && portal ? `<p class="muted" style="font-size:12px;margin:8px 0 0">Cancel or switch between monthly and annual in the Stripe portal.</p>` : ''}</div>` : ''}
       <div class="acct-actions">
         <button class="btn" id="acctEdit">Edit preferences</button>
@@ -196,6 +214,20 @@
     panel.querySelector('.acct-close').onclick = close;
     panel.querySelector('#acctEdit').onclick = openOnboarding;
     panel.querySelector('#acctSignOut').onclick = async () => { await Auth.signOut(); close(); renderChip(); };
+    const copyBtn = panel.querySelector('#acctRefCopy');
+    if (copyBtn && shareLink) {
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(shareLink);
+          if (F.toast) F.toast('Referral link copied');
+          else copyBtn.textContent = 'Copied!';
+        } catch (e) {
+          const inp = panel.querySelector('#acctRefLink');
+          if (inp) { inp.select(); document.execCommand('copy'); }
+          if (F.toast) F.toast('Link copied');
+        }
+      };
+    }
     const mng = panel.querySelector('#acctManage');
     if (mng) mng.onclick = () => {
       const email = (u && u.email) || '';

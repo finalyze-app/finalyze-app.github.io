@@ -529,7 +529,9 @@
     addAccount(label) {
       label = (label || '').trim();
       if (!label) return null;
+      const F = global.Finalyze;
       const accs = this.getAccounts();
+      if (F && F.isPro && !F.isPro() && accs.length >= 1) return null;
       const existing = accs.find((a) => a.label.toLowerCase() === label.toLowerCase());
       if (existing) return existing.id;
       const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);

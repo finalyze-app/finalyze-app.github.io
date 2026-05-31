@@ -62,12 +62,19 @@
   // returned until the user confirms; otherwise we get tokens straight away.
   async function signUp(email, password) {
     if (!enabled()) throw new Error('Accounts are not configured.');
+    const ref = (global.Finalyze.Referral && global.Finalyze.Referral.getRef && global.Finalyze.Referral.getRef()) || '';
+    const payload = { email, password };
+    if (ref) payload.data = { referred_by: ref };
     const res = await fetch(authUrl('/signup'), {
       method: 'POST', headers: baseHeaders(),
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(payload),
     });
     const body = await jsonOrThrow(res);
-    if (body && body.access_token) { stash(body); notify(); return { signedIn: true }; }
+    if (body && body.access_token) {
+      if (global.Finalyze.Referral && global.Finalyze.Referral.clearRef) global.Finalyze.Referral.clearRef();
+      stash(body); notify(); return { signedIn: true };
+    }
+    if (global.Finalyze.Referral && global.Finalyze.Referral.clearRef) global.Finalyze.Referral.clearRef();
     return { signedIn: false, needsConfirmation: true };
   }
 

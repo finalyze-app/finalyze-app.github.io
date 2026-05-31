@@ -59,8 +59,13 @@ Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
 
 ## How it behaves
 - **Payment completes** → `license = 'pro'`, `stripe_customer_id` stored.
+- **Referred user's first Pro checkout** → if `profiles.referred_by` is set, the webhook
+  credits both users $7 via Stripe customer balance (referee: 2nd month free; referrer:
+  reward month), inserts a row in `referral_rewards`, and increments referrer stats.
 - **Subscription active/trialing/past_due** → `pro`.
 - **Subscription canceled/deleted/unpaid** → `free`.
+
+Referral rewards require the migration in [`supabase/migrations/20260530_referrals.sql`](supabase/migrations/20260530_referrals.sql). Customer balance credits use Stripe's [Customer Balance API](https://stripe.com/docs/api/customer_balance_transactions/create) (enabled by default on most accounts).
 
 ## In the app
 The app reads `license` on sign-in and when the window regains focus (so after

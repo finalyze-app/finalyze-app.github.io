@@ -195,6 +195,8 @@
   </style>
 </head>
 <body>
+  <script src="js/config.js"></script>
+  <script src="js/referral.js"></script>
   <script>
     // Apply saved theme before paint (shared with the app via localStorage). Default light.
     (function () {
@@ -223,7 +225,7 @@
       <p class="lead">Finalyze understands where your money goes — and tells you what to do about it.
         Import a statement, get instant insights, and ask your data anything. All on your machine.</p>
       <div class="cta">
-        <a class="btn primary" href="app.html?signup=1">Get started — it's free</a>
+        <a class="btn primary" id="ctaSignup" href="app.html?signup=1">Get started — it's free</a>
         <a class="btn ghost" href="app.html?demo=1">Try the live demo</a>
       </div>
       <div class="note">Free to start · Works offline · Your data stays on your device — <code>.pdf</code>/<code>.qfx</code>/<code>.ofx</code>/<code>.csv</code></div>
@@ -309,19 +311,19 @@
             <li>Last 2 months of history</li>
             <li>Auto-categorization</li>
             <li>Core dashboard &amp; charts</li>
-            <li>Basic AI insights</li>
+            <li>1 account</li>
           </ul>
-          <a class="btn ghost" href="app.html?signup=1" style="width:100%;justify-content:center;">Get started</a>
+          <a class="btn ghost" id="priceSignup" href="app.html?signup=1" style="width:100%;justify-content:center;">Get started</a>
         </div>
         <div class="price pro">
           <div class="tag">Pro</div>
           <div class="amt">$7<span> / mo</span> <span class="amt-alt">· $70 / yr</span></div>
           <ul>
             <li>Unlimited history</li>
-            <li>Advanced AI insights &amp; forecasting</li>
-            <li>Ask-your-data chat</li>
-            <li>Subscription detection &amp; savings simulator</li>
-            <li>Family mode</li>
+            <li>AI chat &amp; narrative insights</li>
+            <li>Custom KPI cards &amp; rules</li>
+            <li>Unlimited accounts &amp; family mode</li>
+            <li>Give a month, get a month referrals</li>
           </ul>
           <div class="price-btns">
             <a class="btn primary" href="https://buy.stripe.com/7sY4gyaww7Yl7RI0NI3Nm00" target="_blank" rel="noopener">Go Pro — Monthly</a>
@@ -341,7 +343,7 @@
         <details><summary>How does the AI run without sending my data anywhere?</summary><p>The categorization and language models run on-device. They download once (opt-in) and then process your data locally — even offline.</p></details>
         <details><summary>Which banks and file types are supported?</summary><p>Most major North American banks and cards via PDF statements, OFX/QFX, and CSV — with automatic format detection. Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase, and more.</p></details>
         <details><summary>Do I need an account?</summary><p>Yes — a free account is required to import and analyze your statements. It only stores your email; your financial data stays in your browser. The free plan covers your last 2 months of history; Pro unlocks unlimited history and premium features. You can also explore a sample-data tour without an account.</p></details>
-        <details><summary>What does the free plan include?</summary><p>Importing, auto-categorization, the core dashboard and charts, and basic insights — for your most recent 2 months of transactions. Pro ($7/month or $70/year) lifts that to unlimited history and adds advanced AI, chat, the savings simulator and family mode.</p></details>
+        <details><summary>What does the free plan include?</summary><p>Importing, built-in auto-categorization, the core dashboard and charts, and one account — for your most recent 2 months of transactions. Pro ($7/month or $70/year) unlocks unlimited history, AI chat, custom cards and rules, multiple accounts, family mode, and a referral program (give a month, get a month).</p></details>
         <details><summary>Can I try it before signing up?</summary><p>Yes — choose “Take a tour with sample data” to explore every feature with dummy transactions, no account needed.</p></details>
         <details><summary>Does it work on my phone?</summary><p>Yes. The whole dashboard is mobile-responsive — transactions become tap-friendly cards, charts resize, and the menu slides in. Add it to your home screen to use it like an app.</p></details>
         <details><summary>Can I export my data?</summary><p>Yes. Export a full JSON backup anytime and restore it on another device.</p></details>
@@ -351,7 +353,7 @@
 
   <footer>
     <div class="wrap">
-      <span>© 2026 Finalyze · Your money, analyzed privately.</span>
+      <span>© 2026 Finalyze · Your money, analyzed privately. · <a href="app.html">Refer a friend</a> — give a month, get a month.</span>
       <span><a href="app.html">Open app</a> · <a href="#top">Back to top</a></span>
     </div>
   </footer>
@@ -373,7 +375,15 @@
     })();
 
     (function () {
-      var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var R = window.Finalyze && window.Finalyze.Referral;
+      if (!R) return;
+      ['ctaSignup', 'priceSignup'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && el.getAttribute('href')) el.setAttribute('href', R.appendRef(el.getAttribute('href')));
+      });
+    })();
+
+    (function () {
 
       // KPI count-up, re-triggered on the 9s loop.
       var kpis = [].slice.call(document.querySelectorAll('.ad-v'));

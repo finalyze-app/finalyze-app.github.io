@@ -374,6 +374,7 @@
   // Some widgets are only meaningful with enough data (e.g. year-in-review needs ≥12 months).
   function widgetAvailable(id) {
     if (id === 'yearReview') return analyze.monthSpan(allTxns) >= 12;
+    if (id === 'cardmember' && !isPro()) return false;
     return true;
   }
   function visibleOrder() {
@@ -390,6 +391,43 @@
   function isFreeGated() {
     return !!(F.Auth && F.Auth.enabled() && F.Auth.isSignedIn() && userLicense !== 'pro');
   }
+  function isPro() { return !isFreeGated(); }
+  function requirePro(label) {
+    if (isPro()) return true;
+    openUpgradeModal();
+    toast((label || 'This feature') + ' is available on Pro.');
+    return false;
+  }
+  function proLockOverlayHtml(label) {
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    return `<span class="pro-chip">Pro</span><p>${esc(label || 'Upgrade to unlock')}</p><button type="button" class="btn primary pro-lock-upgrade">Upgrade to Pro</button>`;
+  }
+  function applyProLock(container, label) {
+    if (!container) return;
+    if (isPro()) {
+      container.classList.remove('pro-lock');
+      container.querySelector('.pro-lock-overlay')?.remove();
+      return;
+    }
+    container.classList.add('pro-lock');
+    let ov = container.querySelector('.pro-lock-overlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.className = 'pro-lock-overlay';
+      ov.innerHTML = proLockOverlayHtml(label);
+      container.appendChild(ov);
+      ov.querySelector('.pro-lock-upgrade').onclick = openUpgradeModal;
+    } else {
+      const p = ov.querySelector('p');
+      if (p) p.textContent = label || 'Upgrade to unlock';
+    }
+  }
+  function monthsBetween(earlierYmd, laterYmd) {
+    if (!earlierYmd || !laterYmd || laterYmd <= earlierYmd) return 0;
+    const [y1, m1] = earlierYmd.split('-').map(Number);
+    const [y2, m2] = laterYmd.split('-').map(Number);
+    return Math.max(0, (y2 - y1) * 12 + (m2 - m1));
+  }
   // Cutoff anchored to the most recent transaction (not the system clock), so the
   // free window is always the 2 most recent months present in the user's data.
   function freeCutoffFrom(anchorYmd) {
@@ -397,12 +435,11 @@
     return fmtYMD(new Date(y, (m - 1) - (FREE_MONTHS - 1), 1));
   }
   function openUpgradeModal() {
-    // Prefill the user's email at Stripe checkout so it matches their account.
     const email = (F.Auth && F.Auth.user && F.Auth.user() && F.Auth.user().email) || '';
     const q = email ? '?prefilled_email=' + encodeURIComponent(email) : '';
     openModal(
       `<h2>Upgrade to Pro</h2>
-       <p class="muted">Unlock your full transaction history, advanced AI insights, the savings simulator and more. Your data stays in your browser — Pro just lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
+       <p class="muted">Unlock your full transaction history, AI chat, custom KPI cards, categorization rules, unlimited accounts, and family mode. Your data stays in your browser — Pro lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
        <div class="upgrade-plans">
          <a class="btn primary upgrade-plan" href="${STRIPE_MONTHLY}${q}" target="_blank" rel="noopener">
            <span class="up-amt">$7<small>/month</small></span><span class="up-label">Monthly</span></a>
@@ -463,20 +500,27 @@
     if (proBadge) proBadge.hidden = !(F.Auth && F.Auth.enabled() && F.Auth.isSignedIn() && userLicense === 'pro');
 
     // Free plan: only the FREE_MONTHS most recent months of data are accessible
-    // (anchored to the latest transaction, so it's dynamic per dataset).
+    const fullTxns = allTxns;
     let hiddenOlder = 0;
+    let hiddenMonths = 0;
     if (isFreeGated() && allTxns.length) {
       const latest = allTxns.reduce((mx, t) => (t.date > mx ? t.date : mx), allTxns[0].date);
       const cutoff = freeCutoffFrom(latest);
       const n = allTxns.length;
       allTxns = allTxns.filter((t) => t.date >= cutoff);
       hiddenOlder = n - allTxns.length;
+      const earliest = fullTxns.reduce((mn, t) => (t.date < mn ? t.date : mn), fullTxns[0].date);
+      hiddenMonths = monthsBetween(earliest, cutoff);
     }
     const freeBn = $('#freeBanner');
     if (freeBn) {
       if (isFreeGated() && (hiddenOlder > 0 || allTxns.length)) {
         freeBn.hidden = false;
-        freeBn.innerHTML = `<span><strong>Free plan</strong> — showing the last ${FREE_MONTHS} months${hiddenOlder ? ` · ${hiddenOlder} older transaction${hiddenOlder === 1 ? '' : 's'} hidden` : ''}.</span> <button class="linkish" id="freeUpgrade" type="button">Upgrade to Pro for full history →</button>`;
+        const missParts = [];
+        if (hiddenOlder > 0) missParts.push(`${hiddenOlder} older transaction${hiddenOlder === 1 ? '' : 's'}`);
+        if (hiddenMonths > 0) missParts.push(`~${hiddenMonths} month${hiddenMonths === 1 ? '' : 's'} of history`);
+        const missLine = missParts.length ? ` · ${missParts.join(' and ')} waiting in Pro` : '';
+        freeBn.innerHTML = `<span><strong>Free plan</strong> — showing the last ${FREE_MONTHS} months${missLine}. Pro unlocks AI chat, custom cards, rules, multi-account &amp; family mode.</span> <button class="linkish" id="freeUpgrade" type="button">Upgrade to Pro →</button>`;
         const fu = $('#freeUpgrade'); if (fu) fu.onclick = openUpgradeModal;
       } else { freeBn.hidden = true; freeBn.innerHTML = ''; }
     }
@@ -513,6 +557,7 @@
     datedTxns = filterTxns(accountTxns, { dateFrom, dateTo, amountMin, amountMax, flowFilter });
     if (activeCategory && !datedTxns.some((t) => txnMatchesSlice(t, activeCategory))) activeCategory = null;
     if (activeCardmember && !datedTxns.some((t) => t.cardmember === activeCardmember)) activeCardmember = null;
+    if (!isPro() && activeCardmember) activeCardmember = null;
     // Analytics base optionally drops tagged (business/reimbursable) txns; the ledger keeps them.
     const anaBase = excludeTagged ? datedTxns.filter((t) => !(t.tags && t.tags.length)) : datedTxns;
     const matchCross = (base) => base.filter((t) =>
@@ -710,13 +755,15 @@
     if (!activeCategory && bal != null) cards.push(card(ICON.balance, 'Statement balance', fmt(bal), bal < 0 ? 'neg' : ''));
     if (s.dateFrom) cards.push(card(ICON.calendar, 'Date range', `${s.dateFrom}<br>→ ${s.dateTo}`, 'small'));
 
-    // Custom KPI cards — totals over the active period (account + date range).
-    const period = periodLabel();
-    Store.getCustomCards().forEach((cc) => {
-      const matched = periodTxns.filter((t) => cardMatch(t, cc));
-      const total = matched.reduce((a, t) => a + Math.abs(t.amount), 0);
-      cards.push(card(ICON.custom, `${cc.name} · ${period}`, fmt(total), 'small'));
-    });
+    // Custom KPI cards — Pro only; totals over the active period.
+    if (isPro()) {
+      const period = periodLabel();
+      Store.getCustomCards().forEach((cc) => {
+        const matched = periodTxns.filter((t) => cardMatch(t, cc));
+        const total = matched.reduce((a, t) => a + Math.abs(t.amount), 0);
+        cards.push(card(ICON.custom, `${cc.name} · ${period}`, fmt(total), 'small'));
+      });
+    }
 
     $('#summaryCards').innerHTML = cards.join('');
 
@@ -1086,11 +1133,20 @@
   }
 
   function renderTransactions() {
+    const showCm = isPro();
     $('#txnSearch').value = txnQuery;
     renderCategoryFilterOptions();
     $('#bulkCat').innerHTML = catOptions();
-    $('#cardholderList').innerHTML = [...new Set(allTxns.map((t) => t.cardmember))].sort()
-      .map((c) => `<option value="${c}"></option>`).join('');
+    const bh = $('#bulkCardholder');
+    const ba = $('#bulkCardApply');
+    if (bh) bh.hidden = !showCm;
+    if (ba) ba.hidden = !showCm;
+    const cmTh = document.querySelector('#txnTable th[data-sort="cardmember"]');
+    if (cmTh) cmTh.hidden = !showCm;
+    if (showCm) {
+      $('#cardholderList').innerHTML = [...new Set(allTxns.map((t) => t.cardmember))].sort()
+        .map((c) => `<option value="${c}"></option>`).join('');
+    }
     $('#txnSearch').oninput = () => { txnQuery = $('#txnSearch').value; renderTxnTable(); };
     $('#txnCategory').onchange = () => { txnCatFilter = $('#txnCategory').value; renderTxnTable(); };
     $('#txnSelectAll').onchange = () => {
@@ -1211,6 +1267,7 @@
     });
 
     $('#txnCount').textContent = `${rows.length} of ${ledgerTxns.length}`;
+    const showCm = isPro();
     $('#txnTable tbody').innerHTML = rows.map((t) => {
       const amtCls = t.isSpend ? 'amt-neg' : 'amt-pos';
       const key = analyze.subKey(t.merchantKey, t.spend);
@@ -1225,7 +1282,7 @@
         <td class="chk-cell"><input type="checkbox" class="row-check" data-merchant="${encodeURIComponent(t.merchantKey)}" data-tid="${encodeURIComponent(t.tid)}" data-store-key="${encodeURIComponent(t.storeKey)}"></td>
         <td data-label="Date">${t.date}</td>
         <td class="txn-merch" data-label="Merchant"><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span><button type="button" class="icon-btn txn-edit" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Edit merchant">${svg(PENCIL)}</button></td>
-        <td data-label="Cardmember">${t.cardmember}</td>
+        ${showCm ? `<td data-label="Cardmember">${t.cardmember}</td>` : ''}
         <td data-label="Category"><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td>
         <td class="num ${amtCls}" data-label="Amount">${fmt(t.amount)}</td>
         <td class="tag-cell" data-label="Tags">${tagCell}</td>
@@ -1330,6 +1387,7 @@
       const pattern = $('#rulePattern').value.trim();
       const flags = $('#ruleCase').checked ? '' : 'i';
       if (!pattern) { toast('Enter a regex pattern'); return; }
+      if (!isPro()) { requirePro('Custom categorization rules'); return; }
       if (Store.addRule(pattern, $('#ruleCat').value, flags)) { render(); toast('Rule added'); }
       else toast('Invalid regular expression');
     };
@@ -1343,6 +1401,7 @@
       out.className = 'rule-test-out';
       out.innerHTML = '→ ' + chip(cat);
     };
+    applyProLock(container, 'Custom categorization rules');
   }
 
   // ---- Subscription keyword rules ----
@@ -1485,6 +1544,7 @@
     });
     container.querySelector('#ccCreate').onclick = () => {
       ccReadDraft(container);
+      if (!isPro()) { requirePro('Custom KPI cards'); return; }
       if (!cardDraft.name) { toast('Name your card'); return; }
       const valid = cardDraft.conditions.filter((c) => c.field && (c.field === 'amount' ? c.value !== '' : String(c.value).trim() !== '' || c.field === 'category' || c.field === 'type'));
       if (!valid.length) { toast('Add at least one condition'); return; }
@@ -1492,6 +1552,7 @@
       cardDraft = null;
       render(); toast('Custom card created');
     };
+    applyProLock(container, 'Custom KPI cards');
   }
 
   // ---- Feature 3: monthly category + group budgets ----
@@ -1585,23 +1646,35 @@
   }
 
   // ---- Feature 8: accounts ----
+  function importAccountSelectHtml(accounts) {
+    const opts = accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
+    const extra = isPro() ? '<option value="__new">+ New account…</option>' : '';
+    return opts + extra;
+  }
   function renderAccountManager() {
     const container = $('#accountManager');
     if (!container) return;
     const accounts = Store.getAccounts();
     const counts = {};
     allTxns.forEach((t) => { const a = t.accountId || 'default'; counts[a] = (counts[a] || 0) + 1; });
+    const canAdd = isPro();
     container.innerHTML =
       `<div class="acct-list">` + accounts.map((a) =>
-        `<div class="acct-row"><span class="acct-label">${a.label}</span><span class="mi-meta">${counts[a.id] || 0} txns</span></div>`).join('') + `</div>
-      <div class="acct-add">
+        `<div class="acct-row"><span class="acct-label">${a.label}</span><span class="mi-meta">${counts[a.id] || 0} txns</span></div>`).join('') + `</div>` +
+      (canAdd
+        ? `<div class="acct-add">
         <input type="text" id="newAcctName" placeholder="New account label, e.g. Personal Visa">
         <button class="btn primary" id="addAcctBtn">Add account</button>
-      </div>`;
-    $('#addAcctBtn').onclick = () => {
+      </div>`
+        : `<p class="muted" style="margin-top:10px">Free plan includes one account. <button type="button" class="linkish" id="acctProUpgrade">Upgrade to Pro</button> for unlimited accounts and family mode.</p>`);
+    const upg = container.querySelector('#acctProUpgrade');
+    if (upg) upg.onclick = openUpgradeModal;
+    const addBtn = $('#addAcctBtn');
+    if (addBtn) addBtn.onclick = () => {
       const label = $('#newAcctName').value.trim();
       if (!label) { toast('Enter an account label'); return; }
-      Store.addAccount(label); $('#newAcctName').value = ''; renderAccountManager(); toast('Account added');
+      if (!Store.addAccount(label)) { requirePro('Multiple accounts'); return; }
+      $('#newAcctName').value = ''; renderAccountManager(); toast('Account added');
     };
   }
 
@@ -1997,7 +2070,7 @@
       `<h2>Import ${files.length} file${files.length > 1 ? 's' : ''}</h2>
       <p class="muted">Assign these transactions to an account${hasCsv ? ' and confirm CSV columns' : ''}.</p>
       <div class="import-acct">
-        <select id="impAccount">${accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('')}<option value="__new">+ New account…</option></select>
+        <select id="impAccount">${importAccountSelectHtml(accounts)}</select>
         <input type="text" id="impNewName" placeholder="New account label" hidden>
       </div>
       ${pdfNote}
@@ -2046,7 +2119,7 @@
       let accountId = selA.value;
       if (accountId === '__new') {
         accountId = Store.addAccount(newName.value.trim());
-        if (!accountId) { toast('Enter an account label'); return; }
+        if (!accountId) { requirePro('Multiple accounts'); return; }
       }
       let csvOpts = null;
       if (hasCsv) {
@@ -2153,7 +2226,7 @@
       `<h2>Review PDF import</h2>
       <p class="muted">PDF statements are parsed heuristically, so check the rows below. Edit any value, untick rows to skip, and import when it looks right.</p>
       <div class="import-acct">
-        <select id="impAccount">${accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('')}<option value="__new">+ New account…</option></select>
+        <select id="impAccount">${importAccountSelectHtml(accounts)}</select>
         <input type="text" id="impNewName" placeholder="New account label" hidden>
       </div>
       ${errNote}
@@ -2216,7 +2289,7 @@
       let accountId = selA.value;
       if (accountId === '__new') {
         accountId = Store.addAccount(newName.value.trim());
-        if (!accountId) { toast('Enter an account label'); return; }
+        if (!accountId) { requirePro('Multiple accounts'); return; }
       }
       const txns = [];
       tbody.querySelectorAll('tr').forEach((tr, i) => {
@@ -2531,8 +2604,11 @@
   }
 
   F.filterTxns = filterTxns;
-  F.render = render;            // let optional modules (AI) refresh after writes
+  F.render = render;
   F.openUpgradeModal = openUpgradeModal;
+  F.isPro = isPro;
+  F.requirePro = requirePro;
+  F.applyProLock = applyProLock;
   F.toast = toast;
   F.enriched = enriched;       // categorized + flow-typed rows for AI context
   F.openMerchantDrill = openMerchantDrill;

@@ -38,7 +38,11 @@
   function close() { if (overlay) overlay.classList.remove('open'); document.body.classList.remove('modal-open'); }
 
   function renderTab() {
-    shell().querySelectorAll('.ai-tabs [data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+    shell().querySelectorAll('.ai-tabs [data-tab]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+      const proTab = b.dataset.tab === 'chat' || b.dataset.tab === 'categorize';
+      b.classList.toggle('pro-tab', proTab && F.isPro && !F.isPro());
+    });
     const body = $('#aiBody');
     if (tab === 'insights') renderInsights(body);
     else if (tab === 'chat') renderChat(body);
@@ -49,13 +53,19 @@
   // ---- Insights ----
   function renderInsights(body) {
     const local = AIChat ? AIChat.localInsights() : ['AI module not loaded.'];
+    const pro = !F.isPro || F.isPro();
     body.innerHTML = `
       <div class="ai-head"><h3>Insights</h3>
-        <button class="btn sm" id="aiGenInsights">${AIChat && AIChat.ready() ? 'Regenerate with AI' : 'Generate with AI'}</button>
+        <button class="btn sm" id="aiGenInsights">${pro && AIChat && AIChat.ready() ? 'Regenerate with AI' : 'Generate with AI'}</button>
       </div>
       <ul class="ai-insights">${local.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
-      <div class="ai-narrative" id="aiNarrative"></div>`;
-    $('#aiGenInsights').onclick = async () => {
+      <div class="ai-narrative" id="aiNarrative">${pro ? '' : '<p class="muted">Upgrade to Pro for AI-generated narrative insights.</p>'}</div>`;
+    const genBtn = $('#aiGenInsights');
+    if (!pro) {
+      if (genBtn) genBtn.onclick = () => F.requirePro && F.requirePro('AI insights');
+      return;
+    }
+    genBtn.onclick = async () => {
       const out = $('#aiNarrative');
       if (!AIChat || !AIChat.ready()) { tab = 'models'; renderTab(); F.toast && F.toast('Enable the chat model first'); return; }
       out.textContent = '…'; out.classList.add('streaming');
@@ -67,6 +77,11 @@
 
   // ---- Chat ----
   function renderChat(body) {
+    if (F.isPro && !F.isPro()) {
+      body.innerHTML = `<div class="ai-head"><h3>Chat</h3></div><div class="ai-empty">Ask about your recorded spending — e.g. “how much did I spend on coffee?” or “what changed from last month?”</div>`;
+      F.applyProLock && F.applyProLock(body, 'AI chat');
+      return;
+    }
     const enabled = AIChat && AIChat.ready();
     body.innerHTML = `
       <div class="ai-head"><h3>Chat</h3>
@@ -95,6 +110,11 @@
 
   // ---- Auto-categorize ----
   function renderCategorize(body) {
+    if (F.isPro && !F.isPro()) {
+      body.innerHTML = `<div class="ai-head"><h3>Auto-categorize</h3></div><p class="muted">Use AI to suggest categories for uncategorized merchants based on your spending patterns.</p>`;
+      F.applyProLock && F.applyProLock(body, 'AI auto-categorize');
+      return;
+    }
     const work = AICat ? AICat.uncategorizedMerchants() : [];
     body.innerHTML = `
       <div class="ai-head"><h3>Auto-categorize</h3>
