@@ -253,7 +253,7 @@ code { background: var(--accent-soft); color: var(--accent); padding: 1px 7px; b
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px);
   background: var(--ink); color: var(--bg); padding: 12px 20px; border-radius: 12px;
-  font-size: 13.5px; font-weight: 600; z-index: 80; box-shadow: var(--shadow-lg);
+  font-size: 13.5px; font-weight: 600; z-index: 3000; box-shadow: var(--shadow-lg);
   opacity: 0; transition: .25s; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
