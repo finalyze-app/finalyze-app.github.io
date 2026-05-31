@@ -218,7 +218,7 @@
       ${billingBtn ? `<div class="acct-billing">${billingBtn}${isPro && portal ? `<p class="muted" style="font-size:12px;margin:8px 0 0">Cancel or switch between monthly and annual in the Stripe portal.</p>` : ''}</div>` : ''}
       <div class="acct-actions">
         <button class="btn" id="acctEdit">Edit preferences</button>
-        <button class="btn ghost" id="acctSignOut">Sign out</button>
+        <button class="btn ghost danger" id="acctSignOut">Sign out</button>
       </div>
       <p class="muted acct-note">Your transactions never leave this device. Only your email and account settings are synced.</p>`);
     panel.querySelector('.acct-close').onclick = close;
