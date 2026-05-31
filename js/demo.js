@@ -85,8 +85,10 @@
     idx = 0;
     openCoach();
   }
+  function accountsRequired() { return !!(F.Auth && F.Auth.enabled() && !F.Auth.isSignedIn()); }
   function startDemoTour() {
-    steps = STEPS; onFinal = clearAndImport; finalLabel = 'Clear demo & import my data';
+    steps = STEPS; onFinal = clearAndImport;
+    finalLabel = accountsRequired() ? 'Clear demo & create my account' : 'Clear demo & import my data';
     idx = 0; openCoach();
   }
 
@@ -127,7 +129,7 @@
     host.innerHTML = `<span><strong>Demo mode</strong> — sample data · Pro features unlocked.</span>
       <span class="demo-banner-actions">
         <button class="linkish" id="demoReplay" type="button">Replay tour</button>
-        <button class="btn sm primary" id="demoClear" type="button">Clear demo &amp; import my data</button>
+        <button class="btn sm primary" id="demoClear" type="button">${accountsRequired() ? 'Clear demo &amp; create account' : 'Clear demo &amp; import my data'}</button>
       </span>`;
     $('#demoReplay').onclick = () => { startDemoTour(); };
     $('#demoClear').onclick = clearAndImport;
@@ -139,6 +141,12 @@
       localStorage.removeItem(DEMO_KEY);
       F.render && F.render();
       updateBanner();
+      // Accounts required: send them to create an account instead of importing.
+      if (F.Auth && F.Auth.enabled() && !F.Auth.isSignedIn()) {
+        F.toast && F.toast('Loved the demo? Create a free account to bring in your own data');
+        if (F.Account && F.Account.openSignIn) F.Account.openSignIn('signup');
+        return;
+      }
       F.toast && F.toast('Demo cleared — choose your own export to import');
       const inp = $('#fileInput') || $('#fileInput2');
       if (inp) inp.click();

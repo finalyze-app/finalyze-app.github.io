@@ -1,7 +1,28 @@
 # Finalyze — Action Items
 
 Outstanding setup tasks the project owner must complete outside the codebase.
-Last updated after switching auth from magic-link to **email + user-defined password**.
+
+## Custom domain: finalyze.cc (do these now / once DNS propagates)
+- [ ] **Registrar DNS** — apex `finalyze.cc` → four GitHub Pages **A** records:
+      `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+      (optional AAAA: `2606:50c0:8000::153` … `8001/8002/8003::153`).
+      `www` → **CNAME** `finalyze-app.github.io`.
+- [ ] **GitHub → Settings → Pages** — confirm Custom domain = `finalyze.cc`
+      (the repo `CNAME` file sets it), then enable **Enforce HTTPS** once the cert
+      provisions (~15 min–1 hr after DNS resolves).
+- [ ] **Once DNS propagates / HTTPS is on:**
+  - [ ] Supabase → Auth → URL Configuration: Site URL = `https://finalyze.cc`;
+        Redirect URLs include `https://finalyze.cc`, `https://www.finalyze.cc`
+        (keep `https://finalyze-app.github.io` + `http://localhost:8755`).
+  - [ ] Resend → verify `finalyze.cc` (SPF/DKIM/DMARC); send from `no-reply@finalyze.cc`.
+  - [ ] Stripe → Customer Portal + Payment Links: set return/redirect URLs to `https://finalyze.cc`.
+  - [ ] Verify the live site at `https://finalyze.cc` and `https://finalyze.cc/app.html`,
+        do one real sign-up → confirmation email → import.
+
+## Custom SMTP (Resend) — fixes throttled confirmation emails
+See `SUPABASE_SETUP.md` §3b. Verify domain in Resend, create an API key, set it as
+Supabase Custom SMTP (`smtp.resend.com`, port 465, user `resend`, pass = API key),
+then raise Supabase Auth **Emails per hour**.
 
 ## Supabase requirements (Phase 1: accounts)
 
