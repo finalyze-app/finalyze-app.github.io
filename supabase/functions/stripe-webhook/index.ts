@@ -168,6 +168,7 @@ Deno.serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const s = event.data.object as Stripe.Checkout.Session;
+        if (s.payment_status !== 'paid') break;
         const email = s.customer_details?.email || s.customer_email || '';
         const customerId = typeof s.customer === 'string' ? s.customer : s.customer?.id;
         await setLicenseByEmail(email, 'pro', customerId);

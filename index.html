@@ -6,6 +6,10 @@
   <title>Finalyze — Your personal AI financial analyst</title>
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
   <meta name="description" content="Finalyze analyzes where your money goes — and what to do about it. AI-powered, and your financial data never leaves your device." />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://buy.stripe.com https://billing.stripe.com; frame-src https://buy.stripe.com https://billing.stripe.com; base-uri 'self'; form-action 'self'; object-src 'none'" />
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
   <style>
     :root{
       --bg:#080c1a; --bg2:#0b1124; --surface:#111831; --surface2:#0e1428;
@@ -195,6 +199,7 @@
   </style>
 </head>
 <body>
+  <script src="js/escape.js"></script>
   <script src="js/config.js"></script>
   <script src="js/referral.js"></script>
   <script>

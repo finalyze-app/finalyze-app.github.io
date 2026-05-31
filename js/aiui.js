@@ -5,8 +5,8 @@
 (function (global) {
   const F = (global.Finalyze = global.Finalyze || {});
   const AICat = F.AICat, AIChat = F.AIChat;
+  const esc = (s) => F.escapeHtml(s);
   const $ = (s, r = document) => r.querySelector(s);
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   let overlay = null, tab = 'insights';
   const chatLog = []; // {role, content}

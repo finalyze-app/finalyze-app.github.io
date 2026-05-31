@@ -420,6 +420,9 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
   font: inherit; font-size: 12px; padding: 6px 10px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--surface); color: var(--ink);
 }
+.wm-row.wm-pro-locked .wm-vis-label { color: var(--muted); cursor: not-allowed; }
+.wm-row.wm-pro-locked .wm-vis-label input { cursor: not-allowed; }
+.wm-row .wm-name .pro-chip { font-size: 9px; padding: 2px 6px; margin-left: 8px; }
 
 /* ============ Merge merchants ============ */
 .merge-search { margin-bottom: 12px; }

@@ -155,7 +155,12 @@
 
   async function updateProfile(patch) {
     if (!isSignedIn()) throw new Error('Not signed in.');
-    const row = Object.assign({ id: session.user.id, email: session.user.email }, patch || {});
+    const allowed = ['country', 'currency', 'household_size', 'goals', 'onboarded'];
+    const safe = {};
+    for (const key of allowed) {
+      if (patch && Object.prototype.hasOwnProperty.call(patch, key)) safe[key] = patch[key];
+    }
+    const row = Object.assign({ id: session.user.id, email: session.user.email }, safe);
     const res = await fetch(restUrl('/profiles'), {
       method: 'POST',
       headers: authedHeaders({ Prefer: 'resolution=merge-duplicates,return=representation' }),

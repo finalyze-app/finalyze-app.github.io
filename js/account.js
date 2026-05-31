@@ -8,6 +8,7 @@
 (function (global) {
   const F = (global.Finalyze = global.Finalyze || {});
   const Auth = F.Auth;
+  const esc = (s) => F.escapeHtml(s);
   const $ = (s, r = document) => r.querySelector(s);
 
   const ONBOARD_KEY = 'finalyze.onboarded';
@@ -198,12 +199,12 @@
       <button class="acct-close" aria-label="Close">×</button>
       <div class="acct-head">
         <div class="eyebrow">Account</div>
-        <h2>${u ? u.email : ''}</h2>
+        <h2>${esc(u ? u.email : '')}</h2>
       </div>
       <div class="acct-rows">
         ${demoPro ? `<div class="acct-row"><span>Demo</span><strong class="muted">Pro preview — sample data only</strong></div>` : ''}
         <div class="acct-row"><span>Plan</span><strong class="acct-plan ${license}">${isPro ? 'Pro' : 'Free'}</strong></div>
-        ${profile && profile.country ? `<div class="acct-row"><span>Country</span><strong>${profile.country}</strong></div>` : ''}
+        ${profile && profile.country ? `<div class="acct-row"><span>Country</span><strong>${esc(profile.country)}</strong></div>` : ''}
       </div>
       ${refCode ? `
       <div class="acct-referrals">
@@ -262,7 +263,7 @@
       const initial = (u && u.email ? u.email[0] : '?').toUpperCase();
       bottom.innerHTML = `<button class="acct-chip" id="acctChipBtn" title="Account">
         <span class="acct-avatar">${initial}</span>
-        <span class="acct-chip-email">${u ? u.email : ''}</span>
+        <span class="acct-chip-email">${u ? esc(u.email) : ''}</span>
       </button>`;
       $('#acctChipBtn').onclick = openAccount;
     } else if (top) {

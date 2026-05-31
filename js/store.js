@@ -17,6 +17,56 @@
     };
   }
 
+  function sanitizeStr(s) {
+    return typeof s === 'string' ? s.replace(/[<>]/g, '') : s;
+  }
+
+  function validateBackup(incoming) {
+    if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+      throw new Error('Invalid backup file.');
+    }
+    const base = blank();
+    const out = Object.assign(blank(), incoming);
+    for (const key of Object.keys(out)) {
+      if (!(key in base)) delete out[key];
+    }
+    if (out.transactions != null && (typeof out.transactions !== 'object' || Array.isArray(out.transactions))) {
+      throw new Error('Invalid backup: transactions must be an object.');
+    }
+    if (out.overrides != null && typeof out.overrides !== 'object') throw new Error('Invalid backup: overrides must be an object.');
+    if (out.customCategories != null && !Array.isArray(out.customCategories)) throw new Error('Invalid backup: customCategories must be an array.');
+    if (out.accounts != null && !Array.isArray(out.accounts)) throw new Error('Invalid backup: accounts must be an array.');
+    if (out.categoryGroups != null && !Array.isArray(out.categoryGroups)) throw new Error('Invalid backup: categoryGroups must be an array.');
+    if (out.transactions) {
+      for (const id in out.transactions) {
+        const t = out.transactions[id];
+        if (!t || typeof t !== 'object') { delete out.transactions[id]; continue; }
+        if (t.name != null) t.name = sanitizeStr(t.name);
+        if (t.cardmember != null) t.cardmember = sanitizeStr(t.cardmember);
+      }
+    }
+    if (Array.isArray(out.customCategories)) {
+      out.customCategories.forEach((c) => { if (c && c.name != null) c.name = sanitizeStr(c.name); });
+    }
+    if (Array.isArray(out.accounts)) {
+      out.accounts.forEach((a) => { if (a && a.label != null) a.label = sanitizeStr(a.label); });
+    }
+    if (Array.isArray(out.categoryGroups)) {
+      out.categoryGroups.forEach((g) => { if (g && g.name != null) g.name = sanitizeStr(g.name); });
+    }
+    if (out.overrides) {
+      for (const k in out.overrides) {
+        if (typeof out.overrides[k] === 'string') out.overrides[k] = sanitizeStr(out.overrides[k]);
+      }
+    }
+    if (out.merchantMerges) {
+      for (const k in out.merchantMerges) {
+        if (typeof out.merchantMerges[k] === 'string') out.merchantMerges[k] = sanitizeStr(out.merchantMerges[k]);
+      }
+    }
+    return out;
+  }
+
   function migrate(data) {
     const OLD = 'Payments/Refunds';
     let changed = false;
@@ -582,8 +632,7 @@
 
     importJSON(jsonText) {
       const incoming = JSON.parse(jsonText);
-      if (!incoming || typeof incoming !== 'object') throw new Error('Invalid backup file.');
-      cache = Object.assign(blank(), incoming);
+      cache = validateBackup(incoming);
       migrate(cache);
       persist();
     },

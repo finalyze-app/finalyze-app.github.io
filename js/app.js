@@ -1,6 +1,7 @@
 (function () {
   const F = window.Finalyze;
   const { Store, parseQFX, categorize, normalizeMerchant, merchantKeyOf, categoryColor, getCategories, categoryType, analyze, charts } = F;
+  const esc = (s) => F.escapeHtml(s);
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -170,10 +171,10 @@
   }
   function chip(cat) {
     const c = categoryColor(cat);
-    return `<span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${cat}</span>`;
+    return `<span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${esc(cat)}</span>`;
   }
   // Mask merchant text in censor mode so a demo doesn't reveal where money goes.
-  function maskMerch(s) { return censored ? '••••••' : s; }
+  function maskMerch(s) { return esc(censored ? '••••••' : s); }
 
   function otherCategory() {
     const cats = getCategories();
@@ -236,7 +237,7 @@
 
   function filterChip(label) {
     const c = sliceColor(label);
-    return `<span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${label}</span>`;
+    return `<span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${esc(label)}</span>`;
   }
 
   // ---- Feature 4: transaction tags ----
@@ -293,7 +294,7 @@
         </div>
         <div class="canvas-wrap"><canvas id="chartTrend"></canvas></div>`,
       render: renderTrend },
-    { id: 'cardmember', nav: 'Cardmembers', eyebrow: 'People', title: 'By cardmember',
+    { id: 'cardmember', nav: 'Cardmembers', eyebrow: 'People', title: 'By cardmember', pro: true,
       hint: 'Click a bar to filter', body: `<div class="canvas-wrap"><canvas id="chartCardmember"></canvas></div>`,
       render: () => charts.cardmemberBar(analyze.byCardmember(cardScopeTxns), activeCardmember) },
     { id: 'mom', nav: 'Month over month', eyebrow: 'Comparison', title: 'Month over month',
@@ -371,10 +372,19 @@
     const cur = getLayout();
     Store.setLayout({ order: l.order || cur.order, hidden: l.hidden || cur.hidden, sizes: l.sizes || cur.sizes });
   }
+  function isProWidget(id) { return !!(WIDGET_MAP[id] && WIDGET_MAP[id].pro); }
+  function enforceProLayout() {
+    if (isPro()) return;
+    const { order, hidden, sizes } = getLayout();
+    const set = new Set(hidden);
+    let changed = false;
+    order.filter(isProWidget).forEach((id) => { if (!set.has(id)) { set.add(id); changed = true; } });
+    if (changed) saveLayout({ order, hidden: [...set], sizes });
+  }
   // Some widgets are only meaningful with enough data (e.g. year-in-review needs ≥12 months).
   function widgetAvailable(id) {
     if (id === 'yearReview') return analyze.monthSpan(allTxns) >= 12;
-    if (id === 'cardmember' && !isPro()) return false;
+    if (isProWidget(id) && !isPro()) return false;
     return true;
   }
   function visibleOrder() {
@@ -481,6 +491,7 @@
   // ============ Top-level render ============
   function render() {
     allTxns = enriched();
+    enforceProLayout();
 
     // Sign-in gate — block the app for signed-out users, unless they're in the demo.
     const demoActive = !!(F.Demo && F.Demo.active && F.Demo.active());
@@ -633,7 +644,7 @@
     sel.hidden = !multi;
     if (!multi) { activeAccount = 'all'; return; }
     sel.innerHTML = `<option value="all">All accounts</option>` +
-      accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
+      accounts.map((a) => `<option value="${esc(a.id)}">${esc(a.label)}</option>`).join('');
     if (!accounts.some((a) => a.id === activeAccount) && activeAccount !== 'all') activeAccount = 'all';
     sel.value = activeAccount;
   }
@@ -724,7 +735,7 @@
     return `<div class="card">
       <div class="top"><span class="ic">${svg(icon)}</span>${deltaHtml || ''}</div>
       <div class="value ${cls || ''}">${value}</div>
-      <div class="label">${label}</div>
+      <div class="label">${esc(label)}</div>
     </div>`;
   }
 
@@ -766,7 +777,7 @@
       Store.getCustomCards().forEach((cc) => {
         const matched = periodTxns.filter((t) => cardMatch(t, cc));
         const total = matched.reduce((a, t) => a + Math.abs(t.amount), 0);
-        cards.push(card(ICON.custom, `${cc.name} · ${period}`, fmt(total), 'small'));
+        cards.push(card(ICON.custom, `${esc(cc.name)} · ${period}`, fmt(total), 'small'));
       });
     }
 
@@ -834,7 +845,7 @@
       const over = a.pct >= 100;
       const c = sliceColor(a.cat);
       return `<div class="ba-row ${over ? 'over' : 'near'}">
-        <span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${a.cat}${a.isGroup ? ' <small>(group)</small>' : ''}</span>
+        <span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${esc(a.cat)}${a.isGroup ? ' <small>(group)</small>' : ''}</span>
         <div class="ba-bar"><span style="width:${Math.min(100, a.pct).toFixed(0)}%;background:${over ? 'var(--danger,#ef4655)' : c}"></span></div>
         <span class="ba-num">${fmt(a.spent)} / ${fmt(a.budget)} <strong>${a.pct.toFixed(0)}%</strong>${over ? ' ⚠' : ''}</span>
       </div>`;
@@ -900,7 +911,7 @@
         rows.map((r) => {
           const tag = r.type === 'Large outlier' ? 'warn' : 'info';
           return `<tr><td><span class="tag ${tag}">${r.type}</span></td><td>${r.date}</td>` +
-            `<td>${maskMerch(r.merchant)}<div class="muted-cell" style="font-size:11px">${censored ? '' : r.reason}</div></td>` +
+            `<td>${maskMerch(r.merchant)}<div class="muted-cell" style="font-size:11px">${censored ? '' : esc(r.reason)}</div></td>` +
             `<td class="num amt-neg">${fmt(r.amount)}</td></tr>`;
         }).join('') + '</tbody>'
       : '<tbody><tr><td class="muted-cell">No anomalies detected.</td></tr></tbody>';
@@ -1038,7 +1049,7 @@
       }</tbody></table></div>
       <h3>Top merchants</h3>
       <div class="table-wrap"><table><thead><tr><th>Merchant</th><th class="num">A</th><th class="num">B</th><th class="num">Δ</th></tr></thead><tbody>${
-        cmp.merchants.map((m) => `<tr><td>${m.merchant}</td><td class="num">${fmt(m.a)}</td><td class="num">${fmt(m.b)}</td>${dcell(m.delta)}</tr>`).join('')
+        cmp.merchants.map((m) => `<tr><td>${esc(m.merchant)}</td><td class="num">${fmt(m.a)}</td><td class="num">${fmt(m.b)}</td>${dcell(m.delta)}</tr>`).join('')
       }</tbody></table></div>`;
   }
 
@@ -1080,7 +1091,7 @@
       }</tbody></table></div>
       <h3>Biggest merchants</h3>
       <div class="table-wrap"><table><thead><tr><th>Merchant</th><th class="num">Spend</th><th class="num">Txns</th></tr></thead><tbody>${
-        yr.merchants.map((m) => `<tr><td>${m.merchant}</td><td class="num">${fmt(m.spend)}</td><td class="num">${m.count}</td></tr>`).join('')
+        yr.merchants.map((m) => `<tr><td>${esc(m.merchant)}</td><td class="num">${fmt(m.spend)}</td><td class="num">${m.count}</td></tr>`).join('')
       }</tbody></table></div>`;
     const bd = $('#yrBigDay');
     if (bd) bd.onclick = () => filterToDay(bd.dataset.date);
@@ -1108,7 +1119,7 @@
     const head = document.querySelector('#widget-uncategorized .widget-head h2');
     if (head) head.textContent = rows.length ? `Review uncategorized (${rows.length})` : 'Review uncategorized';
 
-    const opts = getCategories().map((c) => `<option value="${c}">${c}</option>`).join('');
+    const opts = getCategories().map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if (!rows.length) {
       table.innerHTML = '<tbody><tr><td class="muted-cell">Nothing in “Other” for the current filters — you’re caught up.</td></tr></tbody>';
       return;
@@ -1116,7 +1127,7 @@
     table.innerHTML =
       `<thead><tr><th>Date</th><th>Merchant</th><th class="num">Amount</th><th>Category</th></tr></thead><tbody>` +
       rows.map((t) =>
-        `<tr><td>${t.date}</td><td>${t.name}</td><td class="num amt-neg">${fmt(t.spend)}</td>` +
+        `<tr><td>${t.date}</td><td>${esc(t.name)}</td><td class="num amt-neg">${fmt(t.spend)}</td>` +
         `<td><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td></tr>`
       ).join('') + '</tbody>';
 
@@ -1133,7 +1144,7 @@
   function renderCategoryFilterOptions() {
     const present = [...new Set(allTxns.map((t) => t.category))].sort();
     const sel = $('#txnCategory');
-    sel.innerHTML = '<option value="">All categories</option>' + present.map((c) => `<option value="${c}">${c}</option>`).join('');
+    sel.innerHTML = '<option value="">All categories</option>' + present.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     sel.value = txnCatFilter;
   }
 
@@ -1150,7 +1161,7 @@
     if (cmTh) cmTh.hidden = !showCm;
     if (showCm) {
       $('#cardholderList').innerHTML = [...new Set(allTxns.map((t) => t.cardmember))].sort()
-        .map((c) => `<option value="${c}"></option>`).join('');
+        .map((c) => `<option value="${esc(c)}"></option>`).join('');
     }
     $('#txnSearch').oninput = () => { txnQuery = $('#txnSearch').value; renderTxnTable(); };
     $('#txnCategory').onchange = () => { txnCatFilter = $('#txnCategory').value; renderTxnTable(); };
@@ -1287,7 +1298,7 @@
         <td class="chk-cell"><input type="checkbox" class="row-check" data-merchant="${encodeURIComponent(t.merchantKey)}" data-tid="${encodeURIComponent(t.tid)}" data-store-key="${encodeURIComponent(t.storeKey)}"></td>
         <td data-label="Date">${t.date}</td>
         <td class="txn-merch" data-label="Merchant"><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span><button type="button" class="icon-btn txn-edit" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Edit merchant">${svg(PENCIL)}</button></td>
-        ${showCm ? `<td data-label="Cardmember">${t.cardmember}</td>` : ''}
+        ${showCm ? `<td data-label="Cardmember">${esc(t.cardmember)}</td>` : ''}
         <td data-label="Category"><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td>
         <td class="num ${amtCls}" data-label="Amount">${fmt(t.amount)}</td>
         <td class="tag-cell" data-label="Tags">${tagCell}</td>
@@ -1333,7 +1344,7 @@
     b.hidden = false;
     const parts = ['<span>Filtering all widgets by</span>'];
     if (activeCategory) parts.push(`${filterChip(activeCategory)}<button class="clear-filter" id="clearCat">Clear</button>`);
-    if (activeCardmember) parts.push(`<span class="chip person"><span class="dot"></span>${activeCardmember}</span><button class="clear-filter" id="clearCard">Clear</button>`);
+    if (activeCardmember) parts.push(`${filterChip(activeCardmember)}<button class="clear-filter" id="clearCard">Clear</button>`);
     if (flowFilter !== 'all') parts.push(`<span class="chip">${flowFilterLabel(flowFilter)}</span><button class="clear-filter" id="clearFlow">Clear</button>`);
     if (amountMin || amountMax) {
       parts.push(`<span class="chip">${amountMin || '…'} – ${amountMax || '…'}</span><button class="clear-filter" id="clearAmount">Clear</button>`);
@@ -1352,7 +1363,7 @@
   }
 
   function catOptions(selected) {
-    return getCategories().map((c) => `<option value="${c}"${c === selected ? ' selected' : ''}>${c}</option>`).join('');
+    return getCategories().map((c) => `<option value="${esc(c)}"${c === selected ? ' selected' : ''}>${esc(c)}</option>`).join('');
   }
 
   // ---- Feature 1: custom auto-categorization rules ----
@@ -1365,7 +1376,7 @@
         ? `<div class="rule-list">` + rules.map((r) =>
             `<div class="rule-row" data-widget="${r.id}">
               <span class="drag-handle" title="Drag to reorder">${svg(GRIP)}</span>
-              <code class="rule-pat">/${(r.pattern || '').replace(/</g, '&lt;')}/${r.flags || 'i'}</code>
+              <code class="rule-pat">/${esc(r.pattern || '')}/${r.flags || 'i'}</code>
               <span class="rule-arrow">→</span>
               <select class="rule-cat" data-id="${r.id}">${catOptions(r.category)}</select>
               <button class="icon-btn rule-del" data-id="${r.id}" title="Delete rule">${svg(TRASH)}</button>
@@ -1418,7 +1429,7 @@
       (rules.length
         ? `<div class="rule-list">` + rules.map((r) =>
             `<div class="rule-row">
-              <code class="rule-pat">/${(r.pattern || '').replace(/</g, '&lt;')}/${r.flags || 'i'}</code>
+              <code class="rule-pat">/${esc(r.pattern || '')}/${r.flags || 'i'}</code>
               <span class="rule-arrow">→ recurring</span>
               <button class="icon-btn subrule-del" data-id="${r.id}" title="Delete rule">${svg(TRASH)}</button>
             </div>`).join('') + `</div>`
@@ -1452,7 +1463,7 @@
       (rules.length
         ? `<div class="rule-list">` + rules.map((r) =>
             `<div class="rule-row">
-              <code class="rule-pat">/${(r.pattern || '').replace(/</g, '&lt;')}/${r.flags || 'i'}</code>
+              <code class="rule-pat">/${esc(r.pattern || '')}/${r.flags || 'i'}</code>
               <span class="rule-arrow">→</span>
               <span class="merge-rule-target">${(r.target || '').replace(/</g, '&lt;')}</span>
               <button class="icon-btn mergerule-del" data-id="${r.id}" title="Delete rule">${svg(TRASH)}</button>
@@ -1484,7 +1495,7 @@
   const CC_FIELD_LABELS = { category: 'Category', description: 'Description/Merchant', cardmember: 'Cardmember', amount: 'Amount', type: 'Type' };
   const CC_FIELD_OPS = { category: ['is'], description: ['contains', 'not-contains', 'matches'], cardmember: ['is', 'contains'], amount: ['gt', 'lt', 'gte', 'lte', 'eq'], type: ['is'] };
   const CC_OP_LABELS = { is: 'is', contains: 'contains', 'not-contains': "doesn't contain", matches: 'matches regex', gt: '>', lt: '<', gte: '≥', lte: '≤', eq: '=' };
-  const ccEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ccEsc = esc;
   let cardDraft = null;
 
   function ccDefaultValue(field) {
@@ -1611,7 +1622,7 @@
         ? groups.map((g) =>
             `<div class="group-row" data-id="${g.id}">
               <input type="color" class="group-color" value="${g.color}" data-id="${g.id}">
-              <input type="text" class="group-name" value="${g.name.replace(/"/g, '&quot;')}" data-id="${g.id}">
+              <input type="text" class="group-name" value="${esc(g.name)}" data-id="${g.id}">
               <div class="group-cats">${g.categories.map((c) => chip(c)).join(' ') || '<span class="muted">No categories</span>'}</div>
               <button class="icon-btn group-del" data-id="${g.id}" title="Remove group">${svg(TRASH)}</button>
             </div>`).join('')
@@ -1620,7 +1631,7 @@
         <input type="text" id="newGroupName" placeholder="Group name, e.g. Food">
         <input type="color" id="newGroupColor" value="#5b5bf0">
         <select id="newGroupCats" multiple size="4" title="Hold Ctrl/Cmd to select multiple">${spendCats.map((c) =>
-          `<option value="${c}"${assigned.has(c) ? ' disabled' : ''}>${c}${assigned.has(c) ? ' (in group)' : ''}</option>`).join('')}</select>
+          `<option value="${esc(c)}"${assigned.has(c) ? ' disabled' : ''}>${esc(c)}${assigned.has(c) ? ' (in group)' : ''}</option>`).join('')}</select>
         <button class="btn primary" id="addGroupBtn">Add group</button>
       </div>`;
 
@@ -1656,7 +1667,7 @@
 
   // ---- Feature 8: accounts ----
   function importAccountSelectHtml(accounts) {
-    const opts = accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
+    const opts = accounts.map((a) => `<option value="${esc(a.id)}">${esc(a.label)}</option>`).join('');
     const extra = isPro() ? '<option value="__new">+ New account…</option>' : '';
     return opts + extra;
   }
@@ -1669,7 +1680,7 @@
     const canAdd = isPro();
     container.innerHTML =
       `<div class="acct-list">` + accounts.map((a) =>
-        `<div class="acct-row"><span class="acct-label">${a.label}</span><span class="mi-meta">${counts[a.id] || 0} txns</span></div>`).join('') + `</div>` +
+        `<div class="acct-row"><span class="acct-label">${esc(a.label)}</span><span class="mi-meta">${counts[a.id] || 0} txns</span></div>`).join('') + `</div>` +
       (canAdd
         ? `<div class="acct-add">
         <input type="text" id="newAcctName" placeholder="New account label, e.g. Personal Visa">
@@ -1715,7 +1726,7 @@
         ? `<div class="merge-suggestions"><h3>Suggested merges</h3><p class="muted" style="margin:0 0 10px">Likely duplicates — merge to roll up spend, or dismiss to hide.</p>` +
           suggestions.map((s) =>
             `<div class="merge-suggest-row">
-              <span class="ms-names"><strong>${s.a}</strong> + <strong>${s.b}</strong></span>
+              <span class="ms-names"><strong>${esc(s.a)}</strong> + <strong>${esc(s.b)}</strong></span>
               <span class="mi-meta">${fmt(s.combined)} combined</span>
               <button class="btn sm merge-sugg-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Merge</button>
               <button class="btn sm ghost merge-dismiss-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Dismiss</button>
@@ -1733,9 +1744,9 @@
         </label>
       </div>
       <div class="merge-list">${list.map((m) =>
-        `<label class="merge-item" data-name="${m.key.toLowerCase().replace(/"/g, '&quot;')}">
+        `<label class="merge-item" data-name="${esc(m.key.toLowerCase())}">
           <input type="checkbox" class="merge-check" value="${encodeURIComponent(m.key)}">
-          <span class="mi-name">${m.key}</span><span class="mi-meta">${m.count}× · ${fmt(m.spend)}</span>
+          <span class="mi-name">${esc(m.key)}</span><span class="mi-meta">${m.count}× · ${fmt(m.spend)}</span>
         </label>`).join('')}</div>
       <div class="merge-apply">
         <input type="text" id="mergeName" placeholder="Merge into… (defaults to first ticked)">
@@ -1743,8 +1754,8 @@
       </div>` +
       (canonicals.length
         ? `<h3>Remembered merges</h3>` + canonicals.map((c) =>
-            `<div class="merge-saved"><span class="ms-canon">${c}<button class="icon-btn ms-rename" data-canon="${encodeURIComponent(c)}" title="Rename merged merchant">${svg(PENCIL)}</button></span><span class="ms-aliases">${
-              byCanonical[c].map((a) => `<span class="ms-alias">${a}<button class="ms-x" data-alias="${encodeURIComponent(a)}" title="Remove">×</button></span>`).join('')
+            `<div class="merge-saved"><span class="ms-canon">${esc(c)}<button class="icon-btn ms-rename" data-canon="${encodeURIComponent(c)}" title="Rename merged merchant">${svg(PENCIL)}</button></span><span class="ms-aliases">${
+              byCanonical[c].map((a) => `<span class="ms-alias">${esc(a)}<button class="ms-x" data-alias="${encodeURIComponent(a)}" title="Remove">×</button></span>`).join('')
             }</span></div>`).join('')
         : '');
 
@@ -1825,23 +1836,31 @@
   }
 
   function renderWidgetManager() {
+    enforceProLayout();
     const { order, hidden, sizes } = getLayout();
     const hiddenSet = new Set(hidden);
     const container = $('#widgetManager');
     container.innerHTML = order.map((id) => {
       const w = WIDGET_MAP[id];
       const half = effectiveSize(id, sizes) === 'half';
-      return `<div class="wm-row" data-widget="${id}">
+      const pro = isProWidget(id);
+      const locked = pro && !isPro();
+      const visible = !hiddenSet.has(id);
+      const proBadge = pro ? ' <span class="pro-chip">Pro</span>' : '';
+      const visCtrl = locked
+        ? `<label class="wm-vis-label wm-locked" title="Upgrade to Pro to show this widget"><input type="checkbox" class="wm-vis" data-widget="${id}" disabled> Visible</label>`
+        : `<label><input type="checkbox" class="wm-vis" data-widget="${id}" ${visible ? 'checked' : ''}> Visible</label>`;
+      return `<div class="wm-row${locked ? ' wm-pro-locked' : ''}" data-widget="${id}">
         <span class="drag-handle" title="Drag to reorder">${svg(GRIP)}</span>
-        <span class="wm-name">${svg(NAV_ICON[id] || '')}${w.title}</span>
+        <span class="wm-name">${svg(NAV_ICON[id] || '')}${w.title}${proBadge}</span>
         <select class="wm-size" data-widget="${id}" title="Widget width">
           <option value="full"${half ? '' : ' selected'}>Full width</option>
           <option value="half"${half ? ' selected' : ''}>Half width</option>
         </select>
-        <label><input type="checkbox" class="wm-vis" data-widget="${id}" ${hiddenSet.has(id) ? '' : 'checked'}> Visible</label>
+        ${visCtrl}
       </div>`;
     }).join('');
-    $$('#widgetManager .wm-vis').forEach((cb) => cb.onchange = () => toggleWidgetHidden(cb.dataset.widget, !cb.checked));
+    $$('#widgetManager .wm-vis:not(:disabled)').forEach((cb) => cb.onchange = () => toggleWidgetHidden(cb.dataset.widget, !cb.checked));
     $$('#widgetManager .wm-size').forEach((sel) => sel.onchange = () => setWidgetSize(sel.dataset.widget, sel.value));
     makeSortable(container, '.wm-row', (ids) => { saveLayout({ order: ids }); });
   }
@@ -1864,6 +1883,11 @@
     toast(`“${WIDGET_MAP[id].title}” set to ${size} width`);
   }
   function toggleWidgetHidden(id, hide) {
+    if (!hide && isProWidget(id) && !isPro()) {
+      requirePro(WIDGET_MAP[id].title);
+      renderWidgetManager();
+      return;
+    }
     const { order, hidden } = getLayout();
     const set = new Set(hidden);
     if (hide) set.add(id); else set.delete(id);
@@ -1930,15 +1954,11 @@
   }
 
   // ============ Import / backup ============
-  function escHtml(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  }
-
   function csvColOptions(rows, colCount, hasHeader, selected) {
     let html = '<option value="-1">— Skip —</option>';
     for (let i = 0; i < colCount; i++) {
       const label = F.csvColLabel(rows, i, hasHeader);
-      html += `<option value="${i}"${selected === i ? ' selected' : ''}>${escHtml(label)}</option>`;
+      html += `<option value="${i}"${selected === i ? ' selected' : ''}>${esc(label)}</option>`;
     }
     return html;
   }
@@ -1983,7 +2003,7 @@
     if (prev) {
       prev.innerHTML = rows.slice(0, 6).map((r, ri) => {
         const cells = [];
-        for (let c = 0; c < colCount; c++) cells.push(`<td>${escHtml(r[c] || '')}</td>`);
+        for (let c = 0; c < colCount; c++) cells.push(`<td>${esc(r[c] || '')}</td>`);
         const cls = hasHeader && ri === 0 ? ' class="csv-header-row"' : '';
         return `<tr${cls}>${cells.join('')}</tr>`;
       }).join('');
@@ -2254,7 +2274,7 @@
     tbody.innerHTML = rows.map((r, i) => `<tr data-i="${i}">
       <td class="chk-cell"><input type="checkbox" class="pdf-inc" ${r.include ? 'checked' : ''}></td>
       <td data-label="Date"><input type="date" class="pdf-date" value="${r.date}"></td>
-      <td data-label="Description"><input type="text" class="pdf-name" value="${(r.name || '').replace(/"/g, '&quot;')}"></td>
+      <td data-label="Description"><input type="text" class="pdf-name" value="${esc(r.name || '')}"></td>
       <td class="num" data-label="Amount"><input type="number" step="0.01" class="pdf-amt" value="${r.amount}"></td>
       <td data-label="Type"><span class="pdf-type ${r.amount < 0 ? 'amt-neg' : 'amt-pos'}">${r.amount < 0 ? 'Spend' : 'In'}</span><button type="button" class="pdf-flip-row" title="Flip this transaction’s sign">⇅</button></td>
     </tr>`).join('');
