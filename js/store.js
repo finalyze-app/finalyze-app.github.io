@@ -4,6 +4,7 @@
   const LS_KEY = 'finalyze.v1';
   const LS_THEME = 'finalyze.theme';
   const LS_CENSOR = 'finalyze.censor';
+  const LS_CURRENCY = 'finalyze.currency'; // user's preferred display currency (overrides statement CURDEF)
   const idb = () => global.Finalyze.idb;
 
   function blank() {
@@ -637,7 +638,24 @@
       persist();
     },
 
-    currency() { return cache.currency || 'CAD'; },
+    // Display currency: the user's chosen preference (from onboarding/profile)
+    // wins; otherwise fall back to the statement's CURDEF, then CAD. We do not
+    // convert amounts — this is purely the currency label shown in the UI.
+    currency() {
+      let pref = null;
+      try { pref = localStorage.getItem(LS_CURRENCY); } catch (e) {}
+      return (pref && pref.trim()) || cache.currency || 'CAD';
+    },
+    currencyPref() {
+      try { return localStorage.getItem(LS_CURRENCY) || null; } catch (e) { return null; }
+    },
+    setCurrencyPref(code) {
+      code = (code || '').toString().trim().toUpperCase().slice(0, 3);
+      try {
+        if (code) localStorage.setItem(LS_CURRENCY, code);
+        else localStorage.removeItem(LS_CURRENCY);
+      } catch (e) {}
+    },
     balance() { return cache.balance; },
     balanceAsOf() { return cache.balanceAsOf; },
   };

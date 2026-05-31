@@ -163,6 +163,14 @@
     };
   }
 
+  // Apply non-sensitive profile prefs (currency) to the local dashboard.
+  function applyProfilePrefs(profile) {
+    if (profile && profile.currency && F.Store && F.Store.setCurrencyPref) {
+      F.Store.setCurrencyPref(profile.currency);
+      if (F.render) F.render();
+    }
+  }
+
   // After a successful sign-in: refresh the chip and run onboarding if needed.
   async function afterSignIn() {
     renderChip();
@@ -170,13 +178,19 @@
     let profile = null;
     try { profile = await Auth.getProfile(); } catch (e) {}
     if (!(profile && profile.onboarded)) openOnboarding();
-    else markOnboardedLocally();
+    else { applyProfilePrefs(profile); markOnboardedLocally(); }
   }
 
   // ---- onboarding wizard ----
-  function openOnboarding() {
+  function openOnboarding(profile) {
     const u = Auth.user();
-    const state = { country: 'Canada', currency: 'CAD', household: 1, goals: [] };
+    const p = (profile && typeof profile === 'object') ? profile : null;
+    const state = {
+      country: (p && p.country) || 'Canada',
+      currency: (p && p.currency) || F.Store.currencyPref() || 'CAD',
+      household: (p && p.household_size) || 1,
+      goals: (p && Array.isArray(p.goals)) ? p.goals.slice() : [],
+    };
     const panel = modal(renderOnboard(state));
     wireOnboard(panel, state, u);
   }
@@ -227,8 +241,11 @@
       const btn = panel.querySelector('#obFinish');
       btn.disabled = true; btn.textContent = 'Saving…';
       try { await Auth.updateProfile(patch); } catch (e) {}
+      // Make the dashboard follow the chosen currency immediately.
+      if (F.Store && F.Store.setCurrencyPref) F.Store.setCurrencyPref(patch.currency);
       markOnboardedLocally();
       close();
+      if (F.render) F.render();
       renderChip();
     };
   }
@@ -244,6 +261,7 @@
         profile = await Auth.getProfile();
       } catch (e) { /* RPC missing until migration is applied */ }
     }
+    applyProfilePrefs(profile);
     const demoPro = F.Demo && F.Demo.active && F.Demo.active();
     const license = demoPro ? 'pro' : ((profile && profile.license) || 'free');
     const isPro = license === 'pro';
@@ -285,7 +303,7 @@
       </div>
       <p class="muted acct-note">Your transactions never leave this device. Only your email and account settings are synced.</p>`);
     panel.querySelector('.acct-close').onclick = close;
-    panel.querySelector('#acctEdit').onclick = openOnboarding;
+    panel.querySelector('#acctEdit').onclick = () => openOnboarding(profile);
     panel.querySelector('#acctSignOut').onclick = async () => { await Auth.signOut(); close(); renderChip(); };
     const copyBtn = panel.querySelector('#acctRefCopy');
     if (copyBtn && shareLink) {
@@ -350,7 +368,7 @@
       let profile = null;
       try { profile = await Auth.getProfile(); } catch (e) {}
       if (!(profile && profile.onboarded)) openOnboarding();
-      else markOnboardedLocally();
+      else { applyProfilePrefs(profile); markOnboardedLocally(); }
     }
   }
 
