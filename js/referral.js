@@ -29,10 +29,14 @@
     return href + sep + 'ref=' + encodeURIComponent(ref);
   }
 
+  function landingBase() {
+    const configured = F.config && F.config.SITE_URL;
+    if (configured) return String(configured).replace(/\/$/, '');
+    return location.origin;
+  }
+
   function shareUrl(code) {
-    const base = (F.config && F.config.SITE_URL) || location.origin + location.pathname.replace(/[^/]*$/, '');
-    const root = String(base).replace(/\/$/, '') + '/';
-    return root + '?ref=' + encodeURIComponent(code || '');
+    return landingBase() + '/?ref=' + encodeURIComponent(code || '');
   }
 
   captureFromUrl();

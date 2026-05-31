@@ -24,8 +24,8 @@
     // switch monthly↔annual). Leave blank to hide that button.
     STRIPE_PORTAL_URL: 'https://billing.stripe.com/p/login/7sY4gyaww7Yl7RI0NI3Nm00',
 
-    // Public site URL for referral share links (no trailing slash).
-    SITE_URL: 'https://finalyze-app.github.io/Finalyze',
+    // Public site URL for referral share links (landing page root, no trailing slash).
+    SITE_URL: 'https://finalyze-app.github.io',
 
     // Where the magic-link should send the user back to. Defaults to this page.
     get REDIRECT_URL() {
