@@ -125,8 +125,24 @@
     details p{margin:0;padding:0 14px 16px;color:var(--muted);font-size:14px;}
 
     .cta-band{text-align:center;padding:72px 0;}
-    footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:13px;}
-    footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+
+    /* footer */
+    .site-footer{border-top:1px solid var(--line);padding:52px 0 28px;color:var(--muted);}
+    .footer-grid{display:grid;grid-template-columns:minmax(200px,1.25fr) repeat(3,1fr);gap:36px 24px;align-items:start;}
+    .footer-brand .brand{margin-bottom:12px;}
+    .footer-brand p{margin:0;font-size:13.5px;line-height:1.55;max-width:280px;}
+    .footer-col h4{margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);}
+    .footer-col ul{list-style:none;margin:0;padding:0;}
+    .footer-col li{margin:0;}
+    .footer-col a{display:inline-block;padding:5px 0;font-size:14px;font-weight:500;color:var(--muted);text-decoration:none;}
+    .footer-col a:hover{color:var(--ink);}
+    .footer-bottom{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13px;}
+    .footer-meta{color:var(--muted);}
+    @media(max-width:900px){
+      .footer-grid{grid-template-columns:1fr 1fr;gap:28px 20px;}
+      .footer-brand{grid-column:1/-1;}
+    }
+    @media(max-width:480px){.footer-grid{grid-template-columns:1fr;}}
 
     /* ===== animated app preview ===== */
     .appdemo{margin:56px auto 0;max-width:920px;border:1px solid var(--line);border-radius:18px;overflow:hidden;
@@ -356,10 +372,40 @@
     </div>
   </section>
 
-  <footer>
-    <div class="wrap">
-      <span>© 2026 Finalyze · Your money, analyzed privately. · <a href="/docs/">Docs</a> · <a href="/app">Refer a friend</a> — give a month, get a month.</span>
-      <span><a href="/docs/">Docs</a> · <a href="/app">Open app</a> · <a href="#top">Back to top</a></span>
+  <footer class="site-footer" role="contentinfo">
+    <div class="wrap footer-grid">
+      <div class="footer-col footer-brand">
+        <a class="brand" href="/"><img src="assets/icon.svg" alt="" />Finalyze</a>
+        <p>Your personal AI financial analyst. Statements stay on your device — only your account syncs to the cloud.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="/app?demo=1">Try live demo</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="/docs/">Docs</a></li>
+          <li><a href="/docs/#first-import">First import</a></li>
+          <li><a href="/docs/#ai-enable">On-device AI</a></li>
+          <li><a href="/docs/#plans">Free vs Pro</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Referrals</h4>
+        <ul>
+          <li><a href="/docs/#referrals">How it works</a></li>
+          <li><a href="/app">Get your referral link</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wrap footer-bottom">
+      <span>© 2026 Finalyze · Your money, analyzed privately.</span>
+      <span class="footer-meta">Give a month, get a month — for Pro subscribers</span>
     </div>
   </footer>
 
