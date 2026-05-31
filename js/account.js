@@ -42,6 +42,18 @@
     document.body.classList.remove('modal-open');
   }
 
+  // Password strength requirements (sign-up).
+  function pwChecks(pw) {
+    pw = pw || '';
+    return {
+      len: pw.length >= 8,
+      lower: /[a-z]/.test(pw),
+      upper: /[A-Z]/.test(pw),
+      digit: /\d/.test(pw),
+      symbol: /[^A-Za-z0-9]/.test(pw),
+    };
+  }
+
   // ---- sign-in / sign-up (email + password) ----
   function openSignIn(mode) {
     mode = mode === 'signup' ? 'signup' : 'signin';
@@ -61,7 +73,16 @@
         <input type="email" id="acctEmail" placeholder="you@example.com" required autocomplete="email" />
         <input type="password" id="acctPassword" placeholder="Password" required minlength="8"
           autocomplete="${isSignup ? 'new-password' : 'current-password'}" />
-        ${isSignup ? '<input type="password" id="acctPassword2" placeholder="Confirm password" required minlength="8" autocomplete="new-password" />' : ''}
+        ${isSignup ? `
+        <div class="pw-strength" id="pwStrength" aria-hidden="true"><span class="pw-strength-bar" id="pwBar"></span></div>
+        <ul class="pw-reqs" id="pwReqs">
+          <li data-k="len"><span class="pw-dot"></span>At least 8 characters</li>
+          <li data-k="lower"><span class="pw-dot"></span>A lowercase letter</li>
+          <li data-k="upper"><span class="pw-dot"></span>An uppercase letter</li>
+          <li data-k="digit"><span class="pw-dot"></span>A number</li>
+          <li data-k="symbol"><span class="pw-dot"></span>A symbol</li>
+        </ul>
+        <input type="password" id="acctPassword2" placeholder="Confirm password" required minlength="8" autocomplete="new-password" />` : ''}
         <button type="submit" class="btn primary" id="acctSubmit">${isSignup ? 'Create account' : 'Sign in'}</button>
       </form>
       <p class="acct-switch">${isSignup
@@ -70,6 +91,20 @@
       <p class="acct-msg" id="acctMsg"></p>`);
     panel.querySelector('.acct-close').onclick = close;
     panel.querySelector('#acctToggle').onclick = (e) => { e.preventDefault(); openSignIn(isSignup ? 'signin' : 'signup'); };
+    if (isSignup) {
+      const pwInput = panel.querySelector('#acctPassword');
+      const reqs = panel.querySelector('#pwReqs');
+      const bar = panel.querySelector('#pwBar');
+      const update = () => {
+        const c = pwChecks(pwInput.value);
+        reqs.querySelectorAll('li').forEach((li) => li.classList.toggle('met', !!c[li.dataset.k]));
+        const score = Object.values(c).filter(Boolean).length;
+        bar.style.width = (score / 5 * 100) + '%';
+        bar.className = 'pw-strength-bar ' + (score <= 2 ? 'weak' : score < 5 ? 'fair' : 'strong');
+      };
+      pwInput.addEventListener('input', update);
+      update();
+    }
     panel.querySelector('#acctForm').onsubmit = async (e) => {
       e.preventDefault();
       const email = panel.querySelector('#acctEmail').value.trim();
@@ -80,7 +115,12 @@
       if (isSignup) {
         const confirm = panel.querySelector('#acctPassword2').value;
         if (password !== confirm) { msg.className = 'acct-msg err'; msg.textContent = 'Passwords do not match.'; return; }
-        if (password.length < 8) { msg.className = 'acct-msg err'; msg.textContent = 'Use at least 8 characters.'; return; }
+        const c = pwChecks(password);
+        if (!(c.len && c.lower && c.upper && c.digit && c.symbol)) {
+          msg.className = 'acct-msg err';
+          msg.textContent = 'Password must be 8+ characters with uppercase, lowercase, a number, and a symbol.';
+          return;
+        }
       }
       btn.disabled = true; btn.textContent = isSignup ? 'Creating…' : 'Signing in…';
       try {
