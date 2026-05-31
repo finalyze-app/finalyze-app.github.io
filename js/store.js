@@ -370,8 +370,14 @@
 
     // Keyword/regex rules that mark matching merchants as recurring/subscriptions
     // regardless of amount.
-    getSubscriptionRules() { return cache.subscriptionRules || (cache.subscriptionRules = []); },
+    getSubscriptionRules() {
+      const F = global.Finalyze;
+      if (F && F.isPro && !F.isPro()) return [];
+      return cache.subscriptionRules || (cache.subscriptionRules = []);
+    },
     addSubscriptionRule(pattern, flags) {
+      const F = global.Finalyze;
+      if (F && F.isPro && !F.isPro()) return false;
       pattern = (pattern || '').trim();
       if (!pattern) return false;
       try { new RegExp(pattern, flags || 'i'); } catch (e) { return false; }
@@ -386,8 +392,14 @@
     },
 
     // Auto-merge rules: regex/keyword -> canonical merchant name.
-    getMergeRules() { return cache.mergeRules || (cache.mergeRules = []); },
+    getMergeRules() {
+      const F = global.Finalyze;
+      if (F && F.isPro && !F.isPro()) return [];
+      return cache.mergeRules || (cache.mergeRules = []);
+    },
     addMergeRule(pattern, target, flags) {
+      const F = global.Finalyze;
+      if (F && F.isPro && !F.isPro()) return false;
       pattern = (pattern || '').trim(); target = (target || '').trim();
       if (!pattern || !target) return false;
       try { new RegExp(pattern, flags || 'i'); } catch (e) { return false; }

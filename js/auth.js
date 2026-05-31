@@ -165,8 +165,18 @@
     return (rows && rows[0]) || row;
   }
 
+  // Generate referral_code server-side if missing (existing users pre-migration).
+  async function ensureReferralCode() {
+    if (!isSignedIn()) return null;
+    const res = await fetch(restUrl('/rpc/ensure_referral_code'), {
+      method: 'POST', headers: authedHeaders(), body: '{}',
+    });
+    const body = await jsonOrThrow(res);
+    return typeof body === 'string' ? body : (body && body.referral_code) || null;
+  }
+
   function isSignedIn() { return !!(session && session.user); }
   function user() { return session && session.user; }
 
-  F.Auth = { init, enabled, isSignedIn, user, signUp, signIn, signOut, getProfile, updateProfile, onChange };
+  F.Auth = { init, enabled, isSignedIn, user, signUp, signIn, signOut, getProfile, updateProfile, ensureReferralCode, onChange };
 })(window);

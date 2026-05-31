@@ -175,6 +175,12 @@
     const u = Auth.user();
     let profile = null;
     try { profile = await Auth.getProfile(); } catch (e) {}
+    if (profile && !profile.referral_code && Auth.ensureReferralCode) {
+      try {
+        await Auth.ensureReferralCode();
+        profile = await Auth.getProfile();
+      } catch (e) { /* RPC missing until migration is applied */ }
+    }
     const license = (profile && profile.license) || 'free';
     const isPro = license === 'pro';
     const portal = (F.config && F.config.STRIPE_PORTAL_URL) || '';

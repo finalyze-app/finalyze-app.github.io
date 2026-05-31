@@ -60,6 +60,8 @@ If you already created `profiles`, run [`supabase/migrations/20260530_referrals.
 
 Sign-up passes `data: { referred_by: 'CODE' }` in auth metadata; the trigger validates the code exists on another profile.
 
+Existing users without a code: the app calls `ensure_referral_code()` RPC on account open, or run the backfill block at the end of the migration SQL.
+
 ```sql
 -- (full script in supabase/migrations/20260530_referrals.sql)
 ```

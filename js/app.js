@@ -1431,9 +1431,11 @@
       const pattern = $('#subRulePattern').value.trim();
       const flags = $('#subRuleCase').checked ? '' : 'i';
       if (!pattern) { toast('Enter a keyword or regex'); return; }
+      if (!isPro()) { requirePro('Subscription rules'); return; }
       if (Store.addSubscriptionRule(pattern, flags)) { render(); toast('Subscription rule added'); }
       else toast('Invalid regular expression');
     };
+    applyProLock(container, 'Subscription rules');
   }
 
   // ---- Auto-merge rules ----
@@ -1466,9 +1468,11 @@
       const target = $('#mergeRuleTarget').value.trim();
       const flags = $('#mergeRuleCase').checked ? '' : 'i';
       if (!pattern || !target) { toast('Enter a pattern and a merge-into name'); return; }
+      if (!isPro()) { requirePro('Auto-merge rules'); return; }
       if (Store.addMergeRule(pattern, target, flags)) { render(); toast('Auto-merge rule added'); }
       else toast('Invalid regular expression');
     };
+    applyProLock(container, 'Auto-merge rules');
   }
 
   // ---- Custom KPI cards (Spending overview) ----
