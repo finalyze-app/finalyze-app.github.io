@@ -92,8 +92,22 @@
   let initDone = false;
   let saveErrorHandler = null;
 
+  // --- per-user data scoping ---
+  // Imported financial data is stored under an IndexedDB key scoped to the signed-in
+  // user (`data:<uid>`), so two accounts in the same browser never share data. When
+  // signed out (or accounts disabled), the legacy unscoped `data` key is used.
+  const LS_SESSION = 'finalyze.session';
+  function currentUid() {
+    try {
+      const s = JSON.parse(localStorage.getItem(LS_SESSION) || 'null');
+      return (s && s.user && s.user.id) || null;
+    } catch (e) { return null; }
+  }
+  function dataKeyFor(uid) { return uid ? 'data:' + uid : 'data'; }
+  let dataKey = dataKeyFor(currentUid());
+
   function persist() {
-    idb().set('data', cache).catch((e) => {
+    idb().set(dataKey, cache).catch((e) => {
       if (saveErrorHandler) saveErrorHandler(e);
     });
   }
@@ -104,18 +118,34 @@
   }
 
   async function loadFromIdbOrMigrate() {
-    let data = await idb().get('data');
+    // 1. Scoped data for the current user (or unscoped when signed out).
+    let data = await idb().get(dataKey);
     if (data) {
       data = Object.assign(blank(), data);
-      if (migrate(data)) await idb().set('data', data);
+      if (migrate(data)) await idb().set(dataKey, data);
       return data;
     }
+    // 2. First time this user is seen on this device: if there's legacy
+    //    unscoped data with transactions, hand it off to this account (one-time)
+    //    so an existing single user keeps their history. The unscoped key is then
+    //    removed, so any *other* account that logs in starts empty.
+    if (dataKey !== 'data') {
+      const legacy = await idb().get('data');
+      if (legacy && legacy.transactions && Object.keys(legacy.transactions).length) {
+        data = Object.assign(blank(), legacy);
+        migrate(data);
+        await idb().set(dataKey, data);
+        await idb().del('data');
+        return data;
+      }
+    }
+    // 3. Very old localStorage payload (pre-IndexedDB) — migrate once.
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
         data = Object.assign(blank(), JSON.parse(raw));
         migrate(data);
-        await idb().set('data', data);
+        await idb().set(dataKey, data);
         const theme = localStorage.getItem(LS_THEME);
         const censor = localStorage.getItem(LS_CENSOR);
         if (theme) await idb().set('theme', theme);
@@ -139,6 +169,21 @@
       initDone = true;
       return cache;
     },
+
+    // Switch the active data scope to a given user id (null = signed out).
+    // Reloads the in-memory cache from that user's IndexedDB partition. Returns
+    // the loaded cache so callers can re-render. No-op if the scope is unchanged.
+    async setUserScope(uid) {
+      const key = dataKeyFor(uid || null);
+      if (key === dataKey && initDone) return cache;
+      dataKey = key;
+      cache = await loadFromIdbOrMigrate();
+      this.data = cache;
+      initDone = true;
+      return cache;
+    },
+
+    currentScope() { return dataKey; },
 
     onSaveError(fn) { saveErrorHandler = fn; },
 

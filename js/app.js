@@ -2539,7 +2539,26 @@
     // Auth gate buttons + re-render when sign-in state changes.
     const gateSignIn = $('#gateSignIn'); if (gateSignIn) gateSignIn.addEventListener('click', () => F.Account && F.Account.openSignIn && F.Account.openSignIn());
     const gateDemo = $('#gateDemo'); if (gateDemo) gateDemo.addEventListener('click', () => F.Demo && F.Demo.start());
-    if (F.Auth && F.Auth.onChange) F.Auth.onChange(() => refreshLicense());
+    // On sign-in/out, switch to that user's local data partition (so two
+    // accounts in the same browser never see each other's transactions),
+    // reload it, and re-render. Then refresh the license.
+    if (F.Auth && F.Auth.onChange) {
+      let lastScopeUid = (F.Auth.user && F.Auth.user() && F.Auth.user().id) || null;
+      F.Auth.onChange(async (user) => {
+        const uid = (user && user.id) || null;
+        if (uid !== lastScopeUid && Store.setUserScope) {
+          lastScopeUid = uid;
+          try {
+            await Store.setUserScope(uid);
+            activeCategory = null; activeCardmember = null;
+            dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
+            cmpInit = false; yrSelected = '';
+            render();
+          } catch (e) { /* keep prior view on error */ }
+        }
+        refreshLicense();
+      });
+    }
     // Re-check license when returning to the tab (e.g. after paying in Stripe),
     // throttled so it doesn't refetch on every focus.
     let lastLicenseCheck = 0;
