@@ -389,19 +389,18 @@
     })();
 
     (function () {
+      var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       // KPI count-up, re-triggered on the 9s loop.
       var kpis = [].slice.call(document.querySelectorAll('.ad-v'));
       function countUp() {
         kpis.forEach(function (el) {
-          var to = +el.dataset.to, pre = el.dataset.prefix || '', t0 = null, dur = 1100;
-          function step(ts) {
-            if (!t0) t0 = ts;
-            var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+          var to = +el.dataset.to, pre = el.dataset.prefix || '', start = Date.now(), dur = 1100;
+          var iv = setInterval(function () {
+            var p = Math.min(1, (Date.now() - start) / dur), e = 1 - Math.pow(1 - p, 3);
             el.textContent = pre + Math.round(to * e).toLocaleString();
-            if (p < 1) requestAnimationFrame(step);
-          }
-          requestAnimationFrame(step);
+            if (p >= 1) clearInterval(iv);
+          }, 40);
         });
       }
       if (reduce) { kpis.forEach(function (el) { el.textContent = (el.dataset.prefix || '') + (+el.dataset.to).toLocaleString(); }); }
