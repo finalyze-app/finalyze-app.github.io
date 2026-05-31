@@ -27,7 +27,7 @@
   let trendTopN = 5;                   // top-N merchants when trendMode === 'merchants'
   let viewName = 'dashboard';          // 'dashboard' | 'prefs'
   let filtersHidden = false;           // collapse the header filter bar
-  let userLicense = 'free';            // 'free' | 'pro' (from the signed-in profile)
+  let userLicense = localStorage.getItem('finalyze.license') || 'free'; // cached so Pro survives offline
   const STRIPE_MONTHLY = 'https://buy.stripe.com/7sY4gyaww7Yl7RI0NI3Nm00';
   const STRIPE_ANNUAL = 'https://buy.stripe.com/eVq14m4880vTdc2dAu3Nm01';
   const FREE_MONTHS = 2;               // free plan: visible history window
@@ -483,8 +483,15 @@
   // Refresh the cached license from the signed-in profile, then re-render.
   async function refreshLicense() {
     if (F.Auth && F.Auth.enabled() && F.Auth.isSignedIn()) {
-      try { const p = await F.Auth.getProfile(); userLicense = (p && p.license) || 'free'; } catch (e) { userLicense = 'free'; }
-    } else userLicense = 'free';
+      try {
+        const p = await F.Auth.getProfile();
+        userLicense = (p && p.license) || 'free';
+        try { localStorage.setItem('finalyze.license', userLicense); } catch (e) {}
+      } catch (e) { /* offline / fetch failed → keep last-known cached license */ }
+    } else {
+      userLicense = 'free';
+      try { localStorage.removeItem('finalyze.license'); } catch (e) {}
+    }
     render();
   }
 
