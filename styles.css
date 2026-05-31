@@ -704,6 +704,11 @@ body.modal-open { overflow: hidden; }
 .acct-close { position: absolute; top: 12px; right: 14px; border: none; background: none; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; }
 .acct-head h2 { margin: 4px 0 6px; font-size: 20px; word-break: break-word; }
 .acct-head .muted { font-size: 13px; }
+.google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 16px; font: inherit; font-size: 14px; font-weight: 600; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); color: var(--ink); cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.google-btn:hover { background: var(--bg, var(--surface)); border-color: var(--muted); }
+.google-btn svg { flex: none; }
+.acct-or { display: flex; align-items: center; gap: 12px; margin: 14px 0 2px; color: var(--muted); font-size: 12px; }
+.acct-or::before, .acct-or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .acct-form { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
 .acct-form input[type="email"], .acct-form input[type="password"], .acct-form input[type="text"], .acct-form input[type="number"], .acct-form select { font: inherit; font-size: 14px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg, var(--surface)); color: var(--ink); }
 .ob-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }

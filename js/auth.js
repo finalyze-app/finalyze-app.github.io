@@ -90,6 +90,45 @@
     return { signedIn: true };
   }
 
+  // ---- OAuth (Google) ----
+  // Returns the URL we tell Supabase to send the user back to after Google auth.
+  // Same origin + path so it works on localhost and on the live site; this exact
+  // URL must be in Supabase Auth → URL Configuration → Redirect URLs.
+  function oauthRedirect() {
+    return global.location.origin + global.location.pathname;
+  }
+
+  // Kick off the Google sign-in by navigating to Supabase's authorize endpoint.
+  // GoTrue handles the Google handshake and redirects back with tokens in the
+  // URL hash, which handleOAuthCallback() picks up on the next load.
+  function signInWithGoogle() {
+    if (!enabled()) throw new Error('Accounts are not configured.');
+    const ref = (global.Finalyze.Referral && global.Finalyze.Referral.getRef && global.Finalyze.Referral.getRef()) || '';
+    const params = new URLSearchParams({ provider: 'google', redirect_to: oauthRedirect() });
+    // Pass the referral through so the signup trigger can read it (user_metadata).
+    if (ref) params.set('redirect_to', oauthRedirect() + '?ref=' + encodeURIComponent(ref));
+    global.location.href = authUrl('/authorize?' + params.toString());
+  }
+
+  // On load, if Supabase redirected back with tokens in the URL hash, stash the
+  // session and clean the hash so tokens don't linger in the address bar.
+  function handleOAuthCallback() {
+    const hash = global.location.hash || '';
+    if (hash.indexOf('access_token=') === -1) return false;
+    const p = new URLSearchParams(hash.replace(/^#/, ''));
+    const access_token = p.get('access_token');
+    const refresh_token = p.get('refresh_token');
+    if (!access_token) return false;
+    stash({ access_token, refresh_token, expires_in: p.get('expires_in') });
+    if (global.Finalyze.Referral && global.Finalyze.Referral.clearRef) global.Finalyze.Referral.clearRef();
+    // Strip the token hash (and any ?ref=) from the URL without reloading.
+    try {
+      const clean = global.location.origin + global.location.pathname;
+      global.history.replaceState(null, '', clean);
+    } catch (e) {}
+    return true;
+  }
+
   async function signOut() {
     if (session && session.access_token) {
       try { await fetch(authUrl('/logout'), { method: 'POST', headers: authedHeaders() }); } catch (e) {}
@@ -136,6 +175,8 @@
   async function init() {
     if (!enabled()) return null;
     loadSession();
+    // If we just came back from Google, the hash carries fresh tokens.
+    if (handleOAuthCallback()) { await fetchUser(); notify(); return session && session.user; }
     if (session) {
       if (session.expires_at && Date.now() > session.expires_at - 60000) await refresh();
       await fetchUser();
@@ -183,5 +224,5 @@
   function isSignedIn() { return !!(session && session.user); }
   function user() { return session && session.user; }
 
-  F.Auth = { init, enabled, isSignedIn, user, signUp, signIn, signOut, getProfile, updateProfile, ensureReferralCode, onChange };
+  F.Auth = { init, enabled, isSignedIn, user, signUp, signIn, signInWithGoogle, signOut, getProfile, updateProfile, ensureReferralCode, onChange };
 })(window);
