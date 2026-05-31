@@ -399,9 +399,16 @@
          <a class="btn primary upgrade-plan" href="${STRIPE_ANNUAL}" target="_blank" rel="noopener">
            <span class="up-amt">$70<small>/year</small></span><span class="up-label">Annual · save 17%</span></a>
        </div>
-       <p class="muted" style="font-size:12px;margin-top:14px">After paying, your account is upgraded once payment is confirmed. Use the same email as your Finalyze account.</p>
-       <div class="import-actions"><button class="btn" id="upgClose">Close</button></div>`);
+       <p class="muted" style="font-size:12px;margin-top:14px">After paying, your account upgrades automatically once payment is confirmed. Use the same email as your Finalyze account.</p>
+       <div class="import-actions"><button class="btn" id="upgRefresh">I’ve paid — refresh</button><button class="btn" id="upgClose">Close</button></div>`);
     const c = $('#upgClose'); if (c) c.onclick = closeModal;
+    const r = $('#upgRefresh');
+    if (r) r.onclick = async () => {
+      r.disabled = true; r.textContent = 'Checking…';
+      await refreshLicense();
+      if (userLicense === 'pro') { closeModal(); toast('Pro unlocked — full history restored'); }
+      else { r.disabled = false; r.textContent = 'I’ve paid — refresh'; toast('No active Pro subscription yet — it can take a moment after paying.'); }
+    };
   }
   function renderUpgradeSlot() {
     const slot = $('#upgradeSlot');
@@ -1867,9 +1874,25 @@
     }
   }
 
+  // Cheeky nudge when someone tries to import while playing with the demo.
+  function openDemoImportNudge() {
+    const accounts = !!(F.Auth && F.Auth.enabled());
+    openModal(
+      `<h2>Whoa there — that's our play money 🤹</h2>
+       <p class="muted">You're exploring the demo with sample transactions. Ready to see <em>your</em> money in all its glory? Create a free account and import your own statement.</p>
+       <div class="import-actions">
+         <button class="btn" id="nudgeStay">Keep poking around</button>
+         <button class="btn primary" id="nudgeGo">${accounts ? 'Create my account' : 'Got it'}</button>
+       </div>`);
+    const stay = $('#nudgeStay'); if (stay) stay.onclick = closeModal;
+    const go = $('#nudgeGo');
+    if (go) go.onclick = () => { closeModal(); if (accounts && F.Account && F.Account.openSignIn) F.Account.openSignIn('signup'); };
+  }
+
   function handleFiles(fileList) {
     const files = [...fileList];
     if (!files.length) return;
+    if (F.Demo && F.Demo.active && F.Demo.active()) { openDemoImportNudge(); return; }
     if (requiresSignIn()) {
       toast('Sign in to import your statements');
       if (F.Account && F.Account.openSignIn) F.Account.openSignIn();
@@ -2374,6 +2397,16 @@
     const gateSignIn = $('#gateSignIn'); if (gateSignIn) gateSignIn.addEventListener('click', () => F.Account && F.Account.openSignIn && F.Account.openSignIn());
     const gateDemo = $('#gateDemo'); if (gateDemo) gateDemo.addEventListener('click', () => F.Demo && F.Demo.start());
     if (F.Auth && F.Auth.onChange) F.Auth.onChange(() => refreshLicense());
+    // Re-check license when returning to the tab (e.g. after paying in Stripe),
+    // throttled so it doesn't refetch on every focus.
+    let lastLicenseCheck = 0;
+    addEventListener('focus', () => {
+      if (!(F.Auth && F.Auth.enabled() && F.Auth.isSignedIn())) return;
+      const now = Date.now();
+      if (now - lastLicenseCheck < 5000) return;
+      lastLicenseCheck = now;
+      refreshLicense();
+    });
     $('#clearTxnBtn').addEventListener('click', () => {
       if (confirm('Clear all imported transactions? Your settings (categories, rules, budgets, custom cards, accounts, layout) are kept. This cannot be undone.')) {
         Store.clearTransactions(); activeCategory = null; activeCardmember = null;
