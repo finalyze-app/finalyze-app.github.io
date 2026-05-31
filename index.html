@@ -107,6 +107,9 @@
     .price ul{list-style:none;padding:0;margin:18px 0 22px;}
     .price li{font-size:14px;padding:7px 0;border-bottom:1px solid var(--line);color:#cdd6f0;}
     .price li::before{content:"✓";color:var(--green);font-weight:700;margin-right:9px;}
+    .price .amt .amt-alt{font-size:15px;font-weight:600;color:var(--muted);}
+    .price-btns{display:flex;flex-direction:column;gap:10px;}
+    .price-btns .btn{width:100%;justify-content:center;}
 
     /* faq */
     .faq{max-width:760px;margin:0 auto;}
@@ -209,8 +212,7 @@
       </div>
       <div class="spacer"></div>
       <button class="theme-toggle" id="themeToggle" title="Toggle light / dark" aria-label="Toggle theme"></button>
-      <a class="btn ghost" href="app.html?signin=1">Log in</a>
-      <a class="btn primary" href="app.html">Open app</a>
+      <a class="btn primary" href="app.html?signin=1">Login</a>
     </div>
   </nav>
 
@@ -221,10 +223,10 @@
       <p class="lead">Finalyze understands where your money goes — and tells you what to do about it.
         Import a statement, get instant insights, and ask your data anything. All on your machine.</p>
       <div class="cta">
-        <a class="btn primary" href="app.html">Get started — it's free</a>
+        <a class="btn primary" href="app.html?signup=1">Get started — it's free</a>
         <a class="btn ghost" href="app.html?demo=1">Try the live demo</a>
       </div>
-      <div class="note">No account required · Works offline · Try it with sample data, or open a <code>.pdf</code>/<code>.qfx</code>/<code>.ofx</code>/<code>.csv</code></div>
+      <div class="note">Free to start · Works offline · Your data stays on your device — <code>.pdf</code>/<code>.qfx</code>/<code>.ofx</code>/<code>.csv</code></div>
 
       <!-- animated app preview -->
       <div class="appdemo" id="how" aria-hidden="true">
@@ -304,16 +306,16 @@
           <div class="amt">$0</div>
           <ul>
             <li>PDF, OFX/QFX &amp; CSV import</li>
-            <li>3 months of history</li>
+            <li>Last 2 months of history</li>
             <li>Auto-categorization</li>
             <li>Core dashboard &amp; charts</li>
             <li>Basic AI insights</li>
           </ul>
-          <a class="btn ghost" href="app.html" style="width:100%;justify-content:center;">Get started</a>
+          <a class="btn ghost" href="app.html?signup=1" style="width:100%;justify-content:center;">Get started</a>
         </div>
         <div class="price pro">
           <div class="tag">Pro</div>
-          <div class="amt">$7<span> / month</span></div>
+          <div class="amt">$7<span> / mo</span> <span class="amt-alt">· $70 / yr</span></div>
           <ul>
             <li>Unlimited history</li>
             <li>Advanced AI insights &amp; forecasting</li>
@@ -321,7 +323,10 @@
             <li>Subscription detection &amp; savings simulator</li>
             <li>Family mode</li>
           </ul>
-          <a class="btn primary" href="app.html?signup=1" style="width:100%;justify-content:center;">Create account</a>
+          <div class="price-btns">
+            <a class="btn primary" href="https://buy.stripe.com/7sY4gyaww7Yl7RI0NI3Nm00" target="_blank" rel="noopener">Go Pro — Monthly</a>
+            <a class="btn" href="https://buy.stripe.com/eVq14m4880vTdc2dAu3Nm01" target="_blank" rel="noopener">Annual — save 17%</a>
+          </div>
         </div>
       </div>
     </div>
@@ -335,19 +340,12 @@
         <details open><summary>Where is my financial data stored?</summary><p>Entirely in your own browser (IndexedDB). Statements are never uploaded. The only thing stored on a server is your email address — used solely to send you product updates.</p></details>
         <details><summary>How does the AI run without sending my data anywhere?</summary><p>The categorization and language models run on-device. They download once (opt-in) and then process your data locally — even offline.</p></details>
         <details><summary>Which banks and file types are supported?</summary><p>Most major North American banks and cards via PDF statements, OFX/QFX, and CSV — with automatic format detection. Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase, and more.</p></details>
-        <details><summary>Can I try it before importing my own data?</summary><p>Yes — open the app and choose “Take a tour with sample data.” It loads dummy transactions and walks you through every feature. The last step clears the demo so you can import your own.</p></details>
+        <details><summary>Do I need an account?</summary><p>Yes — a free account is required to import and analyze your statements. It only stores your email; your financial data stays in your browser. The free plan covers your last 2 months of history; Pro unlocks unlimited history and premium features. You can also explore a sample-data tour without an account.</p></details>
+        <details><summary>What does the free plan include?</summary><p>Importing, auto-categorization, the core dashboard and charts, and basic insights — for your most recent 2 months of transactions. Pro ($7/month or $70/year) lifts that to unlimited history and adds advanced AI, chat, the savings simulator and family mode.</p></details>
+        <details><summary>Can I try it before signing up?</summary><p>Yes — choose “Take a tour with sample data” to explore every feature with dummy transactions, no account needed.</p></details>
         <details><summary>Does it work on my phone?</summary><p>Yes. The whole dashboard is mobile-responsive — transactions become tap-friendly cards, charts resize, and the menu slides in. Add it to your home screen to use it like an app.</p></details>
-        <details><summary>Do I need an account?</summary><p>No — you can use Finalyze fully without one. An account just lets you receive updates and unlock Pro features.</p></details>
         <details><summary>Can I export my data?</summary><p>Yes. Export a full JSON backup anytime and restore it on another device.</p></details>
       </div>
-    </div>
-  </section>
-
-  <section class="cta-band">
-    <div class="wrap">
-      <h2 class="title">See where your money really goes.</h2>
-      <p class="sub">Import your first statement in under a minute.</p>
-      <a class="btn primary" href="app.html">Open Finalyze</a>
     </div>
   </section>
 

@@ -193,20 +193,24 @@
   }
 
   // ---- sidebar chip ----
+  // Signed out: a "Sign in" button sits at the TOP (below the logo).
+  // Signed in: the account chip sits at the BOTTOM of the sidebar.
   function renderChip() {
-    const slot = $('#accountSlot');
-    if (!slot) return;
-    if (!Auth.enabled()) { slot.innerHTML = ''; return; }
+    const bottom = $('#accountSlot');
+    const top = $('#accountSlotTop');
+    if (bottom) bottom.innerHTML = '';
+    if (top) top.innerHTML = '';
+    if (!bottom || !Auth.enabled()) return;
     if (Auth.isSignedIn()) {
       const u = Auth.user();
       const initial = (u && u.email ? u.email[0] : '?').toUpperCase();
-      slot.innerHTML = `<button class="acct-chip" id="acctChipBtn" title="Account">
+      bottom.innerHTML = `<button class="acct-chip" id="acctChipBtn" title="Account">
         <span class="acct-avatar">${initial}</span>
         <span class="acct-chip-email">${u ? u.email : ''}</span>
       </button>`;
       $('#acctChipBtn').onclick = openAccount;
-    } else {
-      slot.innerHTML = `<button class="btn ghost" id="acctSignInBtn2" style="width:100%">Sign in</button>`;
+    } else if (top) {
+      top.innerHTML = `<button class="btn primary" id="acctSignInBtn2" style="width:100%">Sign in</button>`;
       $('#acctSignInBtn2').onclick = openSignIn;
     }
   }

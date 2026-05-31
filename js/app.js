@@ -24,6 +24,10 @@
   let hmMonth = '';                    // YYYY-MM for heatmap widget
   let viewName = 'dashboard';          // 'dashboard' | 'prefs'
   let filtersHidden = false;           // collapse the header filter bar
+  let userLicense = 'free';            // 'free' | 'pro' (from the signed-in profile)
+  const STRIPE_MONTHLY = 'https://buy.stripe.com/7sY4gyaww7Yl7RI0NI3Nm00';
+  const STRIPE_ANNUAL = 'https://buy.stripe.com/eVq14m4880vTdc2dAu3Nm01';
+  const FREE_MONTHS = 2;               // free plan: visible history window
   // dated = date-filtered; catScope = dated + cardmember (base for category chart);
   // cardScope = dated + category (base for cardmember chart); view = dated + both.
   let allTxns = [], datedTxns = [], catScopeTxns = [], cardScopeTxns = [], viewTxns = [], ledgerTxns = [];
@@ -375,6 +379,45 @@
   function requiresSignIn() {
     return !!(F.Auth && F.Auth.enabled() && !F.Auth.isSignedIn());
   }
+  // Free plan: signed-in users without Pro only see the last FREE_MONTHS months.
+  function isFreeGated() {
+    return !!(F.Auth && F.Auth.enabled() && F.Auth.isSignedIn() && userLicense !== 'pro');
+  }
+  // Cutoff anchored to the most recent transaction (not the system clock), so the
+  // free window is always the 2 most recent months present in the user's data.
+  function freeCutoffFrom(anchorYmd) {
+    const [y, m] = (anchorYmd || fmtYMD(new Date())).split('-').map(Number);
+    return fmtYMD(new Date(y, (m - 1) - (FREE_MONTHS - 1), 1));
+  }
+  function openUpgradeModal() {
+    openModal(
+      `<h2>Upgrade to Pro</h2>
+       <p class="muted">Unlock your full transaction history, advanced AI insights, the savings simulator and more. Your data stays in your browser — Pro just lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
+       <div class="upgrade-plans">
+         <a class="btn primary upgrade-plan" href="${STRIPE_MONTHLY}" target="_blank" rel="noopener">
+           <span class="up-amt">$7<small>/month</small></span><span class="up-label">Monthly</span></a>
+         <a class="btn primary upgrade-plan" href="${STRIPE_ANNUAL}" target="_blank" rel="noopener">
+           <span class="up-amt">$70<small>/year</small></span><span class="up-label">Annual · save 17%</span></a>
+       </div>
+       <p class="muted" style="font-size:12px;margin-top:14px">After paying, your account is upgraded once payment is confirmed. Use the same email as your Finalyze account.</p>
+       <div class="import-actions"><button class="btn" id="upgClose">Close</button></div>`);
+    const c = $('#upgClose'); if (c) c.onclick = closeModal;
+  }
+  function renderUpgradeSlot() {
+    const slot = $('#upgradeSlot');
+    if (!slot) return;
+    if (isFreeGated()) {
+      slot.innerHTML = `<button class="btn primary upgrade-btn" id="upgradeBtn" style="width:100%">${svg(ICON.custom)}Upgrade to Pro</button>`;
+      $('#upgradeBtn').onclick = openUpgradeModal;
+    } else slot.innerHTML = '';
+  }
+  // Refresh the cached license from the signed-in profile, then re-render.
+  async function refreshLicense() {
+    if (F.Auth && F.Auth.enabled() && F.Auth.isSignedIn()) {
+      try { const p = await F.Auth.getProfile(); userLicense = (p && p.license) || 'free'; } catch (e) { userLicense = 'free'; }
+    } else userLicense = 'free';
+    render();
+  }
 
   // ============ Top-level render ============
   function render() {
@@ -398,6 +441,26 @@
       return;
     }
     if ($('#authGate')) $('#authGate').hidden = true;
+    renderUpgradeSlot();
+
+    // Free plan: only the FREE_MONTHS most recent months of data are accessible
+    // (anchored to the latest transaction, so it's dynamic per dataset).
+    let hiddenOlder = 0;
+    if (isFreeGated() && allTxns.length) {
+      const latest = allTxns.reduce((mx, t) => (t.date > mx ? t.date : mx), allTxns[0].date);
+      const cutoff = freeCutoffFrom(latest);
+      const n = allTxns.length;
+      allTxns = allTxns.filter((t) => t.date >= cutoff);
+      hiddenOlder = n - allTxns.length;
+    }
+    const freeBn = $('#freeBanner');
+    if (freeBn) {
+      if (isFreeGated() && (hiddenOlder > 0 || allTxns.length)) {
+        freeBn.hidden = false;
+        freeBn.innerHTML = `<span><strong>Free plan</strong> — showing the last ${FREE_MONTHS} months${hiddenOlder ? ` · ${hiddenOlder} older transaction${hiddenOlder === 1 ? '' : 's'} hidden` : ''}.</span> <button class="linkish" id="freeUpgrade" type="button">Upgrade to Pro for full history →</button>`;
+        const fu = $('#freeUpgrade'); if (fu) fu.onclick = openUpgradeModal;
+      } else { freeBn.hidden = true; freeBn.innerHTML = ''; }
+    }
 
     const hasData = allTxns.length > 0;
     $('#empty').hidden = hasData || viewName === 'prefs';
@@ -2310,7 +2373,7 @@
     // Auth gate buttons + re-render when sign-in state changes.
     const gateSignIn = $('#gateSignIn'); if (gateSignIn) gateSignIn.addEventListener('click', () => F.Account && F.Account.openSignIn && F.Account.openSignIn());
     const gateDemo = $('#gateDemo'); if (gateDemo) gateDemo.addEventListener('click', () => F.Demo && F.Demo.start());
-    if (F.Auth && F.Auth.onChange) F.Auth.onChange(() => render());
+    if (F.Auth && F.Auth.onChange) F.Auth.onChange(() => refreshLicense());
     $('#clearTxnBtn').addEventListener('click', () => {
       if (confirm('Clear all imported transactions? Your settings (categories, rules, budgets, custom cards, accounts, layout) are kept. This cannot be undone.')) {
         Store.clearTransactions(); activeCategory = null; activeCardmember = null;

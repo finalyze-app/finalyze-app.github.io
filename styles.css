@@ -831,3 +831,20 @@ a.brand:hover { opacity: .85; }
 
 .backup-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-2); }
 .backup-btns { display: flex; gap: 10px; flex: none; }
+
+/* ============ Accounts: sign-in (top) + upgrade ============ */
+.account-slot-top { padding: 0 8px 8px; }
+.account-slot-top .btn { width: 100%; }
+.upgrade-slot { margin-bottom: 8px; }
+.upgrade-btn { gap: 8px; }
+.upgrade-btn svg { width: 15px; height: 15px; }
+.free-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 12px;
+  padding: 10px 14px; margin-bottom: 16px; font-size: 13.5px; color: var(--ink);
+}
+.upgrade-plans { display: flex; gap: 12px; margin: 16px 0 4px; flex-wrap: wrap; }
+.upgrade-plan { flex: 1; min-width: 150px; flex-direction: column; gap: 2px; padding: 16px; height: auto; }
+.upgrade-plan .up-amt { font-size: 22px; font-weight: 800; }
+.upgrade-plan .up-amt small { font-size: 13px; font-weight: 500; opacity: .85; }
+.upgrade-plan .up-label { font-size: 12px; opacity: .9; }

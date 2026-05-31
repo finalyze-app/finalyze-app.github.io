@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0a1228" />
   <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device — nothing is uploaded." />
-  <link rel="stylesheet" href="styles.css?v=42" />
+  <link rel="stylesheet" href="styles.css?v=45" />
 </head>
 <body>
   <div class="shell">
@@ -21,6 +21,8 @@
         </span>
         <span class="name">Finalyze<small>Spending analyzer</small></span>
       </a>
+
+      <div id="accountSlotTop" class="account-slot-top"></div>
 
       <nav class="nav" id="nav"></nav>
 
@@ -49,6 +51,7 @@
             <span id="censorLabel">Hide $</span>
           </button>
         </div>
+        <div id="upgradeSlot" class="upgrade-slot"></div>
         <div id="accountSlot" class="account-slot"></div>
         <p class="side-note">All data stays on this device. Nothing is uploaded.</p>
       </div>
@@ -150,6 +153,7 @@
       <!-- Dashboard -->
       <section id="dashboard" hidden>
         <div id="demoBanner" class="demo-banner" hidden></div>
+        <div id="freeBanner" class="free-banner" hidden></div>
         <div id="sizeBanner" class="size-banner" hidden></div>
         <div id="filterBanner" class="filter-banner" hidden></div>
         <div id="widgets"></div>
@@ -283,8 +287,8 @@
   <script src="js/store.js?v=41"></script>
   <script src="js/analyze.js?v=34"></script>
   <script src="js/charts.js?v=15"></script>
-  <script src="js/app.js?v=43"></script>
-  <script src="js/account.js?v=20"></script>
+  <script src="js/app.js?v=46"></script>
+  <script src="js/account.js?v=45"></script>
   <script src="js/ai.js?v=21"></script>
   <script src="js/chat.js?v=22"></script>
   <script src="js/aiui.js?v=22"></script>
