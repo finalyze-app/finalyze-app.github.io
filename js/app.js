@@ -390,13 +390,16 @@
     return fmtYMD(new Date(y, (m - 1) - (FREE_MONTHS - 1), 1));
   }
   function openUpgradeModal() {
+    // Prefill the user's email at Stripe checkout so it matches their account.
+    const email = (F.Auth && F.Auth.user && F.Auth.user() && F.Auth.user().email) || '';
+    const q = email ? '?prefilled_email=' + encodeURIComponent(email) : '';
     openModal(
       `<h2>Upgrade to Pro</h2>
        <p class="muted">Unlock your full transaction history, advanced AI insights, the savings simulator and more. Your data stays in your browser — Pro just lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
        <div class="upgrade-plans">
-         <a class="btn primary upgrade-plan" href="${STRIPE_MONTHLY}" target="_blank" rel="noopener">
+         <a class="btn primary upgrade-plan" href="${STRIPE_MONTHLY}${q}" target="_blank" rel="noopener">
            <span class="up-amt">$7<small>/month</small></span><span class="up-label">Monthly</span></a>
-         <a class="btn primary upgrade-plan" href="${STRIPE_ANNUAL}" target="_blank" rel="noopener">
+         <a class="btn primary upgrade-plan" href="${STRIPE_ANNUAL}${q}" target="_blank" rel="noopener">
            <span class="up-amt">$70<small>/year</small></span><span class="up-label">Annual · save 17%</span></a>
        </div>
        <p class="muted" style="font-size:12px;margin-top:14px">After paying, your account upgrades automatically once payment is confirmed. Use the same email as your Finalyze account.</p>
