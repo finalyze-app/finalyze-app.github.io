@@ -11,7 +11,17 @@
   const esc = (s) => F.escapeHtml(s);
   const $ = (s, r = document) => r.querySelector(s);
 
+  // Per-user "already onboarded" cache. Keyed by user id so a second account
+  // (e.g. signing in with Google after an earlier email account in the same
+  // browser) still gets the onboarding wizard. Falls back to the legacy global
+  // key when no user is known yet.
   const ONBOARD_KEY = 'finalyze.onboarded';
+  function onbKey() {
+    const u = Auth && Auth.user && Auth.user();
+    return u && u.id ? 'finalyze.onboarded.' + u.id : ONBOARD_KEY;
+  }
+  function onboardedLocally() { return !!localStorage.getItem(onbKey()); }
+  function markOnboardedLocally() { localStorage.setItem(onbKey(), '1'); }
 
   const CURRENCIES = {
     Canada: 'CAD', 'United States': 'USD', 'United Kingdom': 'GBP', Eurozone: 'EUR',
@@ -156,11 +166,11 @@
   // After a successful sign-in: refresh the chip and run onboarding if needed.
   async function afterSignIn() {
     renderChip();
-    if (localStorage.getItem(ONBOARD_KEY)) return;
+    if (onboardedLocally()) return;
     let profile = null;
     try { profile = await Auth.getProfile(); } catch (e) {}
     if (!(profile && profile.onboarded)) openOnboarding();
-    else localStorage.setItem(ONBOARD_KEY, '1');
+    else markOnboardedLocally();
   }
 
   // ---- onboarding wizard ----
@@ -217,7 +227,7 @@
       const btn = panel.querySelector('#obFinish');
       btn.disabled = true; btn.textContent = 'Saving…';
       try { await Auth.updateProfile(patch); } catch (e) {}
-      localStorage.setItem(ONBOARD_KEY, '1');
+      markOnboardedLocally();
       close();
       renderChip();
     };
@@ -336,11 +346,11 @@
       openSignIn(params.get('signup') ? 'signup' : 'signin');
     }
     // First-time sign-in → run onboarding once.
-    if (u && !localStorage.getItem(ONBOARD_KEY)) {
+    if (u && !onboardedLocally()) {
       let profile = null;
       try { profile = await Auth.getProfile(); } catch (e) {}
       if (!(profile && profile.onboarded)) openOnboarding();
-      else localStorage.setItem(ONBOARD_KEY, '1');
+      else markOnboardedLocally();
     }
   }
 
