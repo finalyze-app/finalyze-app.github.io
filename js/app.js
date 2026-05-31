@@ -452,6 +452,8 @@
     }
     if ($('#authGate')) $('#authGate').hidden = true;
     renderUpgradeSlot();
+    const proBadge = $('#proBadge');
+    if (proBadge) proBadge.hidden = !(F.Auth && F.Auth.enabled() && F.Auth.isSignedIn() && userLicense === 'pro');
 
     // Free plan: only the FREE_MONTHS most recent months of data are accessible
     // (anchored to the latest transaction, so it's dynamic per dataset).
@@ -2501,6 +2503,7 @@
 
   F.filterTxns = filterTxns;
   F.render = render;            // let optional modules (AI) refresh after writes
+  F.openUpgradeModal = openUpgradeModal;
   F.toast = toast;
   F.enriched = enriched;       // categorized + flow-typed rows for AI context
   F.openMerchantDrill = openMerchantDrill;

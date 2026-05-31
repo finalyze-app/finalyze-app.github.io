@@ -19,6 +19,11 @@
     SUPABASE_URL: 'https://pdanbjmzynsyukfhoftw.supabase.co',      // e.g. 'https://abcdefgh.supabase.co'
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkYW5iam16eW5zeXVrZmhvZnR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzgyODksImV4cCI6MjA5NTc1NDI4OX0.mRR2F_rRjpTee8u2G10PK3i-ZFGR3vA6Qm_SCNsGC-w', // the public "anon" key (safe to ship in the client)
 
+    // Stripe Customer Portal login link (Stripe → Settings → Billing → Customer
+    // portal → "Get a link"). Powers the "Manage subscription" button (cancel /
+    // switch monthly↔annual). Leave blank to hide that button.
+    STRIPE_PORTAL_URL: '',
+
     // Where the magic-link should send the user back to. Defaults to this page.
     get REDIRECT_URL() {
       return location.origin + location.pathname;

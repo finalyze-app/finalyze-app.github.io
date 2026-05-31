@@ -66,3 +66,11 @@ Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
 The app reads `license` on sign-in and when the window regains focus (so after
 paying in the Stripe tab and returning, Pro unlocks within a moment). Users can
 also sign out/in to force a refresh.
+
+## 7. Manage subscription (Customer Portal)
+To power the in-app **Manage subscription** button (cancel / switch monthly↔annual):
+- Stripe Dashboard → **Settings → Billing → Customer portal** → configure what
+  customers can do (cancel, switch plans between your monthly & annual prices),
+  then **“Get a link”** (a `https://billing.stripe.com/p/login/…` URL).
+- Paste it into `js/config.js` → `STRIPE_PORTAL_URL`. The app appends the user's
+  email automatically. Leave blank to hide the button.

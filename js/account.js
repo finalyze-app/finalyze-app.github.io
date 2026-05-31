@@ -171,6 +171,11 @@
     let profile = null;
     try { profile = await Auth.getProfile(); } catch (e) {}
     const license = (profile && profile.license) || 'free';
+    const isPro = license === 'pro';
+    const portal = (F.config && F.config.STRIPE_PORTAL_URL) || '';
+    const billingBtn = isPro
+      ? (portal ? `<button class="btn" id="acctManage">Manage subscription</button>` : '')
+      : `<button class="btn primary" id="acctUpgrade">Upgrade to Pro</button>`;
     const panel = modal(`
       <button class="acct-close" aria-label="Close">×</button>
       <div class="acct-head">
@@ -178,10 +183,11 @@
         <h2>${u ? u.email : ''}</h2>
       </div>
       <div class="acct-rows">
-        <div class="acct-row"><span>Plan</span><strong class="acct-plan ${license}">${license === 'pro' ? 'Pro' : 'Free'}</strong></div>
+        <div class="acct-row"><span>Plan</span><strong class="acct-plan ${license}">${isPro ? 'Pro' : 'Free'}</strong></div>
         ${profile && profile.country ? `<div class="acct-row"><span>Country</span><strong>${profile.country}</strong></div>` : ''}
         ${profile && profile.referral_code ? `<div class="acct-row"><span>Referral code</span><strong>${profile.referral_code}</strong></div>` : ''}
       </div>
+      ${billingBtn ? `<div class="acct-billing">${billingBtn}${isPro && portal ? `<p class="muted" style="font-size:12px;margin:8px 0 0">Cancel or switch between monthly and annual in the Stripe portal.</p>` : ''}</div>` : ''}
       <div class="acct-actions">
         <button class="btn" id="acctEdit">Edit preferences</button>
         <button class="btn ghost" id="acctSignOut">Sign out</button>
@@ -190,6 +196,14 @@
     panel.querySelector('.acct-close').onclick = close;
     panel.querySelector('#acctEdit').onclick = openOnboarding;
     panel.querySelector('#acctSignOut').onclick = async () => { await Auth.signOut(); close(); renderChip(); };
+    const mng = panel.querySelector('#acctManage');
+    if (mng) mng.onclick = () => {
+      const email = (u && u.email) || '';
+      const url = portal + (email ? (portal.includes('?') ? '&' : '?') + 'prefilled_email=' + encodeURIComponent(email) : '');
+      window.open(url, '_blank', 'noopener');
+    };
+    const upg = panel.querySelector('#acctUpgrade');
+    if (upg) upg.onclick = () => { close(); if (F.openUpgradeModal) F.openUpgradeModal(); };
   }
 
   // ---- sidebar chip ----

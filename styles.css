@@ -848,3 +848,8 @@ a.brand:hover { opacity: .85; }
 .upgrade-plan .up-amt { font-size: 22px; font-weight: 800; }
 .upgrade-plan .up-amt small { font-size: 13px; font-weight: 500; opacity: .85; }
 .upgrade-plan .up-label { font-size: 12px; opacity: .9; }
+
+.pro-badge { display: inline-flex; align-items: center; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); padding: 2px 6px; border-radius: 6px; line-height: 1; margin-left: 2px; align-self: flex-start; margin-top: 2px; }
+
+.acct-billing { margin: 4px 0 14px; }
+.acct-billing .btn { width: 100%; }
