@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finalyze Docs — Setup, import, dashboard, AI &amp; privacy</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/icon.svg" />
+  <meta name="description" content="Documentation for Finalyze — import statements, explore your dashboard, enable on-device AI, and keep your financial data private." />
+  <link rel="stylesheet" href="docs.css" />
+  <script>
+    (function () {
+      try { document.documentElement.dataset.theme = localStorage.getItem('finalyze.theme') || 'light'; }
+      catch (e) { document.documentElement.dataset.theme = 'light'; }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="docs-top">
+    <div class="docs-top-inner">
+      <button class="btn icon menu-btn" id="menuBtn" type="button" aria-label="Open docs menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a class="brand" href="/"><img src="../assets/icon.svg" alt="" />Finalyze</a>
+      <span class="docs-badge">Docs</span>
+      <span class="spacer"></span>
+      <a class="btn ghost" href="/">Home</a>
+      <button class="theme-toggle" id="themeToggle" type="button" title="Toggle light / dark" aria-label="Toggle theme"></button>
+      <a class="btn primary" href="/app">Open app</a>
+    </div>
+  </header>
+
+  <div class="docs-overlay" id="docsOverlay"></div>
+
+  <div class="docs-shell">
+    <aside class="docs-side" aria-label="Documentation sections">
+      <div class="docs-intro">
+        <h1>Finalyze Docs</h1>
+        <p>Import in a minute, explore the dashboard in five, enable on-device AI when you're ready.</p>
+      </div>
+
+      <nav class="nav-group">
+        <h4>Getting started</h4>
+        <a href="#open">Open Finalyze</a>
+        <a href="#first-import">Your first import</a>
+        <a href="#demo">Sample-data tour</a>
+        <a href="#account">Account &amp; sign-in</a>
+      </nav>
+
+      <nav class="nav-group">
+        <h4>Import</h4>
+        <a href="#formats">Supported formats</a>
+        <a href="#banks">Banks &amp; detection</a>
+        <a href="#monthly">Monthly workflow</a>
+      </nav>
+
+      <nav class="nav-group">
+        <h4>Dashboard</h4>
+        <a href="#overview">Spending overview</a>
+        <a href="#views">Charts &amp; views</a>
+        <a href="#ledger">Transactions</a>
+        <a href="#filters">Filters &amp; tags</a>
+      </nav>
+
+      <nav class="nav-group">
+        <h4>Settings</h4>
+        <a href="#categories">Categories &amp; groups</a>
+        <a href="#rules">Rules &amp; merges</a>
+        <a href="#budgets">Budgets</a>
+        <a href="#accounts">Accounts &amp; backups</a>
+      </nav>
+
+      <nav class="nav-group">
+        <h4>Finalyze AI</h4>
+        <a href="#ai-enable">Enable models</a>
+        <a href="#ai-chat">Ask your data</a>
+        <a href="#ai-limits">What AI won't do</a>
+      </nav>
+
+      <nav class="nav-group">
+        <h4>Plans &amp; privacy</h4>
+        <a href="#plans">Free vs Pro</a>
+        <a href="#referrals">Referrals</a>
+        <a href="#privacy">Privacy &amp; data</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+    </aside>
+
+    <main class="docs-main" id="content">
+      <section id="open">
+        <h2>Getting started</h2>
+        <p class="lead">Finalyze is a browser app. There is no install step beyond opening the site — your statements are parsed and stored entirely on your device.</p>
+
+        <h3>Open Finalyze</h3>
+        <ul>
+          <li><strong>Online:</strong> visit <a href="https://finalyze.cc">finalyze.cc</a> and click <strong>Open app</strong> (or go directly to <a href="/app">the app</a>).</li>
+          <li><strong>Install as an app:</strong> on mobile or desktop, use your browser's <em>Add to Home Screen</em> / <em>Install</em> option — Finalyze ships a web manifest for a standalone icon.</li>
+        </ul>
+        <div class="callout green">
+          <p><strong>Privacy by default:</strong> transactions live in IndexedDB in your browser. No statement file is uploaded. The only server contact is to store your account credentials — never your transactions.</p>
+        </div>
+      </section>
+
+      <section id="first-import">
+        <h3>Your first import</h3>
+        <ol>
+          <li>Open the app and sign up for a free account (or start the <a href="#demo">sample tour</a> without one).</li>
+          <li>Click <strong>Import statement</strong> in the sidebar, or drag a file onto the page.</li>
+          <li>Choose your bank export — <code>.pdf</code>, <code>.qfx</code> / <code>.ofx</code>, or <code>.csv</code>.</li>
+          <li>If you have more than one account, assign the import to an account when prompted.</li>
+          <li>Review the confirmation toast (format detected, transaction count), then explore <strong>Spending overview</strong>.</li>
+        </ol>
+        <p>Re-importing the same file is safe: transactions are deduped by id, so you won't get duplicates.</p>
+      </section>
+
+      <section id="demo">
+        <h3>Sample-data tour</h3>
+        <p>No statements yet? From the sign-in screen, choose <strong>Take a tour with sample data</strong>. You'll get realistic dummy transactions across every dashboard view. When you're ready, clear the data and import your own — the tour does not require an account.</p>
+      </section>
+
+      <section id="account">
+        <h3>Account &amp; sign-in</h3>
+        <p>A free account is required to import and analyze your own statements. Finalyze uses email + password (and optional Google sign-in when configured). Your email is stored on Supabase; financial data is not.</p>
+        <p>After sign-up you may need to confirm your email before the first sign-in, depending on how the project owner configured auth. Onboarding asks for country, currency, and goals — these tune labels only, not your transactions.</p>
+      </section>
+
+      <section id="formats">
+        <h2>Import</h2>
+        <h3>Supported formats</h3>
+        <table>
+          <thead>
+            <tr><th>Format</th><th>Extensions</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>PDF</strong></td><td><code>.pdf</code></td><td>Statement PDFs from major issuers; review step lets you fix parsing before import.</td></tr>
+            <tr><td><strong>OFX / QFX</strong></td><td><code>.qfx</code>, <code>.ofx</code>, <code>.qbo</code></td><td>Modern XML and older SGML exports; preferred when your bank offers it.</td></tr>
+            <tr><td><strong>CSV</strong></td><td><code>.csv</code></td><td>Auto-detects delimiter, header row, columns, and amount-sign conventions.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="banks">
+        <h3>Banks &amp; detection</h3>
+        <p>Finalyze auto-detects exports from most major North American banks and cards, including American Express, Chase, RBC, TD, Scotiabank, BMO, CIBC, Discover, Bank of America, Capital One, and more.</p>
+        <p>For CSV, the reader skips preamble lines above the header, maps Date / Description / Amount (or separate Debit/Credit columns), handles accounting negatives like <code>(12.34)</code>, and infers whether negatives mean spend or credits. Headerless CSVs are supported too.</p>
+      </section>
+
+      <section id="monthly">
+        <h3>Monthly workflow</h3>
+        <p>Each month, download a fresh export from your bank and import it. New rows append to your history. When you change a merchant's category in the ledger, that choice is remembered for all past and future transactions from that merchant.</p>
+      </section>
+
+      <section id="overview">
+        <h2>Dashboard</h2>
+        <h3>Spending overview</h3>
+        <p>The default view shows summary cards: total spend, refunds, net spend, transaction count, averages, and optional custom KPI cards (<span class="pro-chip" style="font-size:11px;font-weight:700;color:var(--accent)">Pro</span>). Use the date preset (This month, YTD, All time, etc.) or pick a custom range in the header.</p>
+        <p>Budget alerts appear here when a category or group is at ≥80% (caution) or ≥100% (over) of its monthly limit.</p>
+      </section>
+
+      <section id="views">
+        <h3>Charts &amp; views</h3>
+        <p>Use the sidebar to move between specialized views:</p>
+        <ul>
+          <li><strong>By category</strong> — pie chart; click a slice to filter. Toggle <em>Groups</em> to roll up categories.</li>
+          <li><strong>Merchants</strong> — top merchants bar chart; click a bar for drill-down.</li>
+          <li><strong>Trend</strong> — spend over time or top merchants over time.</li>
+          <li><strong>Cardmembers</strong> — per-person spend when your export includes card members (<span class="pro-chip" style="font-size:11px;font-weight:700;color:var(--accent)">Pro</span>).</li>
+          <li><strong>Month over month</strong> — monthly totals and biggest category movers (builds as you import more months).</li>
+          <li><strong>Recurring</strong> — repeating charges and subscription keyword matches.</li>
+          <li><strong>Anomalies</strong> — possible duplicates and large outliers.</li>
+          <li><strong>Patterns</strong> — spend by day of week and week of month.</li>
+          <li><strong>Heatmap</strong> — calendar view; click a day to filter.</li>
+          <li><strong>Compare</strong> — two arbitrary periods side by side.</li>
+          <li><strong>Year in review</strong> — appears with 12+ months of data.</li>
+          <li><strong>Uncategorized</strong> — queue to assign categories you missed.</li>
+        </ul>
+        <p>Open <strong>Finalyze AI</strong> from the sidebar for narrative insights and chat (see below).</p>
+      </section>
+
+      <section id="ledger">
+        <h3>Transactions</h3>
+        <p>The full ledger supports search, category filter, sorting, inline category edits, per-row tags, and bulk recategorize for multiple merchants at once. Click a merchant name for a modal with monthly trend, average ticket, and history.</p>
+      </section>
+
+      <section id="filters">
+        <h3>Filters &amp; tags</h3>
+        <ul>
+          <li><strong>Date &amp; amount</strong> — header controls apply across charts and totals.</li>
+          <li><strong>Account filter</strong> — when you have multiple accounts, filter to one or view all.</li>
+          <li><strong>Tags</strong> — mark rows <em>Business</em> and/or <em>Reimbursable</em>. Toggle <em>Exclude tagged</em> in the header to remove them from spend totals while keeping them in the table; Business and Reimbursable show as their own summary cards.</li>
+          <li><strong>Hide $</strong> — sidebar button censors dollar amounts for screenshots or demos.</li>
+        </ul>
+      </section>
+
+      <section id="categories">
+        <h2>Settings</h2>
+        <p>Click <strong>Settings</strong> in the app sidebar. Settings are grouped into Categories, Rules, Budgets, Accounts &amp; data, and Layout.</p>
+
+        <h3>Categories &amp; groups</h3>
+        <ul>
+          <li>Add custom categories, recolor any category, and set type (spending, payment, refund).</li>
+          <li><strong>Category groups</strong> roll up slices (e.g. Dining + Groceries → Food) for charts and group budgets.</li>
+          <li><strong>Custom KPI cards</strong> (<span class="pro-chip" style="font-size:11px;font-weight:700;color:var(--accent)">Pro</span>) — define cards on the overview from category or merchant rules.</li>
+          <li><strong>Merge merchants</strong> — fuzzy suggestions (e.g. <code>AMAZON.CA</code> vs <code>AMAZON CA</code>); merge or dismiss.</li>
+        </ul>
+      </section>
+
+      <section id="rules">
+        <h3>Rules &amp; merges</h3>
+        <p><strong>Auto-categorization rules</strong> match merchant text with your own regular expressions. Resolution order: merchant override → your rules → built-in keywords → <em>Other</em>. A live tester shows what a merchant name resolves to.</p>
+        <p><strong>Subscription keyword rules</strong> flag recurring merchants even when amounts vary. <strong>Auto-merge rules</strong> remember merges you approve.</p>
+      </section>
+
+      <section id="budgets">
+        <h3>Budgets</h3>
+        <p>Set a monthly limit per category group or ungrouped category. Group limits apply to combined member spend. Overview flags budgets at ≥80% or ≥100% for the current calendar month.</p>
+      </section>
+
+      <section id="accounts">
+        <h3>Accounts &amp; backups</h3>
+        <ul>
+          <li><strong>Accounts</strong> — name each card or bank; assign imports to an account; filter the dashboard by account.</li>
+          <li><strong>Export backup</strong> — full JSON snapshot anytime.</li>
+          <li><strong>Import backup</strong> — restore on another browser or machine.</li>
+          <li><strong>Clear data</strong> — wipes everything on this device (export first if you care).</li>
+        </ul>
+        <p>Data is stored in IndexedDB. Use the same origin consistently (<code>file://</code> vs <code>localhost</code> vs <code>finalyze.cc</code>) so history stays in one place.</p>
+      </section>
+
+      <section id="ai-enable">
+        <h2>Finalyze AI</h2>
+        <h3>Enable models</h3>
+        <p>AI is <strong>opt-in</strong>. Open <strong>Finalyze AI</strong> → <strong>Models</strong> → <strong>Download &amp; enable</strong>. Models run in your browser; transactions are never sent to a server.</p>
+        <ul>
+          <li><strong>Categorization</strong> — small embedding model (~30 MB) improves auto-sorting.</li>
+          <li><strong>Chat</strong> — WebLLM model (~1 GB, requires WebGPU).</li>
+          <li><strong>Insights</strong> — works without any model via locally computed observations.</li>
+        </ul>
+        <div class="callout">
+          <p><strong>HTTPS required for chat:</strong> WebGPU and model caching need a secure context (<code>https://</code> or <code>localhost</code>). Over plain HTTP on a LAN IP, chat may show "No WebGPU". GitHub Pages and finalyze.cc work out of the box.</p>
+        </div>
+      </section>
+
+      <section id="ai-chat">
+        <h3>Ask your data</h3>
+        <p>Examples: "How much do I spend on coffee?", "What changed from last month?", "List my subscriptions." Answers use only your imported transactions. Use <strong>Clear chat</strong> to reset the thread.</p>
+      </section>
+
+      <section id="ai-limits">
+        <h3>What AI won't do</h3>
+        <p>The assistant is scoped to spending analysis — totals, categories, merchants, trends, subscriptions, month-over-month. It does <strong>not</strong> answer affordability, forecasting, investment, or budgeting advice, because Finalyze holds past spend only, not income or balances.</p>
+      </section>
+
+      <section id="plans">
+        <h2>Plans &amp; privacy</h2>
+        <h3>Free vs Pro</h3>
+        <table>
+          <thead>
+            <tr><th></th><th>Free</th><th>Pro</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Import formats</td><td>PDF, OFX/QFX, CSV</td><td>Same</td></tr>
+            <tr><td>History</td><td>Last 2 months</td><td>Unlimited</td></tr>
+            <tr><td>Accounts</td><td>1</td><td>Unlimited + family mode</td></tr>
+            <tr><td>AI chat &amp; insights</td><td>—</td><td>Included</td></tr>
+            <tr><td>Custom KPI cards &amp; rules</td><td>—</td><td>Included</td></tr>
+            <tr><td>Price</td><td>$0</td><td>$7/mo or $70/yr</td></tr>
+          </tbody>
+        </table>
+        <p>Upgrade from the app or the <a href="/#pricing">pricing section</a> on the home page. Your data stays local on every plan.</p>
+      </section>
+
+      <section id="referrals">
+        <h3>Referrals</h3>
+        <p>Pro subscribers can refer friends: <strong>give a month, get a month</strong>. Open the app while signed in to copy your referral link. Referral codes are stored on your profile — not in your transaction data.</p>
+      </section>
+
+      <section id="privacy">
+        <h3>Privacy &amp; data</h3>
+        <ul>
+          <li><strong>On device:</strong> transactions, categories, budgets, tags, merges, accounts, and AI model cache.</li>
+          <li><strong>On server:</strong> email, auth credentials (encrypted), license/referral flags, onboarding preferences — never statements.</li>
+          <li><strong>Network:</strong> Network calls happen only for sign-in, Pro upgrade checkout, and the one-time AI model download you choose.</li>
+        </ul>
+      </section>
+
+      <section id="troubleshooting">
+        <h3>Troubleshooting</h3>
+        <ul>
+          <li><strong>Data disappeared</strong> — different URL/origin than before, or browser data cleared. Restore from a JSON backup if you have one.</li>
+          <li><strong>Import failed</strong> — try OFX/QFX instead of CSV, or use the PDF review step to fix columns. Check the sample file at <code>sample/activity.qfx</code>.</li>
+          <li><strong>AI won't download</strong> — use HTTPS, ensure enough disk space, and a browser with WebGPU (recent Chrome, Edge, or Safari).</li>
+          <li><strong>Free plan date range</strong> — only the most recent two months of transactions are kept; upgrade to Pro for full history.</li>
+          <li><strong>Email confirmation</strong> — check spam/junk mail.</li>
+        </ul>
+      </section>
+
+      <footer class="docs-foot">
+        <span>© 2026 Finalyze · Your money, analyzed privately.</span>
+        <span><a href="/">Home</a> · <a href="/app">Open app</a> · <a href="/#faq">FAQ</a></span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="docs.js"></script>
+</body>
+</html>

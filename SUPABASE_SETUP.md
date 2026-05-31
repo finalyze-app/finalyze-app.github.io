@@ -79,10 +79,10 @@ Existing users without a code: the app calls `ensure_referral_code()` RPC on acc
   domain (`https://finalyze.cc`) and add **Redirect URLs** for every origin you
   use: `https://finalyze.cc`, `https://www.finalyze.cc`,
   `https://finalyze-app.github.io`, and `http://localhost:8755` for local testing.
-  For Google sign-in, also allow-list the **`/app.html` paths** (that's where the
-  app sends users back to): `https://finalyze.cc/app.html`,
-  `https://www.finalyze.cc/app.html`, `https://finalyze-app.github.io/app.html`,
-  `http://localhost:8755/app.html`.
+  For Google sign-in, also allow-list the **app paths** (that's where OAuth sends
+  users back): `https://finalyze.cc/app/`, `https://www.finalyze.cc/app/`,
+  `https://finalyze-app.github.io/app/`, `http://localhost:8754/app/`
+  (and legacy `…/app.html` if you still have bookmarks).
 
 ## 3a. Google sign-in (OAuth)
 The auth modal shows a **"Continue with Google"** button. It's dependency-free:
@@ -96,7 +96,7 @@ To turn it on:
    callback: `https://<your-project-ref>.supabase.co/auth/v1/callback`.
 2. **Supabase → Authentication → Providers → Google**: enable it and paste the
    **Client ID** and **Client Secret** from step 1.
-3. Make sure the **`/app.html` redirect URLs** above are allow-listed (§3) so the
+3. Make sure the **`/app/` redirect URLs** above are allow-listed (§3) so the
    round-trip back to the app succeeds.
 4. No client config needed — the button uses the same `SUPABASE_URL` /
    `SUPABASE_ANON_KEY` already in `js/config.js`. New Google users get a `profiles`

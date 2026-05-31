@@ -103,7 +103,7 @@
   function initWorker() {
     const lib = pdfLib();
     if (!lib.GlobalWorkerOptions.workerSrc) {
-      lib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+      lib.GlobalWorkerOptions.workerSrc = '/vendor/pdf.worker.min.js';
     }
   }
 
