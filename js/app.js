@@ -22,6 +22,8 @@
   let settingsTab = 'categories';      // active settings tab
   let categoryViewMode = 'categories'; // 'categories' | 'groups'
   let hmMonth = '';                    // YYYY-MM for heatmap widget
+  let trendMode = 'time';              // 'time' | 'merchants' for the Trend widget
+  let trendTopN = 10;                  // top-N merchants when trendMode === 'merchants'
   let viewName = 'dashboard';          // 'dashboard' | 'prefs'
   let filtersHidden = false;           // collapse the header filter bar
   let userLicense = 'free';            // 'free' | 'pro' (from the signed-in profile)
@@ -285,7 +287,12 @@
     { id: 'merchants', nav: 'Merchants', eyebrow: 'Merchants', title: 'Top merchants',
       body: `<div class="canvas-wrap"><canvas id="chartMerchant"></canvas></div>`, render: () => charts.merchantBar(analyze.byMerchant(viewTxns)) },
     { id: 'trend', nav: 'Trend', eyebrow: 'Trend', title: 'Spend over time',
-      body: `<div class="canvas-wrap"><canvas id="chartTrend"></canvas></div>`, render: () => charts.spendLine(analyze.spendOverTime(viewTxns)) },
+      body: `<div class="trend-controls">
+          <label>View <select id="trendMode"><option value="time">Spend over time</option><option value="merchants">Top merchants</option></select></label>
+          <label id="trendTopWrap" hidden>Show top <input type="number" id="trendTopN" min="1" max="50" step="1" value="10"> merchants</label>
+        </div>
+        <div class="canvas-wrap"><canvas id="chartTrend"></canvas></div>`,
+      render: renderTrend },
     { id: 'cardmember', nav: 'Cardmembers', eyebrow: 'People', title: 'By cardmember',
       hint: 'Click a bar to filter', body: `<div class="canvas-wrap"><canvas id="chartCardmember"></canvas></div>`,
       render: () => charts.cardmemberBar(analyze.byCardmember(cardScopeTxns), activeCardmember) },
@@ -849,6 +856,28 @@
 
   function renderPatterns() {
     charts.spendingPatterns(analyze.byDayOfWeek(viewTxns), analyze.byWeekOfMonth(viewTxns));
+  }
+
+  // Trend widget: spend over time, or top-N merchants (N editable on the fly).
+  function renderTrend() {
+    const sel = $('#trendMode'), topWrap = $('#trendTopWrap'), topN = $('#trendTopN');
+    if (sel) {
+      sel.value = trendMode;
+      sel.onchange = () => { trendMode = sel.value; renderTrend(); };
+    }
+    if (topWrap) topWrap.hidden = trendMode !== 'merchants';
+    if (topN) {
+      topN.value = trendTopN;
+      topN.onchange = topN.oninput = () => {
+        const v = Math.max(1, Math.min(50, parseInt(topN.value, 10) || 1));
+        trendTopN = v;
+        if (trendMode === 'merchants') charts.trendMerchants(analyze.byMerchant(viewTxns, trendTopN));
+      };
+    }
+    const head = document.querySelector('#widget-trend .widget-head h2');
+    if (head) head.textContent = trendMode === 'merchants' ? `Top ${trendTopN} merchants` : 'Spend over time';
+    if (trendMode === 'merchants') charts.trendMerchants(analyze.byMerchant(viewTxns, trendTopN));
+    else charts.spendLine(analyze.spendOverTime(viewTxns));
   }
 
   function renderHeatmap() {

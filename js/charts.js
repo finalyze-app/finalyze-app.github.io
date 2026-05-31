@@ -118,6 +118,24 @@
       },
       options: { plugins: { legend: { display: false } }, scales: { x: gridScale(), y: gridScale(true) }, interaction: { mode: 'index', intersect: false } },
     });
+    last.trendMerchants = null;
+  }
+
+  // Alternate view for the Trend widget: top merchants as a horizontal bar, drawn
+  // into the same #chartTrend canvas. Clicking a bar opens that merchant.
+  function trendMerchants(byMerchant) {
+    last.trendMerchants = byMerchant;
+    last.spendLine = null;
+    const labels = censored ? byMerchant.map((_, i) => 'Merchant ' + (i + 1)) : byMerchant.map((m) => m.merchant);
+    draw('chartTrend', {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Spend', data: byMerchant.map((m) => m.spend), backgroundColor: theme().accent, borderRadius: 6, maxBarThickness: 22 }] },
+      options: {
+        indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: gridScale(true), y: gridScale() },
+        onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+        onClick: (e, els) => { if (!els.length || !onMerchantClick) return; onMerchantClick(byMerchant[els[0].index].merchant); },
+      },
+    });
   }
 
   let onMerchantClick = null;
@@ -226,6 +244,7 @@
     applyDefaults();
     if (last.categoryPie) categoryPie(last.categoryPie, last.categoryActive);
     if (last.spendLine) spendLine(last.spendLine);
+    if (last.trendMerchants) trendMerchants(last.trendMerchants);
     if (last.merchantBar) merchantBar(last.merchantBar);
     if (last.cardmemberBar) cardmemberBar(last.cardmemberBar, last.cardmemberActive);
     if (last.momBar) momBar(last.momBar);
@@ -237,5 +256,5 @@
   applyDefaults();
 
   global.Finalyze = global.Finalyze || {};
-  global.Finalyze.charts = { categoryPie, spendLine, merchantBar, cardmemberBar, momBar, spendingPatterns, merchantTrend, setTheme, setCensor, setCategoryClickHandler, setCardmemberClickHandler, setMerchantClickHandler, PALETTE };
+  global.Finalyze.charts = { categoryPie, spendLine, trendMerchants, merchantBar, cardmemberBar, momBar, spendingPatterns, merchantTrend, setTheme, setCensor, setCategoryClickHandler, setCardmemberClickHandler, setMerchantClickHandler, PALETTE };
 })(window);

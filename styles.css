@@ -853,3 +853,7 @@ a.brand:hover { opacity: .85; }
 
 .acct-billing { margin: 4px 0 14px; }
 .acct-billing .btn { width: 100%; }
+
+.trend-controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+.trend-controls select, .trend-controls input { font: inherit; font-size: 13px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
+.trend-controls input[type="number"] { width: 64px; }
