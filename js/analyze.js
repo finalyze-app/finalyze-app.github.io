@@ -98,6 +98,23 @@
     };
   }
 
+  // Spend over time split into one series per top-N category.
+  function topCategoriesOverTime(txns, topN = 5) {
+    const top = byCategory(txns).slice(0, topN).map((c) => c.category);
+    const idx = Object.fromEntries(top.map((c, i) => [c, i]));
+    const dates = [...new Set(txns.filter((t) => t.isSpend).map((t) => t.date))].sort();
+    const byDate = top.map(() => ({}));
+    for (const t of txns) {
+      if (!t.isSpend || !(t.category in idx)) continue;
+      const b = byDate[idx[t.category]];
+      b[t.date] = (b[t.date] || 0) + t.spend;
+    }
+    return {
+      labels: dates,
+      series: top.map((c, i) => ({ category: c, data: dates.map((d) => byDate[i][d] || 0) })),
+    };
+  }
+
   // Month-over-month: per-month totals + per-category, with deltas vs previous month.
   function monthOverMonth(txns) {
     const months = {};
@@ -476,7 +493,7 @@
   global.Finalyze.analyze = {
     summary, byCardmember, byCategory, byMerchant, spendOverTime,
     monthOverMonth, categoryMovers, recurring, anomalies, subKey,
-    compileSubRules, matchesSubRule, topMerchantsOverTime,
+    compileSubRules, matchesSubRule, topMerchantsOverTime, topCategoriesOverTime,
     byDayOfWeek, byWeekOfMonth,
     monthSpan, yearsPresent, comparePeriods, yearInReview, merchantDetail,
     suggestMerchantMerges, dailySpendMap, heatmapMonths, byCategoryGroup, pairKey,

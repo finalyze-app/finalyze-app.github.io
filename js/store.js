@@ -12,11 +12,15 @@
       transactions: {}, overrides: {}, currency: 'CAD', balance: null, balanceAsOf: null,
       subscriptions: {}, customCategories: [], categoryColors: {}, categoryTypes: {},
       categoryRenames: {}, merchantMerges: {}, mergeRules: [], customRules: [], subscriptionRules: [], customCards: [], budgets: {}, txnTags: {},
-      cardmemberOverrides: {}, merchantTags: {}, merchantAnomalyExcludes: {},
+      cardmemberOverrides: {}, txnCategoryOverrides: {}, txnReimburse: {}, merchantReimburse: {},
+      merchantTags: {}, merchantAnomalyExcludes: {},
       mergeSuggestionsDismissed: {}, categoryGroups: [],
       accounts: [{ id: 'default', label: 'Default' }], layout: null, csvImportPrefs: null,
+      categoryApplyMode: 'ask', // 'ask' | 'one' | 'all'
     };
   }
+
+  const CATEGORY_APPLY_MODES = new Set(['ask', 'one', 'all']);
 
   function sanitizeStr(s) {
     return typeof s === 'string' ? s.replace(/[<>]/g, '') : s;
@@ -35,6 +39,9 @@
       throw new Error('Invalid backup: transactions must be an object.');
     }
     if (out.overrides != null && typeof out.overrides !== 'object') throw new Error('Invalid backup: overrides must be an object.');
+    if (out.txnCategoryOverrides != null && typeof out.txnCategoryOverrides !== 'object') throw new Error('Invalid backup: txnCategoryOverrides must be an object.');
+    if (out.txnReimburse != null && typeof out.txnReimburse !== 'object') throw new Error('Invalid backup: txnReimburse must be an object.');
+    if (out.merchantReimburse != null && typeof out.merchantReimburse !== 'object') throw new Error('Invalid backup: merchantReimburse must be an object.');
     if (out.customCategories != null && !Array.isArray(out.customCategories)) throw new Error('Invalid backup: customCategories must be an array.');
     if (out.accounts != null && !Array.isArray(out.accounts)) throw new Error('Invalid backup: accounts must be an array.');
     if (out.categoryGroups != null && !Array.isArray(out.categoryGroups)) throw new Error('Invalid backup: categoryGroups must be an array.');
@@ -85,6 +92,10 @@
     }
     if (!data.mergeSuggestionsDismissed) { data.mergeSuggestionsDismissed = {}; changed = true; }
     if (!Array.isArray(data.categoryGroups)) { data.categoryGroups = []; changed = true; }
+    if (!data.txnCategoryOverrides) { data.txnCategoryOverrides = {}; changed = true; }
+    if (!data.txnReimburse) { data.txnReimburse = {}; changed = true; }
+    if (!data.merchantReimburse) { data.merchantReimburse = {}; changed = true; }
+    if (!CATEGORY_APPLY_MODES.has(data.categoryApplyMode)) { data.categoryApplyMode = 'ask'; changed = true; }
     return changed;
   }
 
@@ -257,6 +268,16 @@
         cm[newTid] = cm[oldTid];
         delete cm[oldTid];
       }
+      const catOv = this.getTxnCategoryOverrides();
+      if (catOv[oldTid]) {
+        catOv[newTid] = catOv[oldTid];
+        delete catOv[oldTid];
+      }
+      const reimb = this.getTxnReimburse();
+      if (reimb[oldTid]) {
+        reimb[newTid] = reimb[oldTid];
+        delete reimb[oldTid];
+      }
     },
 
     updateTransactionMerchant(storeKey, newName) {
@@ -284,6 +305,8 @@
       delete cache.transactions[storeKey];
       delete this.getTxnTags()[tid];
       delete this.getCardmemberOverrides()[tid];
+      delete this.getTxnCategoryOverrides()[tid];
+      delete this.getTxnReimburse()[tid];
       persist();
       return true;
     },
@@ -599,6 +622,60 @@
       const cur = new Set(tags[fitid] || []);
       if (on) cur.add(tag); else cur.delete(tag);
       if (cur.size) tags[fitid] = [...cur]; else delete tags[fitid];
+      if (!on && tag === 'reimbursable') delete this.getTxnReimburse()[fitid];
+      persist();
+    },
+
+    getTxnCategoryOverrides() { return cache.txnCategoryOverrides || (cache.txnCategoryOverrides = {}); },
+
+    setTxnCategoryOverride(fitid, category) {
+      if (!fitid) return;
+      category = (category || '').trim();
+      if (category) this.getTxnCategoryOverrides()[fitid] = category;
+      else delete this.getTxnCategoryOverrides()[fitid];
+      persist();
+    },
+
+    clearTxnCategoryOverridesForMerchant(merchantKey) {
+      if (!merchantKey) return;
+      const mkOf = (global.Finalyze && global.Finalyze.merchantKeyOf) || ((n) => n);
+      const catOv = this.getTxnCategoryOverrides();
+      let changed = false;
+      for (const id in cache.transactions) {
+        const t = cache.transactions[id];
+        if (mkOf(t.name) !== merchantKey) continue;
+        const tid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
+        if (catOv[tid]) { delete catOv[tid]; changed = true; }
+      }
+      if (changed) persist();
+    },
+
+    _normReimburse(meta) {
+      if (!meta || typeof meta !== 'object') return null;
+      const mode = meta.mode === 'amount' ? 'amount' : 'percent';
+      let value = Number(meta.value);
+      if (!isFinite(value) || value < 0) value = mode === 'percent' ? 100 : 0;
+      if (mode === 'percent') value = Math.min(100, value);
+      return { mode, value };
+    },
+
+    getTxnReimburse() { return cache.txnReimburse || (cache.txnReimburse = {}); },
+
+    setTxnReimburse(fitid, meta) {
+      if (!fitid) return;
+      const norm = this._normReimburse(meta);
+      if (norm) this.getTxnReimburse()[fitid] = norm;
+      else delete this.getTxnReimburse()[fitid];
+      persist();
+    },
+
+    getMerchantReimburse() { return cache.merchantReimburse || (cache.merchantReimburse = {}); },
+
+    setMerchantReimburse(merchantKey, meta) {
+      if (!merchantKey) return;
+      const norm = this._normReimburse(meta);
+      if (norm) this.getMerchantReimburse()[merchantKey] = norm;
+      else delete this.getMerchantReimburse()[merchantKey];
       persist();
     },
 
@@ -610,6 +687,7 @@
       const cur = new Set(tags[merchantKey] || []);
       if (on) cur.add(tag); else cur.delete(tag);
       if (cur.size) tags[merchantKey] = [...cur]; else delete tags[merchantKey];
+      if (!on && tag === 'reimbursable') delete this.getMerchantReimburse()[merchantKey];
       persist();
     },
 
@@ -652,8 +730,18 @@
     setLayout(layout) { cache.layout = layout; persist(); },
 
     getCsvImportPrefs() { return cache.csvImportPrefs; },
+
     setCsvImportPrefs(prefs) {
       cache.csvImportPrefs = prefs || null;
+      persist();
+    },
+
+    getCategoryApplyMode() {
+      return CATEGORY_APPLY_MODES.has(cache.categoryApplyMode) ? cache.categoryApplyMode : 'ask';
+    },
+
+    setCategoryApplyMode(mode) {
+      cache.categoryApplyMode = CATEGORY_APPLY_MODES.has(mode) ? mode : 'ask';
       persist();
     },
 
@@ -671,6 +759,8 @@
       cache.transactions = {};
       cache.txnTags = {};
       cache.cardmemberOverrides = {};
+      cache.txnCategoryOverrides = {};
+      cache.txnReimburse = {};
       persist();
     },
 

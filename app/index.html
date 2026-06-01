@@ -14,7 +14,7 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="styles.css?v=57" />
+  <link rel="stylesheet" href="styles.css?v=60" />
 </head>
 <body>
   <div class="shell">
@@ -167,6 +167,19 @@
 
       <!-- Preferences -->
       <section id="prefs" hidden>
+        <div class="panel span-2" id="set-category-apply">
+          <div class="phead"><div><div class="eyebrow">Categories</div><h2>Changing categories</h2></div></div>
+          <p class="muted" style="margin:0 0 14px">When you change a category in the transaction ledger or uncategorized queue, choose the default behavior. Bulk recategorize in the ledger always updates every selected merchant.</p>
+          <label class="pref-row" for="categoryApplyMode">
+            <span class="pref-label">Default when changing a category</span>
+            <select id="categoryApplyMode">
+              <option value="ask">Ask me each time</option>
+              <option value="one">Always this transaction only</option>
+              <option value="all">Always all transactions for this merchant</option>
+            </select>
+          </label>
+        </div>
+
         <div class="panel span-2" id="set-categories">
           <div class="phead"><div><div class="eyebrow">Preferences</div><h2>Manage categories</h2></div></div>
           <p class="muted" style="margin:0 0 14px">Add your own categories and recolor any category. Built-in categories can be recolored; custom ones can be removed.</p>
@@ -292,10 +305,10 @@
   <script src="js/parse.js?v=18"></script>
   <script src="js/pdfparse.js?v=6"></script>
   <script src="js/categorize.js?v=41"></script>
-  <script src="js/store.js?v=42"></script>
-  <script src="js/analyze.js?v=51"></script>
-  <script src="js/charts.js?v=51"></script>
-  <script src="js/app.js?v=55"></script>
+  <script src="js/store.js?v=45"></script>
+  <script src="js/analyze.js?v=52"></script>
+  <script src="js/charts.js?v=52"></script>
+  <script src="js/app.js?v=59"></script>
   <script src="js/account.js?v=53"></script>
   <script src="js/ai.js?v=21"></script>
   <script src="js/chat.js?v=22"></script>

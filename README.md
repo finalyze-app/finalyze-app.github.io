@@ -47,7 +47,7 @@ sidebar, the favicon, and the install manifest. Replace those files to rebrand.
 - **Merchant drill-down** — click a bar in *Top merchants* (or a merchant name in the ledger)
   for a modal with that merchant's monthly trend, average ticket, category history and txns.
 - **Transactions table** — search, filter by category, sort, reassign a merchant's category
-  inline, tag rows, and **bulk recategorize** multiple merchants at once.
+  category edits (default: ask each time, one transaction, or all at merchant — in Settings → Categories), tag rows with reimbursable %/$, and **bulk recategorize** multiple merchants at once.
 
 ## Categorization, rules & budgets
 
@@ -59,10 +59,9 @@ sidebar, the favicon, and the install manifest. Replace those files to rebrand.
   Group limits apply to combined member spend. The Overview flags any budget at ≥80% (caution) or ≥100% (over) for the current calendar month.
 - **Category groups** (Settings → *Category groups*): roll up categories (e.g. Dining + Groceries → Food). Toggle **Groups** on the category chart to see group slices; click to filter.
 - **Suggested merchant merges** (Settings → *Merge merchants*): fuzzy matches like `AMAZON.CA` vs `AMAZON CA` — merge or dismiss.
-- **Tags**: tag any transaction as **Business** and/or **Reimbursable**. The header
+- **Tags**: tag any transaction as **Business** and/or **Reimbursable** (set **%** or **$** when reimbursable). The header
   *Exclude tagged* toggle removes tagged transactions from spend totals and charts (showing
-  "True spend") while keeping them visible in the ledger; Business/Reimbursable totals show as
-  their own summary cards.
+  "True spend") while keeping them visible in the ledger; Business/Reimbursable totals use the amount you configure.
 
 ## Accounts & CSV import
 

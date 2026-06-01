@@ -119,6 +119,7 @@
       options: { plugins: { legend: { display: false } }, scales: { x: gridScale(), y: gridScale(true) }, interaction: { mode: 'index', intersect: false } },
     });
     last.trendMerchants = null;
+    last.trendCategories = null;
   }
 
   // Alternate view for the Trend widget: spend over time, one line per top
@@ -126,6 +127,7 @@
   function trendMerchants(data) {
     last.trendMerchants = data;
     last.spendLine = null;
+    last.trendCategories = null;
     const datasets = data.series.map((s, i) => {
       const color = PALETTE[i % PALETTE.length];
       return {
@@ -143,6 +145,44 @@
         interaction: { mode: 'index', intersect: false },
       },
     });
+  }
+
+  // Top categories over time — same shape as trendMerchants but per category.
+  function trendCategories(data) {
+    last.trendCategories = data;
+    last.spendLine = null;
+    last.trendMerchants = null;
+    const datasets = data.series.map((s, i) => {
+      const color = (F.categoryColor && F.categoryColor(s.category)) || PALETTE[i % PALETTE.length];
+      return {
+        label: censored ? 'Category ' + (i + 1) : s.category,
+        data: s.data, borderColor: color, backgroundColor: color + '22',
+        borderWidth: 2, tension: 0.35, pointRadius: 0, pointHoverRadius: 4, fill: false,
+      };
+    });
+    draw('chartTrend', {
+      type: 'line',
+      data: { labels: data.labels, datasets },
+      options: {
+        plugins: { legend: { display: !censored, position: 'bottom' } },
+        scales: { x: gridScale(), y: gridScale(true) },
+        interaction: { mode: 'index', intersect: false },
+      },
+    });
+  }
+
+  function downloadPng(canvasId, filename) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return false;
+    const inst = Chart.getChart && Chart.getChart(canvas);
+    const url = (inst && inst.toBase64Image)
+      ? inst.toBase64Image('image/png', 1)
+      : canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'chart.png';
+    a.click();
+    return true;
   }
 
   let onMerchantClick = null;
@@ -252,6 +292,7 @@
     if (last.categoryPie) categoryPie(last.categoryPie, last.categoryActive);
     if (last.spendLine) spendLine(last.spendLine);
     if (last.trendMerchants) trendMerchants(last.trendMerchants);
+    if (last.trendCategories) trendCategories(last.trendCategories);
     if (last.merchantBar) merchantBar(last.merchantBar);
     if (last.cardmemberBar) cardmemberBar(last.cardmemberBar, last.cardmemberActive);
     if (last.momBar) momBar(last.momBar);
@@ -263,5 +304,9 @@
   applyDefaults();
 
   global.Finalyze = global.Finalyze || {};
-  global.Finalyze.charts = { categoryPie, spendLine, trendMerchants, merchantBar, cardmemberBar, momBar, spendingPatterns, merchantTrend, setTheme, setCensor, setCategoryClickHandler, setCardmemberClickHandler, setMerchantClickHandler, PALETTE };
+  global.Finalyze.charts = {
+    categoryPie, spendLine, trendMerchants, trendCategories, downloadPng,
+    merchantBar, cardmemberBar, momBar, spendingPatterns, merchantTrend,
+    setTheme, setCensor, setCategoryClickHandler, setCardmemberClickHandler, setMerchantClickHandler, PALETTE,
+  };
 })(window);

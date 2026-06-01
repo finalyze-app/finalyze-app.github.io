@@ -23,8 +23,8 @@
   let settingsTab = 'categories';      // active settings tab
   let categoryViewMode = 'categories'; // 'categories' | 'groups'
   let hmMonth = '';                    // YYYY-MM for heatmap widget
-  let trendMode = 'time';              // 'time' | 'merchants' for the Trend widget
-  let trendTopN = 5;                   // top-N merchants when trendMode === 'merchants'
+  let trendMode = 'time';              // 'time' | 'merchants' | 'categories'
+  let trendTopN = 5;                   // top-N when trendMode is merchants or categories
   let viewName = 'dashboard';          // 'dashboard' | 'prefs'
   let filtersHidden = false;           // collapse the header filter bar
   let userLicense = localStorage.getItem('finalyze.license') || 'free'; // cached so Pro survives offline
@@ -249,14 +249,94 @@
     return excludeTagged ? (t) => (t.tags && t.tags.length > 0) : null;
   }
 
+  function reimbMetaForTxn(t) {
+    if (!t.tags || !t.tags.includes('reimbursable')) return null;
+    return Store.getTxnReimburse()[t.tid] || Store.getMerchantReimburse()[t.merchantKey] || { mode: 'percent', value: 100 };
+  }
+
+  function reimbursableAmount(t) {
+    if (!t.isSpend || !t.tags || !t.tags.includes('reimbursable')) return 0;
+    const meta = reimbMetaForTxn(t);
+    const spend = t.spend;
+    if (meta.mode === 'amount') return Math.min(meta.value, spend);
+    return Math.min(spend, spend * meta.value / 100);
+  }
+
+  function reimbFieldHtml(meta, opts) {
+    const mode = meta && meta.mode === 'amount' ? 'amount' : 'percent';
+    const val = meta != null && meta.value != null ? meta.value : (mode === 'percent' ? 100 : '');
+    const attrs = opts.scope === 'txn'
+      ? `data-reimb-scope="txn" data-tid="${encodeURIComponent(opts.tid)}"`
+      : `data-reimb-scope="merchant" data-merchant="${encodeURIComponent(opts.merchantKey)}"`;
+    return `<div class="reimb-field" ${attrs}>
+      <div class="reimb-mode-toggle" role="group" aria-label="Reimbursable units">
+        <button type="button" class="reimb-mode${mode === 'percent' ? ' on' : ''}" data-mode="percent">%</button>
+        <button type="button" class="reimb-mode${mode === 'amount' ? ' on' : ''}" data-mode="amount">$</button>
+      </div>
+      <input type="number" class="reimb-val" min="0" step="${mode === 'percent' ? '1' : '0.01'}"${mode === 'percent' ? ' max="100"' : ''} value="${esc(String(val))}" placeholder="${mode === 'percent' ? '100' : '0'}" />
+    </div>`;
+  }
+
+  function bindReimbFields(root) {
+    if (!root) return;
+    root.querySelectorAll('.reimb-field').forEach((field) => {
+      const scope = field.dataset.reimbScope;
+      const tid = field.dataset.tid ? decodeURIComponent(field.dataset.tid) : null;
+      const merchantKey = field.dataset.merchant ? decodeURIComponent(field.dataset.merchant) : null;
+      const save = () => {
+        const mode = field.querySelector('.reimb-mode.on')?.dataset.mode || 'percent';
+        const input = field.querySelector('.reimb-val');
+        let value = parseFloat(input.value);
+        if (!isFinite(value) || value < 0) value = mode === 'percent' ? 100 : 0;
+        if (mode === 'percent') value = Math.min(100, value);
+        const meta = { mode, value };
+        if (scope === 'txn') Store.setTxnReimburse(tid, meta);
+        else Store.setMerchantReimburse(merchantKey, meta);
+        render();
+        if (scope === 'merchant' && merchantKey && !$('#modal').hidden) openMerchantDrill(merchantKey);
+      };
+      field.querySelectorAll('.reimb-mode').forEach((b) => {
+        b.onclick = (e) => {
+          e.preventDefault();
+          field.querySelectorAll('.reimb-mode').forEach((x) => x.classList.toggle('on', x === b));
+          const input = field.querySelector('.reimb-val');
+          const m = b.dataset.mode;
+          input.step = m === 'percent' ? '1' : '0.01';
+          if (m === 'percent') { input.max = '100'; input.placeholder = '100'; }
+          else { input.removeAttribute('max'); input.placeholder = '0'; }
+          save();
+        };
+      });
+      const input = field.querySelector('.reimb-val');
+      input.onchange = save;
+    });
+  }
+
+  function txnTagCellHtml(t) {
+    const has = (tag) => t.tags && t.tags.includes(tag);
+    const reimbOn = has('reimbursable');
+    const reimbMeta = reimbOn
+      ? (Store.getTxnReimburse()[t.tid] || Store.getMerchantReimburse()[t.merchantKey] || { mode: 'percent', value: 100 })
+      : null;
+    return `<div class="tag-cell-inner">
+      <button class="tag-btn${has('business') ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="business" title="Business expense">Biz</button>
+      <div class="tag-reimb-group">
+        <button class="tag-btn${reimbOn ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="reimbursable" title="Reimbursable">Reimb</button>
+        ${reimbOn ? reimbFieldHtml(reimbMeta, { scope: 'txn', tid: t.tid }) : ''}
+      </div>
+    </div>`;
+  }
+
   function enriched() {
     const overrides = Store.getOverrides();
+    const catOv = Store.getTxnCategoryOverrides();
     return Store.getTransactions().map((t) => {
-      const category = categorize(t.name, overrides);
+      const tid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
+      const category = catOv[tid] || categorize(t.name, overrides);
       const type = categoryType(category);
       const row = { ...t, merchantKey: merchantKeyOf(t.name), category };
       row.storeKey = Store.transactionStoreKey(t);
-      row.tid = t.fitid || (t.date + '|' + t.name + '|' + t.amount);
+      row.tid = tid;
       // Tags = per-transaction tags ∪ merchant-level tags.
       const mTags = Store.getMerchantTags()[row.merchantKey] || [];
       row.tags = [...new Set([...tagsOf(row.tid), ...mTags])];
@@ -289,8 +369,9 @@
       body: `<div class="canvas-wrap"><canvas id="chartMerchant"></canvas></div>`, render: () => charts.merchantBar(analyze.byMerchant(viewTxns)) },
     { id: 'trend', nav: 'Trend', eyebrow: 'Trend', title: 'Spend over time',
       body: `<div class="trend-controls">
-          <label>View <select id="trendMode"><option value="time">Spend over time</option><option value="merchants">Top merchants</option></select></label>
-          <label id="trendTopWrap" hidden>Show top <input type="number" id="trendTopN" min="1" max="50" step="1" value="5"> merchants</label>
+          <label>View <select id="trendMode"><option value="time">Spend over time</option><option value="merchants">Top merchants</option><option value="categories">Top categories</option></select></label>
+          <label id="trendTopWrap" hidden>Show top <input type="number" id="trendTopN" min="1" max="50" step="1" value="5"> <span id="trendTopUnit">merchants</span></label>
+          <button type="button" class="btn" id="trendDownloadPng">Download PNG</button>
         </div>
         <div class="canvas-wrap"><canvas id="chartTrend"></canvas></div>`,
       render: renderTrend },
@@ -329,6 +410,7 @@
       body: `<div class="yr-head"><select id="yrSelect"></select></div><div id="yearReviewOut"></div>`,
       render: renderYearReview },
     { id: 'transactions', nav: 'Transactions', eyebrow: 'Ledger', title: 'Transactions',
+      hint: 'Category changes follow your default in Settings → Categories',
       body: `<div class="controls">
           <div class="field">${svg(SEARCH)}<input type="search" id="txnSearch" placeholder="Search merchant…" /></div>
           <select id="txnCategory"><option value="">All categories</option></select>
@@ -673,7 +755,7 @@
 
   // Settings is organised into tabs; each tab shows a subset of the prefs panels.
   const SETTINGS_TABS = [
-    { id: 'categories', label: 'Categories', panels: ['set-categories', 'set-cards', 'set-groups', 'set-merchants'] },
+    { id: 'categories', label: 'Categories', panels: ['set-category-apply', 'set-categories', 'set-cards', 'set-groups', 'set-merchants'] },
     { id: 'rules', label: 'Rules', panels: ['set-rules', 'set-sub-rules', 'set-merge-rules'] },
     { id: 'budgets', label: 'Budgets', panels: ['set-budgets'] },
     { id: 'accounts', label: 'Accounts & data', panels: ['set-accounts', 'set-tours', 'set-danger'] },
@@ -772,7 +854,7 @@
     // regardless of the exclude toggle).
     const sumSpend = (tag) => ledgerTxns.reduce((a, t) => a + ((t.isSpend && t.tags && t.tags.includes(tag)) ? t.spend : 0), 0);
     const bizTotal = sumSpend('business');
-    const reimbTotal = sumSpend('reimbursable');
+    const reimbTotal = ledgerTxns.reduce((a, t) => a + reimbursableAmount(t), 0);
     if (bizTotal > 0) cards.push(card(ICON.balance, 'Business expenses', fmt(bizTotal), 'small'));
     if (reimbTotal > 0) cards.push(card(ICON.refund, 'Reimbursable', fmt(reimbTotal), 'small'));
     if (!activeCategory && bal != null) cards.push(card(ICON.balance, 'Statement balance', fmt(bal), bal < 0 ? 'neg' : ''));
@@ -928,26 +1010,52 @@
     charts.spendingPatterns(analyze.byDayOfWeek(viewTxns), analyze.byWeekOfMonth(viewTxns));
   }
 
-  // Trend widget: spend over time, or top-N merchants (N editable on the fly).
+  function trendWidgetTitle() {
+    if (trendMode === 'merchants') return `Top ${trendTopN} merchants over time`;
+    if (trendMode === 'categories') return `Top ${trendTopN} categories over time`;
+    return 'Spend over time';
+  }
+
+  function updateTrendTitle() {
+    const head = document.querySelector('#widget-trend .widget-head h2');
+    if (head) head.textContent = trendWidgetTitle();
+  }
+
+  function updateTrendChart() {
+    if (trendMode === 'merchants') charts.trendMerchants(analyze.topMerchantsOverTime(viewTxns, trendTopN));
+    else if (trendMode === 'categories') charts.trendCategories(analyze.topCategoriesOverTime(viewTxns, trendTopN));
+    else charts.spendLine(analyze.spendOverTime(viewTxns));
+  }
+
+  // Trend widget: spend over time, top-N merchants, or top-N categories.
   function renderTrend() {
-    const sel = $('#trendMode'), topWrap = $('#trendTopWrap'), topN = $('#trendTopN');
+    const sel = $('#trendMode'), topWrap = $('#trendTopWrap'), topUnit = $('#trendTopUnit'), topN = $('#trendTopN');
     if (sel) {
       sel.value = trendMode;
       sel.onchange = () => { trendMode = sel.value; renderTrend(); };
     }
-    if (topWrap) topWrap.hidden = trendMode !== 'merchants';
+    const showTop = trendMode === 'merchants' || trendMode === 'categories';
+    if (topWrap) topWrap.hidden = !showTop;
+    if (topUnit) topUnit.textContent = trendMode === 'categories' ? 'categories' : 'merchants';
     if (topN) {
       topN.value = trendTopN;
       topN.onchange = topN.oninput = () => {
-        const v = Math.max(1, Math.min(50, parseInt(topN.value, 10) || 1));
-        trendTopN = v;
-        if (trendMode === 'merchants') charts.trendMerchants(analyze.topMerchantsOverTime(viewTxns, trendTopN));
+        trendTopN = Math.max(1, Math.min(50, parseInt(topN.value, 10) || 1));
+        topN.value = trendTopN;
+        updateTrendTitle();
+        updateTrendChart();
       };
     }
-    const head = document.querySelector('#widget-trend .widget-head h2');
-    if (head) head.textContent = trendMode === 'merchants' ? `Top ${trendTopN} merchants over time` : 'Spend over time';
-    if (trendMode === 'merchants') charts.trendMerchants(analyze.topMerchantsOverTime(viewTxns, trendTopN));
-    else charts.spendLine(analyze.spendOverTime(viewTxns));
+    const dl = $('#trendDownloadPng');
+    if (dl) {
+      dl.onclick = () => {
+        const slug = trendWidgetTitle().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trend';
+        if (charts.downloadPng('chartTrend', `${slug}.png`)) toast('Chart downloaded');
+        else toast('Chart not ready');
+      };
+    }
+    updateTrendTitle();
+    updateTrendChart();
   }
 
   function renderHeatmap() {
@@ -1135,17 +1243,10 @@
       `<thead><tr><th>Date</th><th>Merchant</th><th class="num">Amount</th><th>Category</th></tr></thead><tbody>` +
       rows.map((t) =>
         `<tr><td>${t.date}</td><td>${esc(t.name)}</td><td class="num amt-neg">${fmt(t.spend)}</td>` +
-        `<td><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td></tr>`
+        `<td><select class="cat-select cat-select-txn" data-tid="${encodeURIComponent(t.tid)}" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td></tr>`
       ).join('') + '</tbody>';
 
-    table.querySelectorAll('select.cat-select').forEach((sel, i) => {
-      sel.value = rows[i].category;
-      sel.onchange = () => {
-        Store.setOverride(decodeURIComponent(sel.dataset.merchant), sel.value);
-        render();
-        toast('Category saved for this merchant');
-      };
-    });
+    table.querySelectorAll('select.cat-select').forEach((sel, i) => wireCategorySelect(sel, rows[i]));
   }
 
   function renderCategoryFilterOptions() {
@@ -1297,16 +1398,13 @@
       const subCell = t.isSpend
         ? `<input type="checkbox" class="sub-check" data-key="${encodeURIComponent(key)}" ${subs[key] ? 'checked' : ''} title="Mark this merchant + amount as a subscription">`
         : '';
-      const has = (tag) => t.tags && t.tags.includes(tag);
-      const tagCell =
-        `<button class="tag-btn${has('business') ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="business" title="Business expense">Biz</button>` +
-        `<button class="tag-btn${has('reimbursable') ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="reimbursable" title="Reimbursable">Reimb</button>`;
+      const tagCell = txnTagCellHtml(t);
       return `<tr>
         <td class="chk-cell"><input type="checkbox" class="row-check" data-merchant="${encodeURIComponent(t.merchantKey)}" data-tid="${encodeURIComponent(t.tid)}" data-store-key="${encodeURIComponent(t.storeKey)}"></td>
         <td data-label="Date">${t.date}</td>
         <td class="txn-merch" data-label="Merchant"><span class="txn-name" data-merchant="${encodeURIComponent(t.merchantKey)}">${maskMerch(t.name)}</span><button type="button" class="icon-btn txn-edit" data-store-key="${encodeURIComponent(t.storeKey)}" data-name="${encodeURIComponent(t.name)}" title="Edit merchant">${svg(PENCIL)}</button></td>
         ${showCm ? `<td data-label="Cardmember">${esc(t.cardmember)}</td>` : ''}
-        <td data-label="Category"><select class="cat-select" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td>
+        <td data-label="Category"><select class="cat-select cat-select-txn" data-tid="${encodeURIComponent(t.tid)}" data-merchant="${encodeURIComponent(t.merchantKey)}">${opts}</select></td>
         <td class="num ${amtCls}" data-label="Amount">${fmt(t.amount)}</td>
         <td class="tag-cell" data-label="Tags">${tagCell}</td>
         <td class="sub-cell" data-label="Subscription">${subCell}</td>
@@ -1315,10 +1413,7 @@
     }).join('');
 
     const tb = $('#txnTable tbody');
-    tb.querySelectorAll('select.cat-select').forEach((sel, i) => {
-      sel.value = rows[i].category;
-      sel.onchange = () => { Store.setOverride(decodeURIComponent(sel.dataset.merchant), sel.value); render(); };
-    });
+    tb.querySelectorAll('select.cat-select').forEach((sel, i) => wireCategorySelect(sel, rows[i]));
     tb.querySelectorAll('input.sub-check').forEach((cb) => {
       cb.onchange = () => {
         Store.setSubscription(decodeURIComponent(cb.dataset.key), cb.checked);
@@ -1329,9 +1424,14 @@
     tb.querySelectorAll('input.row-check').forEach((cb) => cb.onchange = updateBulkButton);
     tb.querySelectorAll('.tag-btn').forEach((btn) => btn.onclick = () => {
       const tid = decodeURIComponent(btn.dataset.tid), tag = btn.dataset.tag;
-      Store.setTxnTag(tid, tag, !btn.classList.contains('on'));
+      const turningOn = !btn.classList.contains('on');
+      Store.setTxnTag(tid, tag, turningOn);
+      if (turningOn && tag === 'reimbursable' && !Store.getTxnReimburse()[tid]) {
+        Store.setTxnReimburse(tid, { mode: 'percent', value: 100 });
+      }
       render();
     });
+    bindReimbFields(tb);
     tb.querySelectorAll('.txn-name').forEach((el) => el.onclick = () => openMerchantDrill(decodeURIComponent(el.dataset.merchant)));
     tb.querySelectorAll('.txn-edit').forEach((btn) => btn.onclick = (e) => {
       e.stopPropagation();
@@ -1365,8 +1465,19 @@
 
   // ============ Preferences ============
   function renderPrefs() {
+    renderCategoryApplyPref();
     renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderMergeRuleManager(); renderCardManager(); renderGroupManager(); renderBudgetManager();
     renderAccountManager(); renderMergeManager(); renderWidgetManager(); renderAccountSize();
+  }
+
+  function renderCategoryApplyPref() {
+    const sel = $('#categoryApplyMode');
+    if (!sel) return;
+    sel.value = Store.getCategoryApplyMode();
+    sel.onchange = () => {
+      Store.setCategoryApplyMode(sel.value);
+      toast('Category change preference saved');
+    };
   }
 
   function catOptions(selected) {
@@ -2363,6 +2474,77 @@
     reader.readAsText(file);
   }
 
+  function applyCategoryOne(tid, txnName, newCat) {
+    const autoCat = categorize(txnName, Store.getOverrides());
+    if (newCat === autoCat) Store.setTxnCategoryOverride(tid, '');
+    else Store.setTxnCategoryOverride(tid, newCat);
+  }
+
+  function applyCategoryAll(merchantKey, newCat) {
+    Store.setOverride(merchantKey, newCat);
+    Store.clearTxnCategoryOverridesForMerchant(merchantKey);
+  }
+
+  function wireCategorySelect(sel, t) {
+    sel.value = t.category;
+    sel.removeAttribute('title');
+    sel.onchange = () => {
+      const newCat = sel.value;
+      if (newCat === t.category) return;
+      const opts = {
+        tid: t.tid,
+        merchantKey: t.merchantKey,
+        merchantLabel: maskMerch(t.merchantKey),
+        txnName: t.name,
+        newCat,
+        previousCat: t.category,
+        selectEl: sel,
+      };
+      const mode = Store.getCategoryApplyMode();
+      if (mode === 'one') {
+        applyCategoryOne(opts.tid, opts.txnName, opts.newCat);
+        toast('Category saved for this transaction');
+        render();
+        return;
+      }
+      if (mode === 'all') {
+        applyCategoryAll(opts.merchantKey, opts.newCat);
+        toast('Category saved for all transactions at this merchant');
+        render();
+        return;
+      }
+      promptCategoryApply(opts);
+    };
+  }
+
+  function promptCategoryApply(opts) {
+    const { tid, merchantKey, merchantLabel, txnName, newCat, previousCat, selectEl } = opts;
+    if (selectEl) selectEl.value = previousCat;
+    const body = openModal(
+      `<div class="eyebrow">Category</div>
+       <h2>Apply “${esc(newCat)}”?</h2>
+       <p class="muted">Choose how to apply this category for <strong>${esc(merchantLabel)}</strong>.</p>
+       <div class="cat-apply-actions">
+         <button type="button" class="btn primary" id="catApplyOne">Just this transaction</button>
+         <button type="button" class="btn" id="catApplyAll">All transactions for this merchant</button>
+         <button type="button" class="btn ghost" id="catApplyCancel">Cancel</button>
+       </div>`
+    );
+    body.querySelector('#catApplyOne').onclick = () => {
+      applyCategoryOne(tid, txnName, newCat);
+      closeModal();
+      toast('Category saved for this transaction');
+      render();
+    };
+    body.querySelector('#catApplyAll').onclick = () => {
+      applyCategoryAll(merchantKey, newCat);
+      closeModal();
+      toast('Category saved for all transactions at this merchant');
+      render();
+    };
+    body.querySelector('#catApplyCancel').onclick = () => closeModal();
+  }
+
   // ============ Modal ============
   function openModal(html) {
     const m = $('#modal');
@@ -2394,12 +2576,18 @@
           <span><strong>${fmt(detail.avg)}</strong> avg ticket</span>
         </div></div>
       <div class="drill-manage">
-        <div class="dm-row"><label>Category</label><select id="dmCat">${catOptions(curCat)}</select></div>
-        <div class="dm-row"><label>Apply to all transactions</label><div class="dm-toggles">
+        <div class="dm-row"><label>Category</label><select id="dmCat">${catOptions(curCat)}</select><span class="dm-hint muted">All transactions at this merchant</span></div>
+        <div class="dm-row"><label>Tags</label><div class="dm-toggles">
           <button class="tag-btn${mTags.includes('business') ? ' on' : ''}" data-mtag="business">Work / Business</button>
           <button class="tag-btn${mTags.includes('reimbursable') ? ' on' : ''}" data-mtag="reimbursable">Reimbursable</button>
           <button class="tag-btn${exclAnom ? ' on' : ''}" data-mexcl="1">Exclude from anomalies</button>
         </div></div>
+        ${mTags.includes('reimbursable')
+          ? `<div class="dm-row"><label>Reimbursable</label>${reimbFieldHtml(
+              Store.getMerchantReimburse()[merchantKey] || { mode: 'percent', value: 100 },
+              { scope: 'merchant', merchantKey }
+            )}</div>`
+          : ''}
       </div>
       <div class="canvas-wrap"><canvas id="drillTrend"></canvas></div>
       ${detail.categories.length > 1
@@ -2417,9 +2605,14 @@
     };
     body.querySelectorAll('[data-mtag]').forEach((btn) => btn.onclick = () => {
       const tag = btn.dataset.mtag;
-      Store.setMerchantTag(merchantKey, tag, !btn.classList.contains('on'));
+      const turningOn = !btn.classList.contains('on');
+      Store.setMerchantTag(merchantKey, tag, turningOn);
+      if (turningOn && tag === 'reimbursable' && !Store.getMerchantReimburse()[merchantKey]) {
+        Store.setMerchantReimburse(merchantKey, { mode: 'percent', value: 100 });
+      }
       render(); openMerchantDrill(merchantKey);
     });
+    bindReimbFields(body);
     const exBtn = body.querySelector('[data-mexcl]');
     if (exBtn) exBtn.onclick = () => {
       Store.setMerchantAnomalyExclude(merchantKey, !exBtn.classList.contains('on'));

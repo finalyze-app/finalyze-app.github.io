@@ -337,6 +337,8 @@ body.is-mobile #widget-transactions td.txn-merch .txn-name { font-weight: 700; f
 body.is-mobile #widget-transactions td.num { font-size: 16px; font-weight: 700; }
 body.is-mobile #widget-transactions td .cat-select { flex: 1; max-width: 60%; }
 body.is-mobile #widget-transactions td.tag-cell { justify-content: flex-end; gap: 8px; }
+body.is-mobile #widget-transactions .tag-cell-inner { justify-content: flex-end; }
+body.is-mobile #widget-transactions .tag-reimb-group { flex-wrap: wrap; justify-content: flex-end; }
 body.is-mobile #widget-transactions td.txn-actions { justify-content: flex-end; padding-top: 2px; }
 body.is-mobile #widget-transactions td.txn-actions::before { display: none; }
 body.is-mobile #widget-transactions td.txn-merch .txn-edit { width: 36px; height: 36px; }
@@ -538,7 +540,15 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
 .bulk-all { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
 .bulk-bar select { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
 .chk-cell { width: 30px; text-align: center; }
-.tag-cell { white-space: nowrap; }
+.tag-cell { white-space: nowrap; vertical-align: middle; }
+.tag-cell-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.tag-reimb-group { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.reimb-field { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.reimb-mode-toggle { display: inline-flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+.reimb-mode { font: inherit; font-size: 10px; font-weight: 700; padding: 3px 7px; border: 0; background: var(--surface-2); color: var(--muted); cursor: pointer; }
+.reimb-mode.on { background: var(--accent-soft); color: var(--accent); }
+.reimb-val { width: 52px; font: inherit; font-size: 11px; font-weight: 600; padding: 3px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); }
+.reimb-val:focus { outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
 .tag-btn { font: inherit; font-size: 11px; font-weight: 600; padding: 3px 7px; margin-right: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); cursor: pointer; transition: .12s; }
 .tag-btn:hover { border-color: var(--accent); color: var(--ink); }
 .tag-btn.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
@@ -608,6 +618,14 @@ body.modal-open { overflow: hidden; }
 .dm-row select { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
 .dm-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
 .dm-toggles .tag-btn { font-size: 12px; padding: 5px 10px; }
+.dm-hint { font-size: 12px; font-weight: 500; }
+.drill-manage .reimb-field { border-radius: 10px; padding: 4px 6px; }
+.drill-manage .reimb-val { width: 72px; }
+.cat-apply-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.cat-apply-actions .btn { width: 100%; justify-content: center; }
+.pref-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 0; }
+.pref-row .pref-label { font-size: 14px; font-weight: 600; color: var(--ink); min-width: 200px; }
+.pref-row select { font: inherit; font-size: 14px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); min-width: min(100%, 320px); flex: 1; }
 
 /* danger zone (clear all data) */
 .danger-zone { border-color: var(--red); }
@@ -902,3 +920,5 @@ a.brand:hover { opacity: .85; }
 .trend-controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
 .trend-controls select, .trend-controls input { font: inherit; font-size: 13px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
 .trend-controls input[type="number"] { width: 64px; }
+.trend-controls .btn { margin-left: auto; }
+@media (max-width: 520px) { .trend-controls .btn { margin-left: 0; width: 100%; } }
