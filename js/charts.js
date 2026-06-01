@@ -171,17 +171,41 @@
     });
   }
 
-  function downloadPng(canvasId, filename) {
+  // Export with opaque panel background (Chart.js canvas is transparent by default).
+  function downloadPng(canvasId, filename, onDone) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas) return false;
+    if (!canvas) {
+      if (onDone) onDone(false);
+      return false;
+    }
     const inst = Chart.getChart && Chart.getChart(canvas);
-    const url = (inst && inst.toBase64Image)
+    const src = (inst && inst.toBase64Image)
       ? inst.toBase64Image('image/png', 1)
       : canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename || 'chart.png';
-    a.click();
+    const w = inst ? inst.width : canvas.width;
+    const h = inst ? inst.height : canvas.height;
+    const bg = css('--surface') || theme().surface || '#ffffff';
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const out = document.createElement('canvas');
+        out.width = w;
+        out.height = h;
+        const ctx = out.getContext('2d');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const a = document.createElement('a');
+        a.href = out.toDataURL('image/png');
+        a.download = filename || 'chart.png';
+        a.click();
+        if (onDone) onDone(true);
+      } catch (e) {
+        if (onDone) onDone(false);
+      }
+    };
+    img.onerror = () => { if (onDone) onDone(false); };
+    img.src = src;
     return true;
   }
 

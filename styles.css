@@ -188,7 +188,7 @@ body.is-mobile .filters-toggle { width: 100%; justify-content: center; margin-to
 .panel h2 { margin: 0; font-size: 16px; letter-spacing: -.01em; }
 .panel h3 { font-size: 13px; color: var(--muted); margin: 20px 0 10px; font-weight: 600; }
 .panel .hint { font-size: 12px; color: var(--muted); }
-.canvas-wrap { position: relative; height: 270px; }
+.canvas-wrap { position: relative; height: 270px; background: var(--surface); border-radius: 10px; }
 .canvas-wrap.tall { height: 320px; }
 
 /* ============ Tables ============ */

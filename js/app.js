@@ -1050,8 +1050,9 @@
     if (dl) {
       dl.onclick = () => {
         const slug = trendWidgetTitle().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trend';
-        if (charts.downloadPng('chartTrend', `${slug}.png`)) toast('Chart downloaded');
-        else toast('Chart not ready');
+        charts.downloadPng('chartTrend', `${slug}.png`, (ok) => {
+          toast(ok ? 'Chart downloaded' : 'Chart not ready');
+        });
       };
     }
     updateTrendTitle();
