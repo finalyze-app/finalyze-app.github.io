@@ -18,7 +18,7 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css?v=4" />
+  <link rel="stylesheet" href="landing.css?v=6" />
   <!-- hero-preview v4: inline fallbacks — do not rely on CSS variables alone -->
   <style>
     .appdemo .ad-window {
@@ -63,17 +63,9 @@
     .appdemo .ad-bars span {
       display: block !important;
       flex: 1 !important;
-      min-height: 24px !important;
       border-radius: 7px 7px 3px 3px !important;
       background: linear-gradient(180deg, #7c4dff, #3b82f6) !important;
     }
-    .appdemo .ad-bars span:nth-child(1) { height: 82% !important; }
-    .appdemo .ad-bars span:nth-child(2) { height: 64% !important; }
-    .appdemo .ad-bars span:nth-child(3) { height: 48% !important; }
-    .appdemo .ad-bars span:nth-child(4) { height: 71% !important; }
-    .appdemo .ad-bars span:nth-child(5) { height: 38% !important; }
-    .appdemo .ad-bars span:nth-child(6) { height: 55% !important; }
-    .appdemo .ad-bars span:nth-child(7) { height: 29% !important; }
     @media (min-width: 720px) {
       .appdemo .ad-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
       .appdemo .ad-row { grid-template-columns: 1.2fr 1fr !important; }
@@ -159,10 +151,10 @@
               <div class="ad-panel ad-chart" style="padding:14px">
                 <div class="ad-ph">Spend by category</div>
                 <div class="ad-bars">
-                  <span style="height:82%"></span><span style="height:64%"></span>
-                  <span style="height:48%"></span><span style="height:71%"></span>
-                  <span style="height:38%"></span><span style="height:55%"></span>
-                  <span style="height:29%"></span>
+                  <span style="--h:82%;--d:0s"></span><span style="--h:64%;--d:.08s"></span>
+                  <span style="--h:48%;--d:.16s"></span><span style="--h:71%;--d:.24s"></span>
+                  <span style="--h:38%;--d:.32s"></span><span style="--h:55%;--d:.4s"></span>
+                  <span style="--h:29%;--d:.48s"></span>
                 </div>
               </div>
               <div class="ad-panel ad-ai" style="padding:14px">
