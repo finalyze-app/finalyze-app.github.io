@@ -18,34 +18,66 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css?v=3" />
-  <!-- Hero preview: hardcoded fallbacks so content stays visible in all browsers/themes -->
+  <link rel="stylesheet" href="landing.css?v=4" />
+  <!-- hero-preview v4: inline fallbacks — do not rely on CSS variables alone -->
   <style>
     .appdemo .ad-window {
-      display: flex !important;
+      display: block !important;
       min-height: 340px !important;
       background: #eef1f8 !important;
     }
     .appdemo .ad-main {
-      display: flex !important;
-      flex: 1 1 auto !important;
-      min-width: 0 !important;
+      display: block !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      padding: 16px !important;
+    }
+    .appdemo .ad-kpis {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+      width: 100% !important;
     }
     .appdemo .ad-kpi,
     .appdemo .ad-panel {
+      display: block !important;
       opacity: 1 !important;
+      visibility: visible !important;
       background: #fff !important;
       border: 1px solid #c7cfe6 !important;
+      border-radius: 12px !important;
+      min-height: 64px !important;
     }
-    .appdemo .ad-v { color: #0b1020 !important; }
-    .appdemo .ad-l { color: #5c6680 !important; }
+    .appdemo .ad-v { color: #0b1020 !important; font-size: 19px !important; font-weight: 800 !important; }
+    .appdemo .ad-l { color: #5c6680 !important; font-size: 11px !important; }
     .appdemo .ad-ph { color: #3b82f6 !important; }
-    .appdemo .ad-type { color: #5c6680 !important; }
+    .appdemo .ad-type { color: #5c6680 !important; font-size: 13px !important; }
     .appdemo .ad-type b { color: #0b1020 !important; }
+    .appdemo .ad-row {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+      margin-top: 14px !important;
+    }
+    .appdemo .ad-bars { display: flex !important; height: 120px !important; gap: 8px !important; align-items: flex-end !important; }
     .appdemo .ad-bars span {
-      height: var(--h, 50%) !important;
-      min-height: 12px !important;
+      display: block !important;
+      flex: 1 !important;
+      min-height: 24px !important;
+      border-radius: 7px 7px 3px 3px !important;
       background: linear-gradient(180deg, #7c4dff, #3b82f6) !important;
+    }
+    .appdemo .ad-bars span:nth-child(1) { height: 82% !important; }
+    .appdemo .ad-bars span:nth-child(2) { height: 64% !important; }
+    .appdemo .ad-bars span:nth-child(3) { height: 48% !important; }
+    .appdemo .ad-bars span:nth-child(4) { height: 71% !important; }
+    .appdemo .ad-bars span:nth-child(5) { height: 38% !important; }
+    .appdemo .ad-bars span:nth-child(6) { height: 55% !important; }
+    .appdemo .ad-bars span:nth-child(7) { height: 29% !important; }
+    @media (min-width: 720px) {
+      .appdemo .ad-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+      .appdemo .ad-row { grid-template-columns: 1.2fr 1fr !important; }
+      .appdemo .ad-bars { height: 150px !important; }
     }
     html[data-theme="dark"] .appdemo .ad-window { background: #0b1124 !important; }
     html[data-theme="dark"] .appdemo .ad-kpi,
@@ -113,41 +145,32 @@
         <span class="chip">On-device AI</span>
       </div>
 
-      <div class="appdemo" id="how" aria-label="Preview of the Finalyze spending dashboard">
+      <div class="appdemo" id="how">
         <div class="ad-chrome"><span class="ad-dots"><i></i><i></i><i></i></span><span class="ad-url">finalyze.cc</span></div>
         <div class="ad-window">
-          <aside class="ad-side">
-            <div class="ad-brand"><img src="assets/icon.svg" alt="" /><span>Finalyze</span></div>
-            <span class="ad-navsel"></span>
-            <span class="ad-nav"><span class="ad-i"></span>Overview</span>
-            <span class="ad-nav"><span class="ad-i"></span>By category</span>
-            <span class="ad-nav"><span class="ad-i"></span>Trend</span>
-            <span class="ad-nav"><span class="ad-i"></span>Recurring</span>
-            <span class="ad-nav"><span class="ad-i"></span>Finalyze AI</span>
-          </aside>
-          <main class="ad-main">
+          <div class="ad-main">
             <div class="ad-kpis">
-              <div class="ad-kpi"><div class="ad-v" data-to="7631" data-prefix="$">$0</div><div class="ad-l">Net spend <em class="up">▲ 212%</em></div></div>
-              <div class="ad-kpi"><div class="ad-v" data-to="2914" data-prefix="$">$0</div><div class="ad-l">Shopping/Retail</div></div>
-              <div class="ad-kpi"><div class="ad-v" data-to="182" data-prefix="$">$0</div><div class="ad-l">Coffee this month</div></div>
-              <div class="ad-kpi"><div class="ad-v" data-to="87" data-prefix="$">$0</div><div class="ad-l">Subscriptions <em class="down">12 found</em></div></div>
+              <div class="ad-kpi" style="padding:11px 12px"><div class="ad-v" data-to="7631" data-prefix="$">$7,631</div><div class="ad-l">Net spend <em class="up">▲ 212%</em></div></div>
+              <div class="ad-kpi" style="padding:11px 12px"><div class="ad-v" data-to="2914" data-prefix="$">$2,914</div><div class="ad-l">Shopping/Retail</div></div>
+              <div class="ad-kpi" style="padding:11px 12px"><div class="ad-v" data-to="182" data-prefix="$">$182</div><div class="ad-l">Coffee this month</div></div>
+              <div class="ad-kpi" style="padding:11px 12px"><div class="ad-v" data-to="87" data-prefix="$">$87</div><div class="ad-l">Subscriptions <em class="down">12 found</em></div></div>
             </div>
             <div class="ad-row">
-              <div class="ad-panel ad-chart">
+              <div class="ad-panel ad-chart" style="padding:14px">
                 <div class="ad-ph">Spend by category</div>
                 <div class="ad-bars">
-                  <span style="--h:82%;--d:.0s"></span><span style="--h:64%;--d:.08s"></span>
-                  <span style="--h:48%;--d:.16s"></span><span style="--h:71%;--d:.24s"></span>
-                  <span style="--h:38%;--d:.32s"></span><span style="--h:55%;--d:.4s"></span>
-                  <span style="--h:29%;--d:.48s"></span>
+                  <span style="height:82%"></span><span style="height:64%"></span>
+                  <span style="height:48%"></span><span style="height:71%"></span>
+                  <span style="height:38%"></span><span style="height:55%"></span>
+                  <span style="height:29%"></span>
                 </div>
               </div>
-              <div class="ad-panel ad-ai">
+              <div class="ad-panel ad-ai" style="padding:14px">
                 <div class="ad-ph">✦ AI insights</div>
                 <div class="ad-type" id="adType"><span class="row">• You spent <b>$4,657 more</b> this month than last.</span></div>
               </div>
             </div>
-          </main>
+          </div>
         </div>
       </div>
     </div>
