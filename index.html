@@ -18,12 +18,45 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css?v=2" />
-  <!-- Keep hero preview visible if an old landing.css is cached (opacity:0 bug) -->
+  <link rel="stylesheet" href="landing.css?v=3" />
+  <!-- Hero preview: hardcoded fallbacks so content stays visible in all browsers/themes -->
   <style>
-    .appdemo .ad-kpi { opacity: 1 !important; transform: none !important; }
-    .appdemo .ad-v { color: var(--ink); }
-    .appdemo .ad-bars span { height: var(--h); min-height: 12px; }
+    .appdemo .ad-window {
+      display: flex !important;
+      min-height: 340px !important;
+      background: #eef1f8 !important;
+    }
+    .appdemo .ad-main {
+      display: flex !important;
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+    }
+    .appdemo .ad-kpi,
+    .appdemo .ad-panel {
+      opacity: 1 !important;
+      background: #fff !important;
+      border: 1px solid #c7cfe6 !important;
+    }
+    .appdemo .ad-v { color: #0b1020 !important; }
+    .appdemo .ad-l { color: #5c6680 !important; }
+    .appdemo .ad-ph { color: #3b82f6 !important; }
+    .appdemo .ad-type { color: #5c6680 !important; }
+    .appdemo .ad-type b { color: #0b1020 !important; }
+    .appdemo .ad-bars span {
+      height: var(--h, 50%) !important;
+      min-height: 12px !important;
+      background: linear-gradient(180deg, #7c4dff, #3b82f6) !important;
+    }
+    html[data-theme="dark"] .appdemo .ad-window { background: #0b1124 !important; }
+    html[data-theme="dark"] .appdemo .ad-kpi,
+    html[data-theme="dark"] .appdemo .ad-panel {
+      background: #111831 !important;
+      border-color: #1f2845 !important;
+    }
+    html[data-theme="dark"] .appdemo .ad-v { color: #eef1fb !important; }
+    html[data-theme="dark"] .appdemo .ad-l,
+    html[data-theme="dark"] .appdemo .ad-type { color: #94a0c0 !important; }
+    html[data-theme="dark"] .appdemo .ad-type b { color: #fff !important; }
   </style>
   <script>
     (function () {
@@ -86,11 +119,11 @@
           <aside class="ad-side">
             <div class="ad-brand"><img src="assets/icon.svg" alt="" /><span>Finalyze</span></div>
             <span class="ad-navsel"></span>
-            <a class="ad-nav"><span class="ad-i"></span>Overview</a>
-            <a class="ad-nav"><span class="ad-i"></span>By category</a>
-            <a class="ad-nav"><span class="ad-i"></span>Trend</a>
-            <a class="ad-nav"><span class="ad-i"></span>Recurring</a>
-            <a class="ad-nav"><span class="ad-i"></span>Finalyze AI</a>
+            <span class="ad-nav"><span class="ad-i"></span>Overview</span>
+            <span class="ad-nav"><span class="ad-i"></span>By category</span>
+            <span class="ad-nav"><span class="ad-i"></span>Trend</span>
+            <span class="ad-nav"><span class="ad-i"></span>Recurring</span>
+            <span class="ad-nav"><span class="ad-i"></span>Finalyze AI</span>
           </aside>
           <main class="ad-main">
             <div class="ad-kpis">
