@@ -1,4 +1,4 @@
-// Finalyze — first-run demo / guided tour.
+// Finalyze - first-run demo / guided tour.
 //
 // Loads bundled dummy transactions (sample/demo.csv) so a first-time visitor can
 // explore the app without importing their own data, then walks them through the
@@ -17,14 +17,14 @@
 
   // Tour steps. `sel` is the element to spotlight (null = centered card).
   const STEPS = [
-    { sel: null, title: 'Welcome to Finalyze', body: 'This is a live demo loaded with dummy May 2026 transactions. Take a 60-second tour of what the app does — then load your own data.' },
+    { sel: null, title: 'Welcome to Finalyze', body: 'This is a live demo loaded with dummy May 2026 transactions. Take a 60-second tour of what the app does - then load your own data.' },
     { sel: '#widget-overview', title: 'Your money at a glance', body: 'KPI cards summarise total spend, refunds, payments, net, and averages for the selected period. Deltas show how this month compares to last.' },
     { sel: '#widget-category', title: 'Where it goes', body: 'Spending is auto-categorised from the merchant name. Tap a slice to filter the whole dashboard to that category.' },
     { sel: '#widget-merchants', title: 'Top merchants', body: 'See who you pay most. Tap a bar to open a merchant drill-down with its history, average ticket, and category.' },
-    { sel: '#widget-recurring', title: 'Recurring & subscriptions', body: 'Finalyze flags repeating charges — Netflix, Spotify, ChatGPT, Apple — so nothing slips through unnoticed.' },
+    { sel: '#widget-recurring', title: 'Recurring & subscriptions', body: 'Finalyze flags repeating charges - Netflix, Spotify, ChatGPT, Apple - so nothing slips through unnoticed.' },
     { sel: '#widget-anomalies', title: 'Anomalies', body: 'Possible duplicates and unusually large charges are surfaced automatically so you can catch surprises.' },
     { sel: '#widget-transactions', title: 'Every transaction', body: 'Search, filter, retag, and recategorise. Changes to a merchant’s category are remembered for future imports.' },
-    { sel: null, title: 'Ask the AI (optional)', body: 'The Finalyze AI button (in the sidebar) gives plain-English insights and lets you chat with your spending — all on your device, opt-in.' },
+    { sel: null, title: 'Ask the AI (optional)', body: 'The Finalyze AI button (in the sidebar) gives plain-English insights and lets you chat with your spending - all on your device, opt-in.' },
     { sel: null, title: 'Ready for the real thing?', body: 'That’s the tour! Clear this sample data and import your own bank or card export (.qfx / .ofx / .csv). Your data never leaves your device.', final: true },
   ];
 
@@ -126,7 +126,7 @@
     if (!host) return;
     if (!active()) { host.hidden = true; host.innerHTML = ''; if (F.Tickets && F.Tickets.refresh) F.Tickets.refresh(); return; }
     host.hidden = false;
-    host.innerHTML = `<span><strong>Demo mode</strong> — sample data · Pro features unlocked.</span>
+    host.innerHTML = `<span><strong>Demo mode</strong> - sample data · Pro features unlocked.</span>
       <span class="demo-banner-actions">
         <button class="linkish" id="demoReplay" type="button">Replay tour</button>
         <button class="btn sm primary" id="demoClear" type="button">${accountsRequired() ? 'Clear demo &amp; create account' : 'Clear demo &amp; import my data'}</button>
@@ -148,7 +148,7 @@
         if (F.Account && F.Account.openSignIn) F.Account.openSignIn('signup');
         return;
       }
-      F.toast && F.toast('Demo cleared — choose your own export to import');
+      F.toast && F.toast('Demo cleared - choose your own export to import');
       const inp = $('#fileInput') || $('#fileInput2');
       if (inp) inp.click();
     });

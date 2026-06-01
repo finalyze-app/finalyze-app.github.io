@@ -685,7 +685,7 @@ body.modal-open { overflow: hidden; }
 #nav a.nav-danger { color: #ff8a8a; }
 .settings-mode .sidebar { box-shadow: inset -3px 0 0 var(--accent); }
 
-/* tabbed settings — centered grid, short panels pair up, wide ones span both */
+/* tabbed settings - centered grid, short panels pair up, wide ones span both */
 .settings-mode #prefs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -898,7 +898,7 @@ a.brand:hover { opacity: .85; }
 .cc-actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
 .cc-sum { font-size: 12.5px; }
 
-/* Danger zone — two clear options */
+/* Danger zone - two clear options */
 .danger-actions { display: flex; flex-direction: column; gap: 12px; }
 .danger-opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--line-2); }
 .danger-opt:first-child { border-top: none; }

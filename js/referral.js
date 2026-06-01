@@ -1,4 +1,4 @@
-// Finalyze — referral link capture (?ref=CODE) and signup propagation.
+// Finalyze - referral link capture (?ref=CODE) and signup propagation.
 (function (global) {
   const F = (global.Finalyze = global.Finalyze || {});
   const KEY = 'finalyze.ref';

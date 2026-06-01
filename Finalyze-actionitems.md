@@ -1,13 +1,13 @@
-# Finalyze — Action Items
+# Finalyze - Action Items
 
 Outstanding setup tasks the project owner must complete outside the codebase.
 
 ## Custom domain: finalyze.cc (do these now / once DNS propagates)
-- [ ] **Registrar DNS** — apex `finalyze.cc` → four GitHub Pages **A** records:
+- [ ] **Registrar DNS** - apex `finalyze.cc` → four GitHub Pages **A** records:
       `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
       (optional AAAA: `2606:50c0:8000::153` … `8001/8002/8003::153`).
       `www` → **CNAME** `finalyze-app.github.io`.
-- [ ] **GitHub → Settings → Pages** — confirm Custom domain = `finalyze.cc`
+- [ ] **GitHub → Settings → Pages** - confirm Custom domain = `finalyze.cc`
       (the repo `CNAME` file sets it), then enable **Enforce HTTPS** once the cert
       provisions (~15 min–1 hr after DNS resolves).
 - [ ] **Once DNS propagates / HTTPS is on:**
@@ -19,14 +19,14 @@ Outstanding setup tasks the project owner must complete outside the codebase.
   - [ ] Verify the live site at `https://finalyze.cc` and `https://finalyze.cc/app.html`,
         do one real sign-up → confirmation email → import.
 
-## Custom SMTP (Resend) — fixes throttled confirmation emails
+## Custom SMTP (Resend) - fixes throttled confirmation emails
 See `SUPABASE_SETUP.md` §3b. Verify domain in Resend, create an API key, set it as
 Supabase Custom SMTP (`smtp.resend.com`, port 465, user `resend`, pass = API key),
 then raise Supabase Auth **Emails per hour**.
 
 ## Supabase requirements (Phase 1: accounts)
 
-The app talks to **one** server — Supabase — and only for email/account data.
+The app talks to **one** server - Supabase - and only for email/account data.
 Financial transactions never leave the device (IndexedDB).
 
 ### 1. Project + keys
@@ -42,7 +42,7 @@ Financial transactions never leave the device (IndexedDB).
   - Row-Level Security so each user can read/write **only their own row**.
   - An `on_auth_user_created` trigger that auto-inserts a profile on sign-up.
 
-### 3. Auth configuration — EMAIL + PASSWORD
+### 3. Auth configuration - EMAIL + PASSWORD
 - [ ] Authentication → Providers → **Email**: enable **email + password**.
       (Magic link is **not** used anymore.)
 - [ ] Decide **Confirm email**:
@@ -57,7 +57,7 @@ Financial transactions never leave the device (IndexedDB).
       `https://finalyze.cc/app.html`, `https://www.finalyze.cc/app.html`,
       `https://finalyze-app.github.io/app.html`, `http://localhost:8755/app.html`.
 
-### 3a. Google sign-in (OAuth) — see `SUPABASE_SETUP.md` §3a
+### 3a. Google sign-in (OAuth) - see `SUPABASE_SETUP.md` §3a
 - [x] Google Cloud → OAuth client ID (Web app); redirect URI
       `https://<project-ref>.supabase.co/auth/v1/callback`.
 - [x] Supabase → Authentication → Providers → **Google**: enabled, Client ID + Secret set.
@@ -66,7 +66,7 @@ Financial transactions never leave the device (IndexedDB).
 
 ### 4. Hosting
 - [ ] Publish the static folder to Netlify / Vercel / GitHub Pages (no backend
-      to deploy — the app is fully static).
+      to deploy - the app is fully static).
 
 ### 5. Growing & emailing the user base
 - [ ] User base = rows in `public.profiles` (and `auth.users`).
@@ -82,19 +82,19 @@ Financial transactions never leave the device (IndexedDB).
 - [x] SVG logo + app icon in `assets/` (`logo.svg`, `icon.svg`), wired to sidebar,
       favicon, and `manifest.webmanifest` (installable PWA).
 - [ ] Optional: drop in the original raster logo by overwriting `assets/logo.svg`
-      / `assets/icon.svg` (keep the same filenames — everything else just works).
+      / `assets/icon.svg` (keep the same filenames - everything else just works).
 - [ ] Optional: add a 180×180 and 512×512 **PNG** icon for the broadest
       iOS/Android home-screen support, and reference them in `manifest.webmanifest`
       + an `apple-touch-icon` link (SVG works in most modern browsers already).
 
-## Phase 2 + 3: on-device AI (done — opt-in)
-- [x] `js/ai.js` — Transformers.js categorization (embeddings + exemplar k-NN).
-- [x] `js/chat.js` — WebLLM insights + ask-your-data chat, with deterministic
+## Phase 2 + 3: on-device AI (done - opt-in)
+- [x] `js/ai.js` - Transformers.js categorization (embeddings + exemplar k-NN).
+- [x] `js/chat.js` - WebLLM insights + ask-your-data chat, with deterministic
       insight fallback when WebGPU/LLM is unavailable.
-- [x] `js/aiui.js` — "Finalyze AI" sidebar button → modal (Insights / Chat /
+- [x] `js/aiui.js` - "Finalyze AI" sidebar button → modal (Insights / Chat /
       Auto-categorize / Models). Models download on explicit opt-in only.
 - **Dependency note:** the AI libraries load via dynamic `import()` from a CDN
-  (jsDelivr / esm.run) **at opt-in time only** — there are no AI network calls
+  (jsDelivr / esm.run) **at opt-in time only** - there are no AI network calls
   until the user clicks "Download & enable". For a fully self-hosted build,
   vendor `@xenova/transformers` and `@mlc-ai/web-llm` locally and point the
   `LIB_URL` constants in `ai.js` / `chat.js` at the local copies.
@@ -110,5 +110,5 @@ Financial transactions never leave the device (IndexedDB).
       the matching form once Supabase is configured).
 
 ## Notes / future
-- Add a **"Forgot password"** flow (Supabase `POST /auth/v1/recover`) — not yet
+- Add a **"Forgot password"** flow (Supabase `POST /auth/v1/recover`) - not yet
   wired in the client.

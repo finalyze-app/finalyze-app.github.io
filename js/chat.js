@@ -1,7 +1,7 @@
-// Finalyze — Phase 3: AI insights + ask-your-data chat (WebLLM).
+// Finalyze - Phase 3: AI insights + ask-your-data chat (WebLLM).
 //
 // OPT-IN. The language model runs entirely in-browser via WebGPU; your spending
-// data is summarised locally and fed to the model on-device — nothing is sent to
+// data is summarised locally and fed to the model on-device - nothing is sent to
 // any server. The model (~0.8–1.2 GB) downloads once and is cached.
 //
 // Everything degrades gracefully: if WebGPU or the model isn't available, the
@@ -28,7 +28,7 @@
 
   async function enable(onProgress) {
     if (engine) return true;
-    if (!webgpu()) throw new Error('This browser has no WebGPU — chat needs Chrome/Edge 121+ or Safari 18+.');
+    if (!webgpu()) throw new Error('This browser has no WebGPU - chat needs Chrome/Edge 121+ or Safari 18+.');
     if (enabling) return enabling;
     enabling = (async () => {
       const webllm = await import(/* webpackIgnore: true */ LIB_URL);
@@ -84,7 +84,7 @@
     if (d.byMerch[0]) out.push(`Top merchant is ${d.byMerch[0].merchant} at ${money(d.byMerch[0].spend)}.`);
     if (d.subs.length) {
       const monthly = d.subs.reduce((a, x) => a + x.amount, 0);
-      out.push(`${d.subs.length} recurring charges totalling about ${money(monthly)} per cycle — review for anything unused.`);
+      out.push(`${d.subs.length} recurring charges totalling about ${money(monthly)} per cycle - review for anything unused.`);
     }
     out.push(`Average transaction is ${money(d.s.avgSpend)}; median ${money(d.s.medianSpend)}.`);
     return out;
@@ -100,7 +100,7 @@
     return full;
   }
 
-  const SYS = 'You are Finalyze, a concise spending-analysis assistant. You ONLY analyze the user\'s recorded transaction history from the summary provided — totals, categories, merchants, trends, subscriptions, and changes over time. Use the user\'s currency, be specific with numbers, keep answers short, and never invent data. Do NOT give affordability, budgeting-advice, forecasting, or investment answers (e.g. "can I afford X", "should I buy Y") — the app only has past spend data, not income, savings, or balances. If asked something like that, briefly say you can only analyze recorded spending and offer a relevant spending breakdown instead. If the summary lacks the answer, say so.';
+  const SYS = 'You are Finalyze, a concise spending-analysis assistant. You ONLY analyze the user\'s recorded transaction history from the summary provided - totals, categories, merchants, trends, subscriptions, and changes over time. Use the user\'s currency, be specific with numbers, keep answers short, and never invent data. Do NOT give affordability, budgeting-advice, forecasting, or investment answers (e.g. "can I afford X", "should I buy Y") - the app only has past spend data, not income, savings, or balances. If asked something like that, briefly say you can only analyze recorded spending and offer a relevant spending breakdown instead. If the summary lacks the answer, say so.';
 
   async function ask(question, onToken) {
     if (!engine) throw new Error('AI chat is not enabled yet.');

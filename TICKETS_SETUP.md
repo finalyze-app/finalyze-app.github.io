@@ -1,4 +1,4 @@
-# Finalyze — Beta tickets + email notifications
+# Finalyze - Beta tickets + email notifications
 
 Users submit feedback from the app (signed in, not in demo mode). Rows land in
 `public.tickets`. A **Database Webhook** calls an Edge Function that emails you
@@ -12,13 +12,13 @@ If you have not already, run in **SQL Editor**:
 
 ## 2. Deploy the notify function
 
-Generate a webhook secret (save it — you need it twice):
+Generate a webhook secret (save it - you need it twice):
 
 ```sh
 openssl rand -hex 32
 ```
 
-Set function secrets (use your Resend API key — same `re_…` key as SMTP is fine):
+Set function secrets (use your Resend API key - same `re_…` key as SMTP is fine):
 
 ```sh
 npx supabase secrets set \
@@ -36,7 +36,7 @@ cd ~/Finalyze
 npx supabase functions deploy ticket-notify --no-verify-jwt --project-ref pdanbjmzynsyukfhoftw
 ```
 
-(`--no-verify-jwt` is required — the database webhook does not send a user JWT;
+(`--no-verify-jwt` is required - the database webhook does not send a user JWT;
 the function verifies `x-webhook-secret` instead.)
 
 ## 3. Create the Database Webhook
@@ -57,7 +57,7 @@ The old **Database → Webhooks** / `/database/hooks` URL 404s.)
    ```
    https://pdanbjmzynsyukfhoftw.supabase.co/functions/v1/ticket-notify
    ```
-7. **HTTP headers** — add one row:
+7. **HTTP headers** - add one row:
    | Name | Value |
    |------|--------|
    | `x-webhook-secret` | same value as `TICKET_WEBHOOK_SECRET` |
@@ -80,7 +80,7 @@ create trigger ticket_notify_webhook
   );
 ```
 
-Do not commit the secret into git if you use this approach — paste it only in the SQL Editor.
+Do not commit the secret into git if you use this approach - paste it only in the SQL Editor.
 
 ## 4. Test
 
@@ -106,7 +106,7 @@ Each notification includes:
 
 - Only the Edge Function sends mail; clients never see `RESEND_API_KEY`.
 - The webhook must send the correct `x-webhook-secret` or the function returns 401.
-- `TICKET_WEBHOOK_SECRET` must be long and random — do not commit it to git.
+- `TICKET_WEBHOOK_SECRET` must be long and random - do not commit it to git.
 
 ## Troubleshooting
 

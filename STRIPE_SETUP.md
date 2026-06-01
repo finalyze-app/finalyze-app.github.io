@@ -1,10 +1,10 @@
-# Finalyze — Stripe → Pro upgrade (webhook setup)
+# Finalyze - Stripe → Pro upgrade (webhook setup)
 
 This makes a paid Stripe subscription automatically flip a user's
 `public.profiles.license` to `pro` (and back to `free` on cancel). The app reads
 that column to unlock Pro (lift the 2-month limit, etc.).
 
-**How users are matched:** by the **email** they use at Stripe checkout — it must
+**How users are matched:** by the **email** they use at Stripe checkout - it must
 match their Finalyze (Supabase) account email. Later subscription events match by
 the Stripe customer id stored on the profile.
 
@@ -26,7 +26,7 @@ From the project root (requires the Supabase CLI, logged in & linked):
 ```sh
 supabase functions deploy stripe-webhook --no-verify-jwt
 ```
-(`--no-verify-jwt` is required — Stripe calls it without a Supabase JWT; the
+(`--no-verify-jwt` is required - Stripe calls it without a Supabase JWT; the
 function verifies Stripe’s own signature instead.)
 
 ## 4. Set the function secrets
@@ -38,7 +38,7 @@ supabase secrets set \
 # SUPABASE_URL is provided automatically; set PROJECT_URL only if needed.
 ```
 > The **service-role key** is required so the function can update any profile
-> (it bypasses RLS). Keep it secret — it lives only in function secrets, never in
+> (it bypasses RLS). Keep it secret - it lives only in function secrets, never in
 > the client.
 
 ## 5. Create the Stripe webhook endpoint

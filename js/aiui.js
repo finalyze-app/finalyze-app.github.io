@@ -1,4 +1,4 @@
-// Finalyze — AI control surface. Wires the opt-in Phase 2 (categorization) and
+// Finalyze - AI control surface. Wires the opt-in Phase 2 (categorization) and
 // Phase 3 (insights + chat) features into a single modal opened from the sidebar.
 // Self-contained; if the AI modules aren't present it simply does nothing.
 
@@ -78,7 +78,7 @@
   // ---- Chat ----
   function renderChat(body) {
     if (F.isPro && !F.isPro()) {
-      body.innerHTML = `<div class="ai-head"><h3>Chat</h3></div><div class="ai-empty">Ask about your recorded spending — e.g. “how much did I spend on coffee?” or “what changed from last month?”</div>`;
+      body.innerHTML = `<div class="ai-head"><h3>Chat</h3></div><div class="ai-empty">Ask about your recorded spending - e.g. “how much did I spend on coffee?” or “what changed from last month?”</div>`;
       F.applyProLock && F.applyProLock(body, 'AI chat');
       return;
     }
@@ -87,7 +87,7 @@
       <div class="ai-head"><h3>Chat</h3>
         <button class="btn sm" id="aiClear" ${chatLog.length ? '' : 'disabled'}>Clear chat</button>
       </div>
-      <div class="ai-chat-log" id="aiChatLog">${chatLog.map(msgHtml).join('') || '<div class="ai-empty">Ask about your recorded spending — e.g. “how much did I spend on coffee?”, “what changed from last month?”, “which subscriptions cost the most?”, “what are my top merchants?”</div>'}</div>
+      <div class="ai-chat-log" id="aiChatLog">${chatLog.map(msgHtml).join('') || '<div class="ai-empty">Ask about your recorded spending - e.g. “how much did I spend on coffee?”, “what changed from last month?”, “which subscriptions cost the most?”, “what are my top merchants?”</div>'}</div>
       <form class="ai-chat-form" id="aiChatForm">
         <input id="aiChatInput" placeholder="${enabled ? 'Ask your data…' : 'Enable the chat model in Models →'}" ${enabled ? '' : 'disabled'} autocomplete="off" />
         <button class="btn primary" ${enabled ? '' : 'disabled'}>Send</button>
@@ -120,7 +120,7 @@
       <div class="ai-head"><h3>Auto-categorize</h3>
         <button class="btn sm" id="aiSuggest" ${work.length ? '' : 'disabled'}>Suggest with AI</button>
       </div>
-      <p class="muted">${work.length ? work.length + ' uncategorized merchant(s) in “Other”. AI suggests a category from your past corrections and category meanings; review before applying.' : 'Nothing uncategorized — you’re all caught up.'}</p>
+      <p class="muted">${work.length ? work.length + ' uncategorized merchant(s) in “Other”. AI suggests a category from your past corrections and category meanings; review before applying.' : 'Nothing uncategorized - you’re all caught up.'}</p>
       <div id="aiSuggestOut"></div>`;
     const out = $('#aiSuggestOut');
     $('#aiSuggest') && ($('#aiSuggest').onclick = async () => {

@@ -61,7 +61,7 @@ end;
 $$;
 
 -- Block client writes to license and stripe_customer_id (webhook/service_role only).
--- Dashboard/SQL editor (postgres) may grant Pro for support — see 20260602 migration.
+-- Dashboard/SQL editor (postgres) may grant Pro for support - see 20260602 migration.
 create or replace function public.guard_profile_billing_fields() returns trigger
   language plpgsql as $$
 declare

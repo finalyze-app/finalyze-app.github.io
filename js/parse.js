@@ -11,7 +11,7 @@
   function ymd(d) { return d ? d.toISOString().slice(0, 10) : null; }
 
   // MEMO carries the cardmember, e.g. "MOUNIR EL-CHOUEIRI-92004".
-  // CIBC CSV puts a card number in the last column — label it by last four digits.
+  // CIBC CSV puts a card number in the last column - label it by last four digits.
   function parseCardmember(memo) {
     if (!memo) return 'Unknown';
     const s = String(memo).trim();
@@ -60,7 +60,7 @@
     return { currency, balance: isFinite(balance) ? balance : null, balanceAsOf, transactions, source: 'OFX/QFX' };
   }
 
-  // OFX 1.x is SGML (tags frequently unclosed) — DOMParser can't read it as XML.
+  // OFX 1.x is SGML (tags frequently unclosed) - DOMParser can't read it as XML.
   // Parse it tag-by-tag with regex instead.
   function parseOFXSGML(content) {
     const field = (chunk, tag) => {
@@ -191,7 +191,7 @@
     return total > 0 && cardish / total >= 0.7;
   }
 
-  // CIBC credit card CSV: no header — Date, Description, Charges, Payments/refunds, Card #.
+  // CIBC credit card CSV: no header - Date, Description, Charges, Payments/refunds, Card #.
   function detectCIBCHeaderless(rows) {
     const sample = rows.slice(0, Math.min(40, rows.length)).filter((r) => r.length >= 4);
     if (sample.length < 2) return null;

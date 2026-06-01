@@ -51,7 +51,7 @@
   function gridScale(beginZero) {
     const t = theme();
     const ticks = { color: t.muted, padding: 8 };
-    // The value axis (beginZero) carries $ amounts — mask it when censored.
+    // The value axis (beginZero) carries $ amounts - mask it when censored.
     if (beginZero && censored) ticks.callback = () => '•';
     return {
       grid: { color: t.grid, drawTicks: false },
@@ -147,7 +147,7 @@
     });
   }
 
-  // Top categories over time — same shape as trendMerchants but per category.
+  // Top categories over time - same shape as trendMerchants but per category.
   function trendCategories(data) {
     last.trendCategories = data;
     last.spendLine = null;

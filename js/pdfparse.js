@@ -1,4 +1,4 @@
-// PDF statement import — extract text locally with PDF.js, parse transaction rows on-device.
+// PDF statement import - extract text locally with PDF.js, parse transaction rows on-device.
 
 (function (global) {
   const normCSVDate = (s) => global.Finalyze.normCSVDate(s);
@@ -46,14 +46,14 @@
       if (mo == null) return null;
       return `${m[3] ? +m[3] : yearHint}-${pad2(mo + 1)}-${pad2(m[1])}`;
     }
-    // Numeric MM/DD or DD/MM with NO year — use the inferred statement year
+    // Numeric MM/DD or DD/MM with NO year - use the inferred statement year
     // (prevents new Date("05/12") defaulting to 2001).
     if ((m = /^(\d{1,2})[-/](\d{1,2})$/.exec(s))) {
       let mo = +m[1], da = +m[2];
       if (mo > 12 && da <= 12) { const t = mo; mo = da; da = t; } // looked like DD/MM
       if (mo >= 1 && mo <= 12 && da >= 1 && da <= 31) return `${yearHint}-${pad2(mo)}-${pad2(da)}`;
     }
-    // Numeric MM/DD/YY (2-digit year) — assume 20YY.
+    // Numeric MM/DD/YY (2-digit year) - assume 20YY.
     if ((m = /^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/.exec(s))) {
       let mo = +m[1], da = +m[2];
       if (mo > 12 && da <= 12) { const t = mo; mo = da; da = t; }
@@ -62,7 +62,7 @@
     return null;
   }
 
-  // Only treat a token as money if it has cents (e.g. 12.34) — this prevents
+  // Only treat a token as money if it has cents (e.g. 12.34) - this prevents
   // integer reward-point totals like "2,450" from being parsed as amounts.
   function currencyAmount(s) {
     if (s == null) return null;
@@ -161,7 +161,7 @@
 
     // Find where the description starts. The date can be split across two cells
     // ("May" + "12"), and many statements have two leading dates (transaction +
-    // posting) — skip the second so it doesn't land in the merchant name.
+    // posting) - skip the second so it doesn't land in the merchant name.
     let date = parseDateToken(cells[0]);
     let nameStart = 1;
     if (!date && cells.length >= 3) {
@@ -276,7 +276,7 @@
     const top = Object.keys(years).sort((a, b) => years[b] - years[a])[0];
     if (top) yearHint = +top;
 
-    // Pass 1 — only parse rows inside an activity/transactions section. A section
+    // Pass 1 - only parse rows inside an activity/transactions section. A section
     // header turns parsing on; a totals/summary line turns it off. This keeps
     // summary blocks (credit limit, balances, payment due, etc.) out.
     const sectioned = [];
@@ -291,7 +291,7 @@
       if (t) sectioned.push(t);
     });
 
-    // Pass 2 — fallback: if no section headers were found (or they yielded too
+    // Pass 2 - fallback: if no section headers were found (or they yielded too
     // little), parse the whole document. The per-row SKIP_* guards still apply.
     let txns = sectioned;
     if (!sawHeader || txns.length < 3) {
@@ -308,7 +308,7 @@
       });
     }
 
-    // A real transaction has a merchant description with letters — drop rows whose
+    // A real transaction has a merchant description with letters - drop rows whose
     // "description" is empty, numeric, or the Unknown fallback (summary figures,
     // account numbers, balances that slipped through).
     txns = txns.filter((t) => /[A-Za-z]{2,}/.test(t.name || '') && !/^unknown$/i.test((t.name || '').trim()));

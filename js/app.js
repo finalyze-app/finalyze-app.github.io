@@ -81,7 +81,7 @@
     return (n < 0 ? '-' : '') + Store.currency() + ' ' +
       Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  function fmtPct(p) { return p == null ? '—' : (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; }
+  function fmtPct(p) { return p == null ? '-' : (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; }
   function fmtYMD(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
@@ -475,7 +475,7 @@
   }
 
   // Accounts gate: when a backend is configured, signed-out users can only run
-  // the demo. (No gate when accounts aren't configured — there'd be no way in.)
+  // the demo. (No gate when accounts aren't configured - there'd be no way in.)
   function requiresSignIn() {
     return !!(F.Auth && F.Auth.enabled() && !F.Auth.isSignedIn());
   }
@@ -536,7 +536,7 @@
     const q = email ? '?prefilled_email=' + encodeURIComponent(email) : '';
     openModal(
       `<h2>Upgrade to Pro</h2>
-       <p class="muted">Unlock your full transaction history, AI chat, custom KPI cards, categorization rules, unlimited accounts, and family mode. Your data stays in your browser — Pro lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
+       <p class="muted">Unlock your full transaction history, AI chat, custom KPI cards, categorization rules, unlimited accounts, and family mode. Your data stays in your browser - Pro lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
        <div class="upgrade-plans">
          <a class="btn primary upgrade-plan" href="${STRIPE_MONTHLY}${q}" target="_blank" rel="noopener">
            <span class="up-amt">$7<small>/month</small></span><span class="up-label">Monthly</span></a>
@@ -544,14 +544,14 @@
            <span class="up-amt">$70<small>/year</small></span><span class="up-label">Annual · save 17%</span></a>
        </div>
        <p class="muted" style="font-size:12px;margin-top:14px">After paying, your account upgrades automatically once payment is confirmed. Use the same email as your Finalyze account.</p>
-       <div class="import-actions"><button class="btn" id="upgRefresh">I’ve paid — refresh</button><button class="btn" id="upgClose">Close</button></div>`);
+       <div class="import-actions"><button class="btn" id="upgRefresh">I’ve paid - refresh</button><button class="btn" id="upgClose">Close</button></div>`);
     const c = $('#upgClose'); if (c) c.onclick = closeModal;
     const r = $('#upgRefresh');
     if (r) r.onclick = async () => {
       r.disabled = true; r.textContent = 'Checking…';
       await refreshLicense();
-      if (userLicense === 'pro') { closeModal(); toast('Pro unlocked — full history restored'); }
-      else { r.disabled = false; r.textContent = 'I’ve paid — refresh'; toast('No active Pro subscription yet — it can take a moment after paying.'); }
+      if (userLicense === 'pro') { closeModal(); toast('Pro unlocked - full history restored'); }
+      else { r.disabled = false; r.textContent = 'I’ve paid - refresh'; toast('No active Pro subscription yet - it can take a moment after paying.'); }
     };
   }
   function renderUpgradeSlot() {
@@ -582,7 +582,7 @@
     allTxns = enriched();
     enforceProLayout();
 
-    // Sign-in gate — block the app for signed-out users, unless they're in the demo.
+    // Sign-in gate - block the app for signed-out users, unless they're in the demo.
     const demoActive = !!(F.Demo && F.Demo.active && F.Demo.active());
     if (requiresSignIn() && !demoActive) {
       const gate = $('#authGate');
@@ -625,7 +625,7 @@
         if (hiddenOlder > 0) missParts.push(`${hiddenOlder} older transaction${hiddenOlder === 1 ? '' : 's'}`);
         if (hiddenMonths > 0) missParts.push(`~${hiddenMonths} month${hiddenMonths === 1 ? '' : 's'} of history`);
         const missLine = missParts.length ? ` · ${missParts.join(' and ')} waiting in Pro` : '';
-        freeBn.innerHTML = `<span><strong>Free plan</strong> — showing the last ${FREE_MONTHS} months${missLine}. Pro unlocks AI chat, custom cards, rules, multi-account &amp; family mode.</span> <button class="linkish" id="freeUpgrade" type="button">Upgrade to Pro →</button>`;
+        freeBn.innerHTML = `<span><strong>Free plan</strong> - showing the last ${FREE_MONTHS} months${missLine}. Pro unlocks AI chat, custom cards, rules, multi-account &amp; family mode.</span> <button class="linkish" id="freeUpgrade" type="button">Upgrade to Pro →</button>`;
         const fu = $('#freeUpgrade'); if (fu) fu.onclick = openUpgradeModal;
       } else { freeBn.hidden = true; freeBn.innerHTML = ''; }
     }
@@ -679,7 +679,7 @@
     if (amountMin || amountMax) filterBits.push(`amount ${amountMin || '…'}–${amountMax || '…'}`);
     if (flowFilter !== 'all') filterBits.push(flowFilterLabel(flowFilter).toLowerCase());
     const rangeNote = filterBits.length ? ` · filtered ${filterBits.join(' · ')}` : '';
-    $('#rangeSub').textContent = `${s.count} transactions · ${s.dateFrom || '—'} → ${s.dateTo || '—'} · ${Store.currency()}${rangeNote}`;
+    $('#rangeSub').textContent = `${s.count} transactions · ${s.dateFrom || '-'} → ${s.dateTo || '-'} · ${Store.currency()}${rangeNote}`;
     buildNav(true);
     buildWidgets();
     renderFilterBanner();
@@ -860,7 +860,7 @@
     if (!activeCategory && bal != null) cards.push(card(ICON.balance, 'Statement balance', fmt(bal), bal < 0 ? 'neg' : ''));
     if (s.dateFrom) cards.push(card(ICON.calendar, 'Date range', `${s.dateFrom}<br>→ ${s.dateTo}`, 'small'));
 
-    // Custom KPI cards — Pro only; totals over the active period.
+    // Custom KPI cards - Pro only; totals over the active period.
     if (isPro()) {
       const period = periodLabel();
       Store.getCustomCards().forEach((cc) => {
@@ -960,7 +960,7 @@
       `<thead><tr><th>Month</th><th class="num">Spend</th><th class="num">Refunds</th><th class="num">Payments</th><th class="num">Net</th><th class="num">Δ Spend</th><th class="num">% Δ</th></tr></thead><tbody>` +
       mom.map((m) =>
         `<tr><td>${m.month}</td><td class="num">${fmt(m.spend)}</td><td class="num">${fmt(m.refunds)}</td><td class="num">${fmt(m.payments)}</td><td class="num">${fmt(m.net)}</td>` +
-        `<td class="num ${m.deltaSpend > 0 ? 'amt-neg' : m.deltaSpend < 0 ? 'amt-pos' : ''}">${m.deltaSpend == null ? '—' : fmt(m.deltaSpend)}</td>` +
+        `<td class="num ${m.deltaSpend > 0 ? 'amt-neg' : m.deltaSpend < 0 ? 'amt-pos' : ''}">${m.deltaSpend == null ? '-' : fmt(m.deltaSpend)}</td>` +
         `<td class="num">${fmtPct(m.pctSpend)}</td></tr>`
       ).join('') + '</tbody>';
 
@@ -1152,7 +1152,7 @@
     const txnsA = base.filter((t) => inRange(t, cmpA));
     const txnsB = base.filter((t) => inRange(t, cmpB));
     const cmp = analyze.comparePeriods(txnsA, txnsB);
-    const dcell = (d) => `<td class="num ${d > 0 ? 'amt-neg' : d < 0 ? 'amt-pos' : ''}">${d === 0 ? '—' : (d > 0 ? '+' : '') + fmt(d)}</td>`;
+    const dcell = (d) => `<td class="num ${d > 0 ? 'amt-neg' : d < 0 ? 'amt-pos' : ''}">${d === 0 ? '-' : (d > 0 ? '+' : '') + fmt(d)}</td>`;
     const totalRow = (label, key) => `<tr><td>${label}</td><td class="num">${fmt(cmp.a[key])}</td><td class="num">${fmt(cmp.b[key])}</td>${dcell(cmp.b[key] - cmp.a[key])}</tr>`;
     $('#compareOut').innerHTML =
       `<div class="table-wrap"><table class="cmp-table"><thead><tr><th></th><th class="num">Period A</th><th class="num">Period B</th><th class="num">Δ</th></tr></thead><tbody>` +
@@ -1193,7 +1193,7 @@
           <div class="value small">${fmt(yr.biggestDay.spend)}<br><span class="muted" style="font-size:11px">${yr.biggestDay.date}</span></div>
           <div class="label">Biggest day ›</div>
         </div>`
-      : card(ICON.balance, 'Biggest day', '—', 'small');
+      : card(ICON.balance, 'Biggest day', '-', 'small');
     $('#yearReviewOut').innerHTML =
       `<div class="cards">
         ${card(ICON.spend, 'Total spend ' + yr.year, fmt(yr.totalSpend), '', yoy)}
@@ -1237,7 +1237,7 @@
 
     const opts = getCategories().map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     if (!rows.length) {
-      table.innerHTML = '<tbody><tr><td class="muted-cell">Nothing in “Other” for the current filters — you’re caught up.</td></tr></tbody>';
+      table.innerHTML = '<tbody><tr><td class="muted-cell">Nothing in “Other” for the current filters - you’re caught up.</td></tr></tbody>';
       return;
     }
     table.innerHTML =
@@ -1418,7 +1418,7 @@
     tb.querySelectorAll('input.sub-check').forEach((cb) => {
       cb.onchange = () => {
         Store.setSubscription(decodeURIComponent(cb.dataset.key), cb.checked);
-        toast(cb.checked ? 'Marked as subscription — all matching charges tracked' : 'Removed from subscriptions');
+        toast(cb.checked ? 'Marked as subscription - all matching charges tracked' : 'Removed from subscriptions');
         render();
       };
     });
@@ -1659,7 +1659,7 @@
       (cards.length
         ? `<div class="rule-list">` + cards.map((cc) =>
             `<div class="rule-row"><strong>${ccEsc(cc.name)}</strong><span class="rule-arrow">·</span><span class="muted cc-sum">${ccEsc(ccSummary(cc))}</span><button class="icon-btn cc-del" data-id="${cc.id}" title="Delete card">${svg(TRASH)}</button></div>`).join('') + `</div>`
-        : `<p class="muted-cell" style="padding:6px 0 12px">No custom cards yet. Build one below — it appears in the Spending overview, totalled over the selected period.</p>`) +
+        : `<p class="muted-cell" style="padding:6px 0 12px">No custom cards yet. Build one below - it appears in the Spending overview, totalled over the selected period.</p>`) +
       `<div class="cc-builder">
         <div class="cc-head-row">
           <input type="text" id="ccName" placeholder="Card name, e.g. CPAP Spend" value="${ccEsc(cardDraft.name)}">
@@ -1759,7 +1759,7 @@
     });
     $$('.group-name', container).forEach((inp) => inp.onchange = () => {
       if (Store.updateCategoryGroup(inp.dataset.id, { name: inp.value.trim() })) render();
-      else toast('Could not rename — name empty or taken');
+      else toast('Could not rename - name empty or taken');
     });
     $$('.group-del', container).forEach((btn) => btn.onclick = () => {
       Store.removeCategoryGroup(btn.dataset.id); render(); toast('Group removed');
@@ -1842,7 +1842,7 @@
 
     container.innerHTML =
       (suggestions.length
-        ? `<div class="merge-suggestions"><h3>Suggested merges</h3><p class="muted" style="margin:0 0 10px">Likely duplicates — merge to roll up spend, or dismiss to hide.</p>` +
+        ? `<div class="merge-suggestions"><h3>Suggested merges</h3><p class="muted" style="margin:0 0 10px">Likely duplicates - merge to roll up spend, or dismiss to hide.</p>` +
           suggestions.map((s) =>
             `<div class="merge-suggest-row">
               <span class="ms-names"><strong>${esc(s.a)}</strong> + <strong>${esc(s.b)}</strong></span>
@@ -1943,7 +1943,7 @@
       const next = prompt(`Rename “${old}” to:`, old);
       if (next == null) return;
       if (Store.renameCategory(old, next.trim())) { renderCatManager(); render(); toast('Category renamed'); }
-      else toast('Could not rename — name is empty or already in use');
+      else toast('Could not rename - name is empty or already in use');
     });
     $$('#catManager .cat-type').forEach((sel) => sel.onchange = () => {
       Store.setCategoryType(decodeURIComponent(sel.dataset.cat), sel.value);
@@ -1989,7 +1989,7 @@
     const { order, hidden } = getLayout();
     if (!hidden.includes(id)) hidden.push(id);
     saveLayout({ order, hidden });
-    toast(`Hid “${WIDGET_MAP[id].title}” — re-enable in Settings`);
+    toast(`Hid “${WIDGET_MAP[id].title}” - re-enable in Settings`);
     render();
   }
   function setWidgetSize(id, size) {
@@ -2074,7 +2074,7 @@
 
   // ============ Import / backup ============
   function csvColOptions(rows, colCount, hasHeader, selected) {
-    let html = '<option value="-1">— Skip —</option>';
+    let html = '<option value="-1">- Skip -</option>';
     for (let i = 0; i < colCount; i++) {
       const label = F.csvColLabel(rows, i, hasHeader);
       html += `<option value="${i}"${selected === i ? ' selected' : ''}>${esc(label)}</option>`;
@@ -2133,7 +2133,7 @@
   function openDemoImportNudge() {
     const accounts = !!(F.Auth && F.Auth.enabled());
     openModal(
-      `<h2>Whoa there — that's our play money 🤹</h2>
+      `<h2>Whoa there - that's our play money 🤹</h2>
        <p class="muted">You're exploring the demo with sample transactions. Ready to see <em>your</em> money in all its glory? Create a free account and import your own statement.</p>
        <div class="import-actions">
          <button class="btn" id="nudgeStay">Keep poking around</button>
@@ -2154,7 +2154,7 @@
       return;
     }
     const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name));
-    // PDF parsing is heuristic — show a review/fix step before importing.
+    // PDF parsing is heuristic - show a review/fix step before importing.
     if (pdfFiles.length && pdfFiles.length === files.length) { openPdfReview(files); return; }
     const csvFiles = files.filter((f) => /\.csv$/i.test(f.name));
     if (!csvFiles.length) { openImportModal(files, null); return; }
@@ -2173,7 +2173,7 @@
     const pdfFiles = files.filter((f) => /\.pdf$/i.test(f.name));
     const hasCsv = csvFiles.length > 0 && csvSampleText;
     const pdfNote = pdfFiles.length && !hasCsv
-      ? '<p class="muted">PDF statements are parsed from extracted text (CIBC-style charge/payment columns supported). Scanned image-only PDFs won\'t work — CSV or OFX is more reliable.</p>'
+      ? '<p class="muted">PDF statements are parsed from extracted text (CIBC-style charge/payment columns supported). Scanned image-only PDFs won\'t work - CSV or OFX is more reliable.</p>'
       : '';
 
     let preview = null, mapState = null;
@@ -2191,7 +2191,7 @@
     const mapSection = hasCsv ? `
       <div class="csv-import">
         <h3>Column mapping</h3>
-        <p class="muted">Match your file’s columns to Finalyze. Auto-detect is pre-filled — adjust if anything looks wrong.${csvFiles.length > 1 ? ' Same mapping applies to all CSV files in this import.' : ''}</p>
+        <p class="muted">Match your file’s columns to Finalyze. Auto-detect is pre-filled - adjust if anything looks wrong.${csvFiles.length > 1 ? ' Same mapping applies to all CSV files in this import.' : ''}</p>
         <label class="csv-check"><input type="checkbox" id="csvHasHeader"${mapState.hasHeader ? ' checked' : ''}> First row is column headers</label>
         <div class="table-wrap csv-preview-wrap"><table class="csv-preview"><thead><tr>${Array.from({ length: preview.colCount }, (_, i) => `<th>${i + 1}</th>`).join('')}</tr></thead><tbody id="csvPreview"></tbody></table></div>
         <div class="csv-map-grid">
@@ -2287,7 +2287,7 @@
     const errors = [], sources = new Set();
     const finish = () => {
       render();
-      if (errors.length) { toast('Import failed — ' + errors[0]); return; }
+      if (errors.length) { toast('Import failed - ' + errors[0]); return; }
       if (totalAdded === 0 && emptyFiles > 0) {
         toast('No transactions found. Expecting OFX/QFX, CSV, or a text-based PDF statement.');
         return;
@@ -2360,7 +2360,7 @@
         }));
       } catch (e) { errors.push(f.name + ': ' + e.message); }
     }
-    if (!rows.length) { toast('Import failed — ' + (errors[0] || 'no transactions found in PDF')); return; }
+    if (!rows.length) { toast('Import failed - ' + (errors[0] || 'no transactions found in PDF')); return; }
     rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     renderPdfReview(rows, errors);
   }
@@ -2368,7 +2368,7 @@
   function renderPdfReview(rows, errors) {
     const accounts = Store.getAccounts();
     const errNote = errors.length
-      ? `<p class="muted">Couldn’t read ${errors.length} file(s). Scanned image-only PDFs have no text layer — CSV or OFX is more reliable.</p>` : '';
+      ? `<p class="muted">Couldn’t read ${errors.length} file(s). Scanned image-only PDFs have no text layer - CSV or OFX is more reliable.</p>` : '';
 
     const body = openModal(
       `<h2>Review PDF import</h2>
@@ -2769,7 +2769,7 @@
         dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
         excludeTagged = false; cmpInit = false; yrSelected = '';
         viewName = 'dashboard';
-        render(); toast('Transactions cleared — settings kept');
+        render(); toast('Transactions cleared - settings kept');
       }
     });
     $('#addCatBtn').addEventListener('click', () => {
@@ -2808,7 +2808,7 @@
     localStorage.setItem('finalyze.settingsTourOffered', '1');
     const body = openModal(
       `<h2>Make Finalyze yours</h2>
-       <p class="muted">Nice — your statement is in! Want a quick tour of Settings to set up categories, rules, budgets and custom cards the way you like?</p>
+       <p class="muted">Nice - your statement is in! Want a quick tour of Settings to set up categories, rules, budgets and custom cards the way you like?</p>
        <div class="import-actions"><button class="btn" id="tourNo">Not now</button><button class="btn primary" id="tourYes">Show me around</button></div>`);
     body.querySelector('#tourNo').onclick = closeModal;
     body.querySelector('#tourYes').onclick = () => { closeModal(); startSettingsTour(); };
@@ -2822,10 +2822,10 @@
       { before: goTab('categories'), sel: '#set-categories', title: 'Categories', body: 'Add your own categories, recolor them, and set each as spending, payment, or refund.' },
       { before: goTab('categories'), sel: '#set-cards', title: 'Custom cards', body: 'Build KPI cards from criteria (e.g. Health + “cpap”). They appear in the overview, totalled for the selected period.' },
       { before: goTab('categories'), sel: '#set-groups', title: 'Category groups', body: 'Roll up categories (e.g. Dining + Groceries → Food) for charts and budgets.' },
-      { before: goTab('categories'), sel: '#set-merchants', title: 'Merge merchants', body: 'Combine differently-named merchants into one — remembered for future imports.' },
-      { before: goTab('rules'), sel: '#set-rules', title: 'Auto-categorization rules', body: 'Match merchant text with a keyword or regex and assign a category — applied before the built-in rules.' },
+      { before: goTab('categories'), sel: '#set-merchants', title: 'Merge merchants', body: 'Combine differently-named merchants into one - remembered for future imports.' },
+      { before: goTab('rules'), sel: '#set-rules', title: 'Auto-categorization rules', body: 'Match merchant text with a keyword or regex and assign a category - applied before the built-in rules.' },
       { before: goTab('rules'), sel: '#set-sub-rules', title: 'Subscription rules', body: 'Flag a merchant as recurring by keyword, even when the charge amount changes each cycle.' },
-      { before: goTab('rules'), sel: '#set-merge-rules', title: 'Auto-merge rules', body: 'Automatically fold matching merchant names into one canonical name — applied to every import.' },
+      { before: goTab('rules'), sel: '#set-merge-rules', title: 'Auto-merge rules', body: 'Automatically fold matching merchant names into one canonical name - applied to every import.' },
       { before: goTab('budgets'), sel: '#set-budgets', title: 'Budgets', body: 'Set monthly limits per category or group. The overview warns at 80% and over.' },
       { before: goTab('accounts'), sel: '#set-accounts', title: 'Accounts & data', body: 'Track multiple cards/accounts, check storage use, and back up or restore your data.' },
       { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, resize, and reorder every dashboard widget.' },
@@ -2834,20 +2834,20 @@
     F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
   }
 
-  // Non-destructive dashboard walkthrough (replayable on real data — unlike the
+  // Non-destructive dashboard walkthrough (replayable on real data - unlike the
   // demo tour, it doesn't clear anything).
   function startDashboardTour() {
     const toDash = () => { viewName = 'dashboard'; render(); };
     if (!F.Demo || !F.Demo.runTour) { toDash(); return; }
     const steps = [
       { before: toDash, title: 'Your dashboard', body: 'A quick tour of what each section shows. Use the filters and date range up top to scope everything.' },
-      { before: toDash, sel: '#widget-overview', title: 'Spending overview', body: 'Totals at a glance — spend, refunds, payments, net, averages, plus any custom cards you add.' },
+      { before: toDash, sel: '#widget-overview', title: 'Spending overview', body: 'Totals at a glance - spend, refunds, payments, net, averages, plus any custom cards you add.' },
       { before: toDash, sel: '#widget-category', title: 'Spend by category', body: 'Where your money goes. Tap a slice to filter the whole dashboard to that category.' },
       { before: toDash, sel: '#widget-merchants', title: 'Top merchants', body: 'Who you pay most. Tap a bar for a merchant drill-down with history and average ticket.' },
       { before: toDash, sel: '#widget-recurring', title: 'Recurring & subscriptions', body: 'Repeating charges, including keyword-matched subscriptions even when the amount varies.' },
       { before: toDash, sel: '#widget-anomalies', title: 'Anomalies', body: 'Possible duplicates and unusually large charges, surfaced automatically.' },
       { before: toDash, sel: '#widget-transactions', title: 'Transactions', body: 'Search, filter, retag, recategorise, and bulk-edit. Category changes are remembered per merchant.' },
-      { before: toDash, title: 'Ask the AI', body: 'The Finalyze AI button (sidebar) gives plain-English insights and a chat about your spending — all on-device. That’s the tour!', final: true },
+      { before: toDash, title: 'Ask the AI', body: 'The Finalyze AI button (sidebar) gives plain-English insights and a chat about your spending - all on-device. That’s the tour!', final: true },
     ];
     F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
   }

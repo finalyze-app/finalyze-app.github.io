@@ -1,4 +1,4 @@
-// Finalyze — email admin when a new beta ticket is inserted (Database Webhook → Resend).
+// Finalyze - email admin when a new beta ticket is inserted (Database Webhook → Resend).
 //
 // Deploy:  cd ~/Finalyze && npx supabase functions deploy ticket-notify --no-verify-jwt --project-ref pdanbjmzynsyukfhoftw
 // Secrets: RESEND_API_KEY, TICKET_NOTIFY_TO, TICKET_WEBHOOK_SECRET

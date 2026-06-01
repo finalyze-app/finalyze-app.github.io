@@ -27,7 +27,7 @@ Also in **Authentication → URL Configuration**:
 
 1. Delete the test user in **Authentication → Users** (or use a new `you+test2@…` address).
 2. Sign up again from `https://finalyze.cc/app/` (hard refresh so `auth.js` is current).
-3. Open the **new** email — old emails still have the old link and template.
+3. Open the **new** email - old emails still have the old link and template.
 
 ## SMTP
 

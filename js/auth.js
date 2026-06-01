@@ -1,10 +1,10 @@
-// Finalyze account layer — a tiny, dependency-free Supabase client.
+// Finalyze account layer - a tiny, dependency-free Supabase client.
 //
 // We deliberately avoid the Supabase JS SDK (which would be a CDN/runtime
 // dependency) and instead talk to Supabase's Auth (GoTrue) and REST (PostgREST)
 // endpoints directly with fetch. This keeps the app's "no third-party scripts"
 // posture intact: the only network traffic is to YOUR Supabase project, and only
-// for email/account data — never transactions.
+// for email/account data - never transactions.
 //
 // Public surface: window.Finalyze.Auth
 //   await Auth.init()                  -> restores an existing session

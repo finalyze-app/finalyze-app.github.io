@@ -1,4 +1,4 @@
-// Finalyze account UI — sign-in, onboarding wizard, and the sidebar account chip.
+// Finalyze account UI - sign-in, onboarding wizard, and the sidebar account chip.
 //
 // This whole layer is OPTIONAL. If no Supabase backend is configured
 // (js/config.js left blank), nothing is injected and Finalyze runs fully local.
@@ -73,7 +73,7 @@
         </div>
         <h2>Account created</h2>
         <p class="acct-confirm-lead">Check your inbox to confirm your email, then sign in. If you don’t see it within a few minutes, check spam or junk.</p>
-        <button type="button" class="btn primary" id="acctConfirmDone">Got it — sign in</button>
+        <button type="button" class="btn primary" id="acctConfirmDone">Got it - sign in</button>
       </div>`);
     const goSignIn = () => { close(); openSignIn('signin'); };
     panel.querySelector('.acct-close').onclick = goSignIn;
@@ -86,13 +86,13 @@
     const isSignup = mode === 'signup';
     const ref = (F.Referral && F.Referral.getRef && F.Referral.getRef()) || '';
     const refNote = isSignup && ref
-      ? '<p class="acct-ref-note muted">Referred by a friend — your 2nd month of Pro is free when you upgrade.</p>'
+      ? '<p class="acct-ref-note muted">Referred by a friend - your 2nd month of Pro is free when you upgrade.</p>'
       : '';
     const panel = modal(`
       <button class="acct-close" aria-label="Close">×</button>
       <div class="acct-head">
         <h2>${isSignup ? 'Create your Finalyze account' : 'Sign in to Finalyze'}</h2>
-        <p class="muted">Your financial data stays on this device — only your email is stored on the server.</p>
+        <p class="muted">Your financial data stays on this device - only your email is stored on the server.</p>
         ${refNote}
       </div>
       <button type="button" class="btn google-btn" id="acctGoogle">
@@ -296,7 +296,7 @@
         <h2>${esc(u ? u.email : '')}</h2>
       </div>
       <div class="acct-rows">
-        ${demoPro ? `<div class="acct-row"><span>Demo</span><strong class="muted">Pro preview — sample data only</strong></div>` : ''}
+        ${demoPro ? `<div class="acct-row"><span>Demo</span><strong class="muted">Pro preview - sample data only</strong></div>` : ''}
         <div class="acct-row"><span>Plan</span><strong class="acct-plan ${license}">${isPro ? 'Pro' : 'Free'}</strong></div>
         ${profile && profile.country ? `<div class="acct-row"><span>Country</span><strong>${esc(profile.country)}</strong></div>` : ''}
       </div>

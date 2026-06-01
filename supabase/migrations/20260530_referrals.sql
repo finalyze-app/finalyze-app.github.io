@@ -22,7 +22,7 @@ create table if not exists public.referral_rewards (
 );
 
 alter table public.referral_rewards enable row level security;
--- No client policies — only service role (webhook) writes.
+-- No client policies - only service role (webhook) writes.
 
 -- Generate a unique referral code from email prefix + random suffix.
 create or replace function public.gen_referral_code(p_email text) returns text

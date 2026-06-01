@@ -1,8 +1,8 @@
-// Finalyze — Phase 2: on-device AI categorization (Transformers.js).
+// Finalyze - Phase 2: on-device AI categorization (Transformers.js).
 //
 // OPT-IN. Nothing here runs until the user explicitly enables AI, at which point
 // the model (~30 MB) is downloaded once and cached by the browser. Inference then
-// happens entirely in-browser — transaction text never leaves the device.
+// happens entirely in-browser - transaction text never leaves the device.
 //
 // Strategy: embed merchant names with a small sentence-transformer, then classify
 // each uncategorized merchant by cosine similarity against (a) the user's own past
@@ -23,7 +23,7 @@
   const LIB_URL = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
   const MODEL = 'Xenova/all-MiniLM-L6-v2';
 
-  // Seed phrases per built-in category — used when the user has no matching
+  // Seed phrases per built-in category - used when the user has no matching
   // correction yet. Custom categories fall back to their own name.
   const SEEDS = {
     'Groceries': 'grocery supermarket food market produce',
@@ -59,7 +59,7 @@
       const t = await import(/* webpackIgnore: true */ LIB_URL);
       // Cache Storage only exists in a secure context (https/localhost). On a
       // plain-HTTP LAN origin it's unavailable, so disable browser caching to
-      // avoid a hard failure — the model still downloads, just not persisted.
+      // avoid a hard failure - the model still downloads, just not persisted.
       const canCache = typeof caches !== 'undefined';
       if (t.env) { t.env.allowLocalModels = false; t.env.useBrowserCache = canCache; }
       extractor = await t.pipeline('feature-extraction', MODEL, {
@@ -129,7 +129,7 @@
     for (const m of work) {
       const v = await embed(m.key);
       let best = { category: null, score: -1 };
-      // exemplars first (weighted slightly higher — these are the user's truth)
+      // exemplars first (weighted slightly higher - these are the user's truth)
       for (const e of exemplars) { const s = dot(v, e.vec) * 1.05; if (s > best.score) best = { category: e.category, score: s }; }
       for (const l of labelVecs) { const s = dot(v, l.vec); if (s > best.score) best = { category: l.category, score: s }; }
       if (best.category) out.push(Object.assign({}, m, { category: best.category, score: Math.min(1, best.score) }));

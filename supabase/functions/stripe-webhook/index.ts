@@ -1,4 +1,4 @@
-// Finalyze — Stripe webhook (Supabase Edge Function)
+// Finalyze - Stripe webhook (Supabase Edge Function)
 //
 // Verifies Stripe webhook events and flips `public.profiles.license` between
 // 'pro' and 'free'. On first Pro checkout, applies referral rewards via Stripe
@@ -130,7 +130,7 @@ async function applyReferralRewards(referee: ProfileRow, refereeCustomerId?: str
     await creditCustomerBalance(
       refereeCustomerId,
       -REFERRAL_CREDIT_CENTS,
-      'Referral bonus — 2nd month of Pro free',
+      'Referral bonus - 2nd month of Pro free',
     );
   }
 
@@ -138,7 +138,7 @@ async function applyReferralRewards(referee: ProfileRow, refereeCustomerId?: str
     await creditCustomerBalance(
       referrer.stripe_customer_id,
       -REFERRAL_CREDIT_CENTS,
-      `Referral reward — friend upgraded (${code})`,
+      `Referral reward - friend upgraded (${code})`,
     );
   } else {
     console.log('referrer has no stripe_customer_id yet', referrer.id);

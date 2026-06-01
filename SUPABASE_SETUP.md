@@ -1,8 +1,8 @@
-# Finalyze — Supabase setup (Phase 1: accounts)
+# Finalyze - Supabase setup (Phase 1: accounts)
 
 This wires up the **only** server Finalyze talks to. It stores email + account
 metadata so you can track your user base and email updates. **No financial data
-is ever sent here** — transactions stay in the browser's IndexedDB.
+is ever sent here** - transactions stay in the browser's IndexedDB.
 
 ## 1. Create a project
 1. Go to <https://supabase.com>, create a free project.
@@ -76,7 +76,7 @@ Existing users without a code: the app calls `ensure_referral_code()` RPC on acc
 - **Password policy** (Authentication → Policies): the client enforces a minimum
   of 8 characters; set the server minimum to match.
 - **Authentication → URL Configuration**: set **Site URL** to `https://finalyze.cc`
-  (or `https://finalyze.cc/app/` — either works if redirects below are set).
+  (or `https://finalyze.cc/app/` - either works if redirects below are set).
   Add **Redirect URLs** for every origin you use: `https://finalyze.cc`, `https://www.finalyze.cc`,
   `https://finalyze-app.github.io`, and `http://localhost:8755` for local testing.
   **Email confirmation** sends users to `https://finalyze.cc/app/` via `email_redirect_to`
@@ -100,17 +100,17 @@ To turn it on:
    **Client ID** and **Client Secret** from step 1.
 3. Make sure the **`/app/` redirect URLs** above are allow-listed (§3) so the
    round-trip back to the app succeeds.
-4. No client config needed — the button uses the same `SUPABASE_URL` /
+4. No client config needed - the button uses the same `SUPABASE_URL` /
    `SUPABASE_ANON_KEY` already in `js/config.js`. New Google users get a `profiles`
    row from the same `on_auth_user_created` trigger and run the onboarding wizard.
 
-## 3b. Custom SMTP (Resend) — required for production email
+## 3b. Custom SMTP (Resend) - required for production email
 Supabase's built-in email is rate-limited (~2–4/hour) and not for production, so
 confirmation/reset emails get throttled. Use Resend:
 
 1. **Resend → Domains → Add Domain** (e.g. `finalyze.cc` or `send.finalyze.cc`).
    Add the **SPF / DKIM / DMARC** DNS records Resend shows, and **Verify**.
-2. **Resend → API Keys → Create** (Sending access). Copy the `re_…` key — it's the
+2. **Resend → API Keys → Create** (Sending access). Copy the `re_…` key - it's the
    SMTP password.
 3. **Supabase → Authentication → Emails → SMTP Settings → Enable Custom SMTP:**
    | Field | Value |
@@ -134,11 +134,11 @@ Repo templates live in [`supabase/email/`](supabase/email/):
 
 1. Deploy the site (so `https://finalyze.cc/assets/icon-email.png` is reachable).
 2. **Authentication → Emails → Confirm signup**
-3. **Subject:** `Confirm your email — you're one step from Finalyze` (or copy from `confirm-signup-subject.txt`).
+3. **Subject:** `Confirm your email - you're one step from Finalyze` (or copy from `confirm-signup-subject.txt`).
 4. **Body:** paste the full HTML from [`supabase/email/confirm-signup.html`](supabase/email/confirm-signup.html). Use the editor's HTML/source mode if available.
 5. Send a test sign-up and check inbox + spam. The message uses Finalyze colours, the app icon, and `{{ .ConfirmationURL }}` for the confirm button.
 
-**Troubleshooting — still seeing the old template or redirect?**
+**Troubleshooting - still seeing the old template or redirect?**
 
 - Repo/email file edits do not update Supabase until you paste into **Confirm signup** and **Save**.
 - Only emails sent **after** that save use the new template; resend or sign up with a **new** address.
@@ -163,4 +163,4 @@ Run [`supabase/migrations/20260603_tickets.sql`](supabase/migrations/20260603_ti
 
 The app shows a fixed **Beta** banner with **Submit feedback** for signed-in users (hidden during demo mode). Tickets appear in **Table Editor → tickets** for review.
 
-**Email when a ticket arrives:** deploy the `ticket-notify` Edge Function and a Database Webhook — full steps in [`TICKETS_SETUP.md`](TICKETS_SETUP.md).
+**Email when a ticket arrives:** deploy the `ticket-notify` Edge Function and a Database Webhook - full steps in [`TICKETS_SETUP.md`](TICKETS_SETUP.md).

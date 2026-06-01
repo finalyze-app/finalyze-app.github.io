@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Finalyze — Spending Analyzer</title>
+  <title>Finalyze - Spending Analyzer</title>
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
   <link rel="apple-touch-icon" href="assets/icon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0a1228" />
-  <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device — nothing is uploaded." />
+  <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device - nothing is uploaded." />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://esm.run 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://buy.stripe.com https://billing.stripe.com https://cdn.jsdelivr.net https://esm.run https://huggingface.co https://*.huggingface.co https://*.hf.co https://raw.githubusercontent.com; frame-src https://buy.stripe.com https://billing.stripe.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'" />
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -19,7 +19,7 @@
 <body>
   <div id="betaBanner" class="beta-banner" hidden>
     <span class="beta-badge">Beta</span>
-    <span class="beta-text">Finalyze is in beta testing — your feedback helps us improve.</span>
+    <span class="beta-text">Finalyze is in beta testing - your feedback helps us improve.</span>
     <button type="button" class="btn sm" id="betaTicketBtn" hidden>Submit feedback</button>
   </div>
   <div class="shell">
@@ -126,7 +126,7 @@
           </span>
           <h1>Sign in to get started</h1>
           <p>Create a free account or sign in to import your statements and analyze your spending.</p>
-          <p class="muted">Your financial data still stays in your browser — only your email is stored. Want to look around first? Take a tour with sample data.</p>
+          <p class="muted">Your financial data still stays in your browser - only your email is stored. Want to look around first? Take a tour with sample data.</p>
           <div class="dz-actions">
             <button class="btn primary" id="gateSignIn" type="button">Sign in / Create account</button>
             <button class="btn" id="gateDemo" type="button">
@@ -145,7 +145,7 @@
           </span>
           <h1>Drop your bank export here</h1>
           <p>Drag a <code>.qfx</code>, <code>.ofx</code>, <code>.csv</code>, or <code>.pdf</code> file anywhere on this page, or use the button below.</p>
-          <p class="muted">Works with exports from most banks (Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase, and more). Everything stays on your machine — nothing is uploaded. Imports accumulate over time so you can compare month over month.</p>
+          <p class="muted">Works with exports from most banks (Amex, RBC, TD, Scotiabank, BMO, CIBC, Chase, and more). Everything stays on your machine - nothing is uploaded. Imports accumulate over time so you can compare month over month.</p>
           <div class="dz-actions">
             <label class="btn primary">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -157,7 +157,7 @@
               Take a tour with sample data
             </button>
           </div>
-          <p class="muted" style="margin-top:12px">New here? The tour loads dummy May 2026 transactions so you can explore — no data of your own needed.</p>
+          <p class="muted" style="margin-top:12px">New here? The tour loads dummy May 2026 transactions so you can explore - no data of your own needed.</p>
         </div>
       </section>
 
@@ -208,14 +208,14 @@
         </div>
 
         <div class="panel span-2" id="set-sub-rules">
-          <div class="phead"><div><div class="eyebrow">Rules</div><h2>Subscription rules <span class="pro-chip">Pro</span></h2></div><span class="hint">Flag recurring by keyword — any amount</span></div>
-          <p class="muted" style="margin:0 0 14px">Match merchant text with a keyword or regular expression to always treat it as recurring/subscription in the Recurring widget — even when the charge amount changes each time (e.g. usage-based bills).</p>
+          <div class="phead"><div><div class="eyebrow">Rules</div><h2>Subscription rules <span class="pro-chip">Pro</span></h2></div><span class="hint">Flag recurring by keyword - any amount</span></div>
+          <p class="muted" style="margin:0 0 14px">Match merchant text with a keyword or regular expression to always treat it as recurring/subscription in the Recurring widget - even when the charge amount changes each time (e.g. usage-based bills).</p>
           <div id="subRuleManager"></div>
         </div>
 
         <div class="panel span-2" id="set-merge-rules">
           <div class="phead"><div><div class="eyebrow">Rules</div><h2>Auto-merge rules <span class="pro-chip">Pro</span></h2></div><span class="hint">Fold matching merchants into one name</span></div>
-          <p class="muted" style="margin:0 0 14px">Automatically combine differently-named merchants into a single canonical name on every import — e.g. match <code>AMZN|AMAZON</code> and merge into “Amazon”. Applies to all past and future transactions.</p>
+          <p class="muted" style="margin:0 0 14px">Automatically combine differently-named merchants into a single canonical name on every import - e.g. match <code>AMZN|AMAZON</code> and merge into “Amazon”. Applies to all past and future transactions.</p>
           <div id="mergeRuleManager"></div>
         </div>
 

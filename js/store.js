@@ -150,7 +150,7 @@
         return data;
       }
     }
-    // 3. Very old localStorage payload (pre-IndexedDB) — migrate once.
+    // 3. Very old localStorage payload (pre-IndexedDB) - migrate once.
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
@@ -775,7 +775,7 @@
 
     // Display currency: the user's chosen preference (from onboarding/profile)
     // wins; otherwise fall back to the statement's CURDEF, then CAD. We do not
-    // convert amounts — this is purely the currency label shown in the UI.
+    // convert amounts - this is purely the currency label shown in the UI.
     currency() {
       let pref = null;
       try { pref = localStorage.getItem(LS_CURRENCY); } catch (e) {}
