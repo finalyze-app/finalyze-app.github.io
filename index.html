@@ -447,30 +447,159 @@
       display: flex !important;
       flex: 1 1 auto !important;
       height: auto !important;
-      min-height: 44px !important;
+      min-height: 36px !important;
       gap: 4px !important;
       align-items: flex-end !important;
+      position: relative !important;
+      z-index: 1 !important;
     }
     .appdemo .ad-bars span {
       display: block !important;
       flex: 1 !important;
       border-radius: 5px 5px 2px 2px !important;
-      background: linear-gradient(180deg, #7c4dff, #3b82f6) !important;
+      background: var(--bar, linear-gradient(180deg, #7c4dff, #3b82f6)) !important;
     }
+    .appdemo .ad-chart-plot {
+      display: grid !important;
+      grid-template-columns: 24px 1fr !important;
+      gap: 4px !important;
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+    }
+    .appdemo .ad-y-axis {
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      align-items: flex-end !important;
+      padding: 1px 0 14px !important;
+      font-size: 6.5px !important;
+      line-height: 1 !important;
+      color: #5c6680 !important;
+      font-variant-numeric: tabular-nums !important;
+    }
+    .appdemo .ad-bar-plot {
+      display: flex !important;
+      flex-direction: column !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      position: relative !important;
+    }
+    .appdemo .ad-bar-grid {
+      position: absolute !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: 0 !important;
+      bottom: 14px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      pointer-events: none !important;
+    }
+    .appdemo .ad-bar-grid span {
+      border-top: 1px solid #eef1f8 !important;
+      height: 0 !important;
+    }
+    .appdemo .ad-x-axis {
+      display: flex !important;
+      gap: 4px !important;
+      margin-top: 3px !important;
+      flex-shrink: 0 !important;
+    }
+    .appdemo .ad-x-axis span {
+      flex: 1 !important;
+      font-size: 6px !important;
+      line-height: 1.1 !important;
+      color: #5c6680 !important;
+      text-align: center !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+    .appdemo .ad-chart-legend {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      gap: 5px !important;
+      margin-top: 4px !important;
+      font-size: 7px !important;
+      line-height: 1 !important;
+      color: #5c6680 !important;
+      flex-shrink: 0 !important;
+    }
+    .appdemo .ad-chart-legend-cats {
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      gap: 3px 7px !important;
+      row-gap: 3px !important;
+    }
+    .appdemo .ad-chart-legend-cats > span {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 3px !important;
+      white-space: nowrap !important;
+    }
+    .appdemo .ad-legend-swatch {
+      display: inline-block !important;
+      flex-shrink: 0 !important;
+      width: 6px !important;
+      height: 6px !important;
+      border-radius: 1px !important;
+    }
+    .appdemo .ad-legend-swatch.ad-legend-line {
+      width: 12px !important;
+      height: 0 !important;
+      border-top: 2px solid #3b82f6 !important;
+      border-radius: 1px !important;
+    }
+    .appdemo[data-theme="dark"] .ad-y-axis,
+    .appdemo[data-theme="dark"] .ad-x-axis span,
+    .appdemo[data-theme="dark"] .ad-chart-legend { color: #94a0c0 !important; }
+    .appdemo[data-theme="dark"] .ad-bar-grid span { border-color: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .ad-legend-swatch.ad-legend-line { border-color: #7cc0ff !important; }
     .appdemo .ad-line-chart {
       display: block !important;
       width: 100% !important;
       flex: 1 1 auto !important;
       height: auto !important;
-      min-height: 44px !important;
+      min-height: 52px !important;
     }
-    .appdemo .ad-line-chart .ad-line-fill { fill: url(#adLineFill) !important; }
+    .appdemo .ad-line-chart .ad-axis-grid line {
+      stroke: #eef1f8 !important;
+      stroke-width: 1 !important;
+      vector-effect: non-scaling-stroke !important;
+    }
+    .appdemo .ad-line-chart .ad-axis-line {
+      stroke: #c7cfe6 !important;
+      stroke-width: 1 !important;
+      vector-effect: non-scaling-stroke !important;
+    }
+    .appdemo .ad-line-chart .ad-axis-y,
+    .appdemo .ad-line-chart .ad-axis-x {
+      fill: #5c6680 !important;
+      font-size: 6px !important;
+      font-family: system-ui, -apple-system, sans-serif !important;
+    }
+    .appdemo .ad-line-chart .ad-axis-y { text-anchor: end !important; }
+    .appdemo .ad-line-chart .ad-axis-x { text-anchor: middle !important; }
+    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-grid line { stroke: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-line { stroke: #2a3558 !important; }
+    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-y,
+    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-x { fill: #94a0c0 !important; }
+    .appdemo .ad-line-chart .ad-line-fill {
+      fill: url(#adLineFill) !important;
+      opacity: 1 !important;
+    }
     .appdemo .ad-line-chart .ad-line-stroke {
       fill: none !important;
       stroke: #3b82f6 !important;
       stroke-width: 2 !important;
       stroke-linecap: round !important;
       stroke-linejoin: round !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .appdemo .ad-line-chart .ad-line-stroke { transition: none !important; }
+      .appdemo .ad-line-chart .ad-line-fill { transition: none !important; }
     }
     .appdemo[data-theme="dark"] .ad-line-chart .ad-line-stroke { stroke: #7cc0ff !important; }
     .appdemo .ad-mom {
@@ -573,7 +702,13 @@
     .appdemo[data-theme="dark"] .ad-filter-sep { color: #94a0c0 !important; }
     .appdemo[data-theme="dark"] .ad-filter-select {
       background-color: #111831 !important;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%2394a0c0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+      border-color: #1f2845 !important;
+      color: #eef1fb !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23eef1fb' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+    }
+    .appdemo[data-theme="dark"] .ad-filter-select option {
+      background: #111831 !important;
+      color: #eef1fb !important;
     }
     .appdemo[data-theme="dark"] .ad-filter-input,
     .appdemo[data-theme="dark"] .ad-filter-btn {
@@ -766,25 +901,65 @@
                 <div class="ad-charts-col">
                   <div class="ad-panel ad-chart">
                     <div class="ad-ph">Spend by category</div>
-                    <div class="ad-bars">
-                      <span style="--h:82%;--d:0s"></span><span style="--h:64%;--d:.08s"></span>
-                      <span style="--h:48%;--d:.16s"></span><span style="--h:71%;--d:.24s"></span>
-                      <span style="--h:38%;--d:.32s"></span><span style="--h:55%;--d:.4s"></span>
-                      <span style="--h:29%;--d:.48s"></span>
+                    <div class="ad-chart-plot">
+                      <div class="ad-y-axis" aria-hidden="true">
+                        <span>$3k</span><span>$2k</span><span>$1k</span><span>$0</span>
+                      </div>
+                      <div class="ad-bar-plot">
+                        <div class="ad-bar-grid" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                        <div class="ad-bars">
+                          <span style="--h:82%;--d:0s;--bar:#7c4dff"></span>
+                          <span style="--h:64%;--d:.08s;--bar:#0fae6f"></span>
+                          <span style="--h:48%;--d:.16s;--bar:#ef4655"></span>
+                          <span style="--h:71%;--d:.24s;--bar:#5b5bf0"></span>
+                          <span style="--h:38%;--d:.32s;--bar:#ff9900"></span>
+                          <span style="--h:55%;--d:.4s;--bar:#14b8a6"></span>
+                          <span style="--h:29%;--d:.48s;--bar:#94a3b8"></span>
+                        </div>
+                        <div class="ad-x-axis" aria-hidden="true">
+                          <span>Retail</span><span>Groc</span><span>Dining</span><span>Subs</span><span>Amazon</span><span>Health</span><span>Other</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ad-chart-legend ad-chart-legend-cats" aria-hidden="true">
+                      <span><i class="ad-legend-swatch" style="background:#7c4dff"></i> Shopping/Retail</span>
+                      <span><i class="ad-legend-swatch" style="background:#0fae6f"></i> Groceries</span>
+                      <span><i class="ad-legend-swatch" style="background:#ef4655"></i> Dining</span>
+                      <span><i class="ad-legend-swatch" style="background:#5b5bf0"></i> Subscriptions</span>
+                      <span><i class="ad-legend-swatch" style="background:#ff9900"></i> Online/Amazon</span>
+                      <span><i class="ad-legend-swatch" style="background:#14b8a6"></i> Health</span>
+                      <span><i class="ad-legend-swatch" style="background:#94a3b8"></i> Other</span>
                     </div>
                   </div>
                   <div class="ad-panel ad-line">
                     <div class="ad-ph">Spend over time</div>
-                    <svg class="ad-line-chart" viewBox="0 0 240 64" preserveAspectRatio="none" aria-hidden="true">
+                    <svg class="ad-line-chart" viewBox="0 0 260 72" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
                       <defs>
                         <linearGradient id="adLineFill" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stop-color="#3b82f6" stop-opacity=".22"/>
                           <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
                         </linearGradient>
                       </defs>
-                      <path class="ad-line-fill" d="M0,64 L0,42 L30,38 L60,48 L90,28 L120,34 L150,22 L180,30 L210,18 L240,26 L240,64 Z"/>
-                      <polyline class="ad-line-stroke" points="0,42 30,38 60,48 90,28 120,34 150,22 180,30 210,18 240,26"/>
+                      <g class="ad-axis-grid">
+                        <line x1="28" y1="12" x2="252" y2="12"/>
+                        <line x1="28" y1="28" x2="252" y2="28"/>
+                        <line x1="28" y1="44" x2="252" y2="44"/>
+                      </g>
+                      <line class="ad-axis-line" x1="28" y1="8" x2="28" y2="56"/>
+                      <line class="ad-axis-line" x1="28" y1="56" x2="252" y2="56"/>
+                      <text class="ad-axis-y" x="25" y="12">$8k</text>
+                      <text class="ad-axis-y" x="25" y="28">$6k</text>
+                      <text class="ad-axis-y" x="25" y="44">$4k</text>
+                      <text class="ad-axis-y" x="25" y="57">$0</text>
+                      <text class="ad-axis-x" x="28" y="68">Feb</text>
+                      <text class="ad-axis-x" x="84" y="68">Mar</text>
+                      <text class="ad-axis-x" x="140" y="68">Apr</text>
+                      <text class="ad-axis-x" x="196" y="68">May</text>
+                      <text class="ad-axis-x" x="252" y="68">Now</text>
+                      <path class="ad-line-fill" d=""/>
+                      <path class="ad-line-stroke" d=""/>
                     </svg>
+                    <div class="ad-chart-legend" aria-hidden="true"><span class="ad-legend-swatch ad-legend-line"></span> Net spend over time</div>
                   </div>
                 </div>
                 <div class="ad-panel ad-mom">
@@ -1166,6 +1341,63 @@
       }
       if (reduce) { kpis.forEach(function (el) { el.textContent = (el.dataset.prefix || '') + (+el.dataset.to).toLocaleString(); }); }
       else { countUp(); setInterval(countUp, 9000); }
+    })();
+
+    (function () {
+      var svg = document.querySelector('.ad-line-chart');
+      if (!svg) return;
+      var stroke = svg.querySelector('.ad-line-stroke');
+      var fill = svg.querySelector('.ad-line-fill');
+      if (!stroke || !fill) return;
+
+      var pts = [[28, 46], [56, 40], [84, 56], [112, 24], [140, 34], [168, 14], [196, 27], [224, 8], [252, 21]];
+      var bottom = 56;
+      var left = 28;
+      var tension = 0.12;
+
+      function smoothLine(points) {
+        if (points.length < 2) return '';
+        var d = 'M' + points[0][0] + ',' + points[0][1];
+        for (var i = 0; i < points.length - 1; i++) {
+          var p0 = points[i === 0 ? 0 : i - 1];
+          var p1 = points[i];
+          var p2 = points[i + 1];
+          var p3 = points[i + 2] || p2;
+          var cp1x = p1[0] + (p2[0] - p0[0]) * tension;
+          var cp1y = p1[1] + (p2[1] - p0[1]) * tension;
+          var cp2x = p2[0] - (p3[0] - p1[0]) * tension;
+          var cp2y = p2[1] - (p3[1] - p1[1]) * tension;
+          d += ' C' + cp1x + ',' + cp1y + ' ' + cp2x + ',' + cp2y + ' ' + p2[0] + ',' + p2[1];
+        }
+        return d;
+      }
+
+      var lineD = smoothLine(pts);
+      var last = pts[pts.length - 1];
+      stroke.setAttribute('d', lineD);
+      fill.setAttribute('d', lineD + ' L' + last[0] + ',' + bottom + ' L' + left + ',' + bottom + ' Z');
+
+      var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) return;
+
+      var len = stroke.getTotalLength();
+      var ease = 'cubic-bezier(.2, .7, .2, 1)';
+
+      function drawLine() {
+        stroke.style.transition = 'none';
+        fill.style.transition = 'none';
+        stroke.style.strokeDasharray = len;
+        stroke.style.strokeDashoffset = len;
+        fill.style.opacity = '0';
+        stroke.getBoundingClientRect();
+        stroke.style.transition = 'stroke-dashoffset 1.7s ' + ease;
+        fill.style.transition = 'opacity 1s ease .85s';
+        stroke.style.strokeDashoffset = '0';
+        fill.style.opacity = '1';
+      }
+
+      drawLine();
+      setInterval(drawLine, 9000);
     })();
 
     (function () {
