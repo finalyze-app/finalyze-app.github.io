@@ -152,7 +152,7 @@
           await afterSignIn();
         } else {
           msg.className = 'acct-msg ok';
-          msg.textContent = 'Account created — check your inbox to confirm your email, then sign in.';
+          msg.textContent = 'Account created — check your inbox to confirm your email, then sign in. If you don’t see it within a few minutes, check spam or junk.';
           btn.textContent = 'Confirm your email';
         }
       } catch (err) {
