@@ -126,6 +126,16 @@ confirmation/reset emails get throttled. Use Resend:
 
 This same SMTP also powers magic-link and password-reset emails.
 
+## 3c. Branded confirmation email
+
+Repo templates live in [`supabase/email/`](supabase/email/):
+
+1. Deploy the site (so `https://finalyze.cc/assets/icon-email.png` is reachable).
+2. **Authentication → Emails → Confirm signup**
+3. **Subject:** `Confirm your email — you're one step from Finalyze` (or copy from `confirm-signup-subject.txt`).
+4. **Body:** paste the full HTML from [`supabase/email/confirm-signup.html`](supabase/email/confirm-signup.html). Use the editor's HTML/source mode if available.
+5. Send a test sign-up and check inbox + spam. The message uses Finalyze colours, the app icon, and `{{ .ConfirmationURL }}` for the confirm button.
+
 ## 4. Tracking your user base
 Every signed-in user has a row in `public.profiles`. To email updates, export
 emails from the **Table Editor** or query `auth.users` / `public.profiles`.
