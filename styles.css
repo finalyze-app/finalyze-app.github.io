@@ -737,6 +737,16 @@ body.modal-open { overflow: hidden; }
 .acct-msg { margin: 14px 0 0; font-size: 13px; min-height: 18px; }
 .acct-msg.ok { color: var(--green, #0fae6f); }
 .acct-msg.err { color: var(--danger, #ef4655); }
+.acct-confirm-sent { text-align: center; padding: 8px 4px 4px; }
+.acct-confirm-icon {
+  width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--accent-soft), var(--green-soft));
+  color: var(--accent);
+}
+.acct-confirm-sent h2 { margin: 0 0 12px; font-size: 22px; }
+.acct-confirm-lead { margin: 0 0 24px; font-size: 16px; line-height: 1.55; color: var(--ink); font-weight: 600; }
+.acct-confirm-sent .btn { width: 100%; justify-content: center; }
 .pw-strength { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; margin-top: -2px; }
 .pw-strength-bar { display: block; height: 100%; width: 0; border-radius: 6px; transition: width .2s ease, background .2s ease; }
 .pw-strength-bar.weak { background: var(--danger, #ef4655); }

@@ -64,6 +64,22 @@
     };
   }
 
+  function openConfirmEmailSent() {
+    const panel = modal(`
+      <button class="acct-close" aria-label="Close">×</button>
+      <div class="acct-confirm-sent">
+        <div class="acct-confirm-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+        </div>
+        <h2>Account created</h2>
+        <p class="acct-confirm-lead">Check your inbox to confirm your email, then sign in. If you don’t see it within a few minutes, check spam or junk.</p>
+        <button type="button" class="btn primary" id="acctConfirmDone">Got it — sign in</button>
+      </div>`);
+    const goSignIn = () => { close(); openSignIn('signin'); };
+    panel.querySelector('.acct-close').onclick = goSignIn;
+    panel.querySelector('#acctConfirmDone').onclick = goSignIn;
+  }
+
   // ---- sign-in / sign-up (email + password) ----
   function openSignIn(mode) {
     mode = mode === 'signup' ? 'signup' : 'signin';
@@ -151,9 +167,7 @@
           close();
           await afterSignIn();
         } else {
-          msg.className = 'acct-msg ok';
-          msg.textContent = 'Account created — check your inbox to confirm your email, then sign in. If you don’t see it within a few minutes, check spam or junk.';
-          btn.textContent = 'Confirm your email';
+          openConfirmEmailSent();
         }
       } catch (err) {
         msg.className = 'acct-msg err';
