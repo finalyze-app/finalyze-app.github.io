@@ -75,10 +75,12 @@ Existing users without a code: the app calls `ensure_referral_code()` RPC on acc
   - OFF (fastest for testing): users are signed in immediately on sign-up.
 - **Password policy** (Authentication → Policies): the client enforces a minimum
   of 8 characters; set the server minimum to match.
-- **Authentication → URL Configuration**: set **Site URL** to your production
-  domain (`https://finalyze.cc`) and add **Redirect URLs** for every origin you
-  use: `https://finalyze.cc`, `https://www.finalyze.cc`,
+- **Authentication → URL Configuration**: set **Site URL** to `https://finalyze.cc`
+  (or `https://finalyze.cc/app/` — either works if redirects below are set).
+  Add **Redirect URLs** for every origin you use: `https://finalyze.cc`, `https://www.finalyze.cc`,
   `https://finalyze-app.github.io`, and `http://localhost:8755` for local testing.
+  **Email confirmation** sends users to `https://finalyze.cc/app/` via `email_redirect_to`
+  in `js/config.js` (`EMAIL_CONFIRM_REDIRECT`). That URL must be allow-listed.
   For Google sign-in, also allow-list the **app paths** (that's where OAuth sends
   users back): `https://finalyze.cc/app/`, `https://www.finalyze.cc/app/`,
   `https://finalyze-app.github.io/app/`, `http://localhost:8754/app/`

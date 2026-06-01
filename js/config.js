@@ -27,7 +27,10 @@
     // Public site URL for referral share links (landing page root, no trailing slash).
     SITE_URL: 'https://finalyze.cc',
 
-    // Where the magic-link should send the user back to. Defaults to this page.
+    // Where users land after confirming email (must be allow-listed in Supabase → URL Configuration).
+    EMAIL_CONFIRM_REDIRECT: 'https://finalyze.cc/app/',
+
+    // OAuth / magic-link return URL for the current page (usually /app/ when signing in from the app).
     get REDIRECT_URL() {
       return location.origin + location.pathname;
     },

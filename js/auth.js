@@ -47,6 +47,18 @@
     return baseHeaders(Object.assign({ Authorization: 'Bearer ' + (session && session.access_token) }, extra || {}));
   }
 
+  // Post-confirmation redirect (GoTrue `email_redirect_to`). Production → finalyze.cc/app/;
+  // local dev → same host /app/ so confirm links work on localhost too.
+  function emailConfirmRedirect() {
+    const host = global.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return global.location.origin + '/app/';
+    }
+    const fixed = (cfg.EMAIL_CONFIRM_REDIRECT || '').trim();
+    if (fixed) return fixed;
+    return (cfg.SITE_URL || global.location.origin).replace(/\/$/, '') + '/app/';
+  }
+
   async function jsonOrThrow(res) {
     let body = null;
     try { body = await res.json(); } catch (e) {}
@@ -63,7 +75,7 @@
   async function signUp(email, password) {
     if (!enabled()) throw new Error('Accounts are not configured.');
     const ref = (global.Finalyze.Referral && global.Finalyze.Referral.getRef && global.Finalyze.Referral.getRef()) || '';
-    const payload = { email, password };
+    const payload = { email, password, email_redirect_to: emailConfirmRedirect() };
     if (ref) payload.data = { referred_by: ref };
     const res = await fetch(authUrl('/signup'), {
       method: 'POST', headers: baseHeaders(),
