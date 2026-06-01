@@ -18,7 +18,7 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css?v=7" />
+  <link rel="stylesheet" href="landing.css?v=8" />
   <!-- hero v7: side-by-side demo with interactive easter-egg chat -->
   <style>
     .appdemo .ad-window {
@@ -775,6 +775,8 @@
     #how-it-works .step { padding: 18px 16px !important; }
     #how-it-works .step p { font-size: 13.5px !important; line-height: 1.45 !important; margin-bottom: 0 !important; }
     #how-it-works .section-link { margin-top: 20px !important; }
+    #how-it-works .scroll-cue { margin-top: 16px !important; }
+    #features .scroll-cue { margin-top: 28px !important; }
   </style>
   <script>
     (function () {
@@ -1056,6 +1058,11 @@
         </div>
       </div>
       <p class="section-link"><a href="/docs/#first-import">See setup guide →</a></p>
+      <a class="scroll-cue" href="#privacy" aria-label="Scroll down for more">
+        <span class="scroll-cue-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </span>
+      </a>
     </div>
   </section>
 
@@ -1121,10 +1128,15 @@
           <p>A responsive dashboard on your phone - tap-friendly cards, charts, and navigation.</p>
         </div>
       </div>
+      <a class="scroll-cue" href="#banks" aria-label="Scroll down for more">
+        <span class="scroll-cue-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </span>
+      </a>
     </div>
   </section>
 
-  <section class="banks-strip">
+  <section class="banks-strip" id="banks">
     <div class="wrap">
       <p class="banks-lead">Import statements from the banks you already use</p>
       <div class="bank-logos" aria-label="Supported banks">
@@ -1247,6 +1259,12 @@
     </div>
     <div class="wrap footer-bottom">
       <span>© 2026 Finalyze · Your money, analyzed privately.</span>
+      <a class="scroll-cue scroll-cue-top" href="#top" aria-label="Go to top">
+        <span class="scroll-cue-top-label">Go to top</span>
+        <span class="scroll-cue-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>
+        </span>
+      </a>
       <span class="footer-meta">Give a month, get a month - for Pro subscribers</span>
     </div>
   </footer>
@@ -1302,6 +1320,36 @@
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDemoTheme(); }
         };
       }
+    })();
+
+    (function () {
+      var downCues = [].slice.call(document.querySelectorAll('.scroll-cue:not(.scroll-cue-top)'));
+      var topCue = document.querySelector('.scroll-cue-top');
+      if (!downCues.length && !topCue) return;
+      function syncScrollCues() {
+        var vh = window.innerHeight;
+        downCues.forEach(function (cue) {
+          var section = cue.closest('section');
+          if (!section) {
+            cue.classList.add('is-hidden');
+            return;
+          }
+          var sr = section.getBoundingClientRect();
+          var show;
+          if (section.id === 'how-it-works') {
+            show = sr.bottom >= vh * 0.62;
+          } else {
+            show = sr.top <= vh * 0.42 && sr.bottom >= vh * 0.62;
+          }
+          cue.classList.toggle('is-hidden', !show);
+        });
+        if (topCue) {
+          topCue.classList.toggle('is-hidden', window.scrollY < Math.min(520, vh * 0.55));
+        }
+      }
+      window.addEventListener('scroll', syncScrollCues, { passive: true });
+      window.addEventListener('resize', syncScrollCues);
+      syncScrollCues();
     })();
 
     (function () {

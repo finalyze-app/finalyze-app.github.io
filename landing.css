@@ -458,6 +458,70 @@ p.sub {
 }
 .section-link a:hover { text-decoration: underline; }
 
+.scroll-cue {
+  display: block;
+  width: fit-content;
+  margin: 20px auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+.scroll-cue-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 36px;
+}
+.scroll-cue-top-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: .85;
+}
+.scroll-cue-top:hover .scroll-cue-top-label { opacity: 1; }
+.scroll-cue.is-hidden {
+  display: none !important;
+}
+.scroll-cue-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, .35);
+  background: linear-gradient(135deg, rgba(59, 130, 246, .14), rgba(124, 77, 255, .12));
+  box-shadow: 0 8px 22px -12px rgba(59, 130, 246, .55);
+  color: var(--accent);
+}
+.scroll-cue-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+}
+.scroll-cue:hover .scroll-cue-icon {
+  border-color: rgba(59, 130, 246, .55);
+  box-shadow: 0 10px 28px -10px rgba(124, 77, 255, .55);
+}
+@keyframes scrollCueBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+@keyframes scrollCueBounceUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .scroll-cue:not(.is-hidden):not(.scroll-cue-top) .scroll-cue-icon { animation: scrollCueBounce 2.2s ease-in-out infinite; }
+  .scroll-cue-top .scroll-cue-icon { animation: scrollCueBounceUp 2.2s ease-in-out infinite; }
+}
+
 /* how it works */
 .steps {
   display: grid;
@@ -852,9 +916,23 @@ details p a { color: var(--accent); font-weight: 600; }
   border-top: 1px solid var(--line);
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
   gap: 12px;
   font-size: 13px;
+}
+.footer-bottom .scroll-cue-top {
+  margin: 0;
+  gap: 6px;
+}
+.footer-bottom .scroll-cue-top-label { font-size: 10px; }
+.footer-bottom .scroll-cue-icon {
+  width: 32px;
+  height: 32px;
+}
+.footer-bottom .scroll-cue-icon svg {
+  width: 16px;
+  height: 16px;
 }
 .footer-meta { color: var(--muted); }
 
@@ -884,6 +962,11 @@ details p a { color: var(--accent); font-weight: 600; }
   .hero .cta { gap: 10px; }
   section.block { padding: 52px 0; }
   .wrap { padding: 0 18px; }
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
 }
 
 @media (max-width: 680px) {
