@@ -834,7 +834,8 @@
           </div>
         </div>
 
-        <div class="appdemo" id="how" data-theme="light">
+        <div class="appdemo" id="how">
+          <script>(function(){var el=document.currentScript.parentElement;el.dataset.theme=document.documentElement.dataset.theme||'light';})();</script>
           <div class="ad-chrome"><span class="ad-dots"><i></i><i></i><i></i></span><span class="ad-url">finalyze.cc</span></div>
           <div class="ad-window">
             <aside class="ad-side" aria-hidden="true">
@@ -1262,7 +1263,7 @@
         var dark = document.documentElement.dataset.theme === 'dark';
         if (btn) btn.innerHTML = dark ? SUN : MOON;
       }
-      function syncDemoTheme() {
+      function syncDemoThemeUI() {
         if (!demo) return;
         var dark = demo.dataset.theme === 'dark';
         if (demoLabel) demoLabel.textContent = dark ? 'Light' : 'Dark';
@@ -1275,19 +1276,25 @@
           icon.replaceWith(next);
         }
       }
+      function syncDemoFromPage() {
+        if (!demo) return;
+        demo.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+        syncDemoThemeUI();
+      }
       function togglePageTheme() {
         var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.dataset.theme = next;
         try { localStorage.setItem('finalyze.theme', next); } catch (e) {}
         syncPageTheme();
+        syncDemoFromPage();
       }
       function toggleDemoTheme() {
         if (!demo) return;
         demo.dataset.theme = demo.dataset.theme === 'dark' ? 'light' : 'dark';
-        syncDemoTheme();
+        syncDemoThemeUI();
       }
       syncPageTheme();
-      syncDemoTheme();
+      syncDemoFromPage();
       if (btn) btn.onclick = togglePageTheme;
       if (demoBtn) {
         demoBtn.onclick = toggleDemoTheme;
