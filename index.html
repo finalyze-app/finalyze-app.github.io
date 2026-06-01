@@ -18,7 +18,13 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css" />
+  <link rel="stylesheet" href="landing.css?v=2" />
+  <!-- Keep hero preview visible if an old landing.css is cached (opacity:0 bug) -->
+  <style>
+    .appdemo .ad-kpi { opacity: 1 !important; transform: none !important; }
+    .appdemo .ad-v { color: var(--ink); }
+    .appdemo .ad-bars span { height: var(--h); min-height: 12px; }
+  </style>
   <script>
     (function () {
       try { document.documentElement.dataset.theme = localStorage.getItem('finalyze.theme') || 'light'; }
@@ -74,7 +80,7 @@
         <span class="chip">On-device AI</span>
       </div>
 
-      <div class="appdemo" id="how" role="img" aria-label="Preview of the Finalyze spending dashboard with KPI cards, category chart, and AI insights">
+      <div class="appdemo" id="how" aria-label="Preview of the Finalyze spending dashboard">
         <div class="ad-chrome"><span class="ad-dots"><i></i><i></i><i></i></span><span class="ad-url">finalyze.cc</span></div>
         <div class="ad-window">
           <aside class="ad-side">
