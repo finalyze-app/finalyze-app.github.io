@@ -162,3 +162,5 @@ Run [`supabase/migrations/20260603_tickets.sql`](supabase/migrations/20260603_ti
 - RLS: signed-in users can **insert** (and **select** their own) tickets only
 
 The app shows a fixed **Beta** banner with **Submit feedback** for signed-in users (hidden during demo mode). Tickets appear in **Table Editor → tickets** for review.
+
+**Email when a ticket arrives:** deploy the `ticket-notify` Edge Function and a Database Webhook — full steps in [`TICKETS_SETUP.md`](TICKETS_SETUP.md).
