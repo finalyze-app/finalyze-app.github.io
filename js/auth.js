@@ -75,12 +75,14 @@
   async function signUp(email, password) {
     if (!enabled()) throw new Error('Accounts are not configured.');
     const ref = (global.Finalyze.Referral && global.Finalyze.Referral.getRef && global.Finalyze.Referral.getRef()) || '';
-    const payload = { email, password, email_redirect_to: emailConfirmRedirect() };
+    const payload = { email, password };
     if (ref) payload.data = { referred_by: ref };
-    const res = await fetch(authUrl('/signup'), {
-      method: 'POST', headers: baseHeaders(),
-      body: JSON.stringify(payload),
-    });
+    // GoTrue expects redirect_to on the query string (not the JSON body) for confirm links.
+    const redirectTo = emailConfirmRedirect();
+    const res = await fetch(
+      authUrl('/signup') + '?redirect_to=' + encodeURIComponent(redirectTo),
+      { method: 'POST', headers: baseHeaders(), body: JSON.stringify(payload) },
+    );
     const body = await jsonOrThrow(res);
     if (body && body.access_token) {
       if (global.Finalyze.Referral && global.Finalyze.Referral.clearRef) global.Finalyze.Referral.clearRef();

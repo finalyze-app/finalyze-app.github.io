@@ -138,6 +138,13 @@ Repo templates live in [`supabase/email/`](supabase/email/):
 4. **Body:** paste the full HTML from [`supabase/email/confirm-signup.html`](supabase/email/confirm-signup.html). Use the editor's HTML/source mode if available.
 5. Send a test sign-up and check inbox + spam. The message uses Finalyze colours, the app icon, and `{{ .ConfirmationURL }}` for the confirm button.
 
+**Troubleshooting — still seeing the old template or redirect?**
+
+- Repo/email file edits do not update Supabase until you paste into **Confirm signup** and **Save**.
+- Only emails sent **after** that save use the new template; resend or sign up with a **new** address.
+- Redirect to `/app/` is set via `?redirect_to=` on sign-up in `js/auth.js` (not the JSON body). Allow-list `https://finalyze.cc/app/` under Redirect URLs.
+- Hard refresh the app (`auth.js` cache bust) before a test sign-up.
+
 ## 4. Tracking your user base
 Every signed-in user has a row in `public.profiles`. To email updates, export
 emails from the **Table Editor** or query `auth.users` / `public.profiles`.
