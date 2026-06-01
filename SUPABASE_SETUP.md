@@ -154,3 +154,11 @@ emails from the **Table Editor** or query `auth.users` / `public.profiles`.
 - Transactions, categories, budgets, tags → IndexedDB, on-device only.
 - Server stores → email, license/referral, feature unlocks, and the
   non-sensitive onboarding settings above. Nothing else.
+
+## 5. Beta feedback tickets
+Run [`supabase/migrations/20260603_tickets.sql`](supabase/migrations/20260603_tickets.sql) in the SQL Editor. It creates `public.tickets` with:
+- `user_id`, `email`, `type` (`enhancement` | `bug` | `feature` | `other`), `description`
+- `submitted_date` and `submitted_time` (Eastern Time, set by the app on submit)
+- RLS: signed-in users can **insert** (and **select** their own) tickets only
+
+The app shows a fixed **Beta** banner with **Submit feedback** for signed-in users (hidden during demo mode). Tickets appear in **Table Editor → tickets** for review.

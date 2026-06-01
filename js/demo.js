@@ -124,7 +124,7 @@
   function updateBanner() {
     const host = $('#demoBanner');
     if (!host) return;
-    if (!active()) { host.hidden = true; host.innerHTML = ''; return; }
+    if (!active()) { host.hidden = true; host.innerHTML = ''; if (F.Tickets && F.Tickets.refresh) F.Tickets.refresh(); return; }
     host.hidden = false;
     host.innerHTML = `<span><strong>Demo mode</strong> — sample data · Pro features unlocked.</span>
       <span class="demo-banner-actions">
@@ -133,6 +133,7 @@
       </span>`;
     $('#demoReplay').onclick = () => { startDemoTour(); };
     $('#demoClear').onclick = clearAndImport;
+    if (F.Tickets && F.Tickets.refresh) F.Tickets.refresh();
   }
 
   function clearAndImport() {

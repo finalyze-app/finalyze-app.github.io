@@ -14,9 +14,14 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="styles.css?v=61" />
+  <link rel="stylesheet" href="styles.css?v=62" />
 </head>
 <body>
+  <div id="betaBanner" class="beta-banner" hidden>
+    <span class="beta-badge">Beta</span>
+    <span class="beta-text">Finalyze is in beta testing — your feedback helps us improve.</span>
+    <button type="button" class="btn sm" id="betaTicketBtn" hidden>Submit feedback</button>
+  </div>
   <div class="shell">
     <!-- ============ Sidebar ============ -->
     <aside class="sidebar">
@@ -300,7 +305,7 @@
   <script src="js/escape.js?v=1"></script>
   <script src="js/config.js?v=53"></script>
   <script src="js/referral.js?v=1"></script>
-  <script src="js/auth.js?v=20"></script>
+  <script src="js/auth.js?v=21"></script>
   <script src="js/idb.js?v=15"></script>
   <script src="js/parse.js?v=18"></script>
   <script src="js/pdfparse.js?v=6"></script>
@@ -313,6 +318,7 @@
   <script src="js/ai.js?v=21"></script>
   <script src="js/chat.js?v=22"></script>
   <script src="js/aiui.js?v=22"></script>
-  <script src="js/demo.js?v=53"></script>
+  <script src="js/demo.js?v=54"></script>
+  <script src="js/tickets.js?v=1"></script>
 </body>
 </html>

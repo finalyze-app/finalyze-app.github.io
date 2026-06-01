@@ -73,6 +73,38 @@ body {
   font-feature-settings: "cv11", "ss01";
 }
 
+/* ============ Beta banner ============ */
+.beta-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 250;
+  display: flex; align-items: center; justify-content: center; gap: 10px 14px;
+  flex-wrap: wrap; padding: 9px 16px;
+  background: linear-gradient(90deg, var(--accent-soft), rgba(91, 91, 240, .1));
+  border-bottom: 1px solid var(--line);
+  font-size: 13px; color: var(--ink);
+  box-shadow: 0 4px 20px -8px rgba(0, 0, 0, .2);
+}
+.beta-badge {
+  font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; flex-shrink: 0;
+}
+.beta-text { text-align: center; line-height: 1.4; }
+body.has-beta-banner { padding-top: var(--beta-banner-h, 46px); }
+body.has-beta-banner .sidebar { top: var(--beta-banner-h, 46px); height: calc(100vh - var(--beta-banner-h, 46px)); }
+
+.ticket-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+.ticket-form select, .ticket-form textarea {
+  font: inherit; font-weight: 400; font-size: 14px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink);
+}
+.ticket-form textarea { resize: vertical; min-height: 100px; }
+.ticket-success { text-align: center; padding: 8px 0 4px; }
+.ticket-success-icon {
+  width: 48px; height: 48px; margin: 0 auto 14px; border-radius: 50%;
+  background: var(--green-soft); color: var(--green);
+  display: grid; place-items: center; font-size: 22px; font-weight: 700;
+}
+.ticket-success p { margin: 0; color: var(--ink-2); line-height: 1.55; max-width: 36em; margin-inline: auto; }
+
 /* ============ App shell ============ */
 .shell { display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; }
 

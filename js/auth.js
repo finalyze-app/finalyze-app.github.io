@@ -235,8 +235,36 @@
     return typeof body === 'string' ? body : (body && body.referral_code) || null;
   }
 
+  // Submit beta feedback ticket (stored in public.tickets; Eastern date/time columns).
+  async function submitTicket({ type, description, submitted_date, submitted_time }) {
+    if (!isSignedIn()) throw new Error('Sign in to submit feedback.');
+    type = (type || '').trim();
+    description = (description || '').trim();
+    if (!type) throw new Error('Choose a ticket type.');
+    if (!description) throw new Error('Enter a description.');
+    const row = {
+      user_id: session.user.id,
+      email: session.user.email || '',
+      type,
+      description,
+      submitted_date,
+      submitted_time,
+    };
+    const res = await fetch(restUrl('/tickets'), {
+      method: 'POST',
+      headers: authedHeaders({ Prefer: 'return=minimal' }),
+      body: JSON.stringify(row),
+    });
+    if (!res.ok) {
+      let body = null;
+      try { body = await res.json(); } catch (e) {}
+      const msg = (body && (body.message || body.error || body.hint)) || ('HTTP ' + res.status);
+      throw new Error(msg);
+    }
+  }
+
   function isSignedIn() { return !!(session && session.user); }
   function user() { return session && session.user; }
 
-  F.Auth = { init, enabled, isSignedIn, user, signUp, signIn, signInWithGoogle, signOut, getProfile, updateProfile, ensureReferralCode, onChange };
+  F.Auth = { init, enabled, isSignedIn, user, signUp, signIn, signInWithGoogle, signOut, getProfile, updateProfile, ensureReferralCode, submitTicket, onChange };
 })(window);
