@@ -224,7 +224,12 @@
 
     async estimatedBytes() {
       await this.init();
-      return idb().estimatedSize();
+      let theme = null, censor = null;
+      try {
+        theme = await idb().get('theme');
+        censor = await idb().get('censor');
+      } catch (e) { /* ignore */ }
+      return new Blob([JSON.stringify({ data: cache, theme, censor })]).size;
     },
 
     mergeTransactions(parsed, accountId) {

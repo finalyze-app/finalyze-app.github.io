@@ -50,8 +50,9 @@
     });
   }
 
-  async function estimatedSize() {
-    const data = await get('data');
+  async function estimatedSize(dataKey) {
+    const key = dataKey || 'data';
+    const data = await get(key);
     const theme = await get('theme');
     const censor = await get('censor');
     const blob = JSON.stringify({ data, theme, censor }) || '';

@@ -1355,6 +1355,11 @@
 
   const SIZE_WARN = 4 * 1024 * 1024;
 
+  function formatStorageSize(bytes) {
+    if (bytes >= 1024 * 1024) return `~${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `~${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
   async function renderSizeBanner() {
     const host = $('#sizeBanner');
     if (!host) return;
@@ -2566,7 +2571,7 @@
     if (!el) return;
     try {
       const bytes = await Store.estimatedBytes();
-      el.textContent = `Storage used: ~${(bytes / 1024).toFixed(0)} KB` + (bytes >= SIZE_WARN ? ' · consider exporting a backup' : '');
+      el.textContent = `Storage used: ${formatStorageSize(bytes)}` + (bytes >= SIZE_WARN ? ' · consider exporting a backup' : '');
     } catch (e) { el.textContent = ''; }
   }
 
