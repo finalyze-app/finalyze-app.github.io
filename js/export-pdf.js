@@ -62,6 +62,17 @@
     });
   }
 
+  function resolveExportItems(widgets, opts) {
+    opts = opts || {};
+    const ids = opts.widgetIds;
+    if (Array.isArray(ids) && ids.length) {
+      return ids
+        .map((id) => widgets.querySelector(`.grid-stack-item[gs-id="${CSS.escape(String(id))}"]`))
+        .filter(Boolean);
+    }
+    return sortedWidgetItems(widgets);
+  }
+
   function stripChrome(root) {
     root.querySelectorAll(
       '.widget-dl, .widget-hide, .drag-handle, .ui-resizable-handle, .grid-stack-item-resize-handle'
@@ -90,6 +101,16 @@
       el.style.height = 'auto';
       el.style.maxHeight = 'none';
       el.style.flex = 'none';
+    });
+    // The live summary grid carries an inline column count sized to the on-screen
+    // window; reset it so it reflows to the (narrower) capture width instead.
+    root.querySelectorAll('.cards').forEach((el) => {
+      el.style.gridTemplateColumns = 'repeat(auto-fit, minmax(190px, 1fr))';
+    });
+    // html2canvas renders soft box-shadows as hard squares behind rounded corners,
+    // leaving ugly notches on every card; drop all shadows for a clean capture.
+    root.querySelectorAll('*').forEach((el) => {
+      if (el.style) el.style.boxShadow = 'none';
     });
     root.querySelectorAll('.grid-stack-item').forEach((item) => {
       const inner = item.querySelector('.widget');
@@ -130,8 +151,8 @@
             ctx.drawImage(img, 0, 0, w, h);
             const imgEl = document.createElement('img');
             imgEl.src = out.toDataURL('image/png');
-            imgEl.style.width = w + 'px';
-            imgEl.style.height = h + 'px';
+            imgEl.style.width = '100%';
+            imgEl.style.height = 'auto';
             imgEl.style.display = 'block';
             imgEl.alt = '';
             target.replaceWith(imgEl);
@@ -183,13 +204,11 @@
     const contentH = pageH - margin * 2;
     const pageBg = hexToRgb(bgHex);
     let y = margin;
-    let page = 0;
 
     fillPdfPage(pdf, pageBg);
 
     function startNewPage() {
       pdf.addPage();
-      page++;
       fillPdfPage(pdf, pageBg);
       y = margin;
     }
@@ -221,11 +240,18 @@
     return { addCanvas, margin, contentW };
   }
 
-  async function exportDashboardPdf() {
+  async function exportDashboardPdf(opts) {
+    opts = opts || {};
     const dashboard = document.getElementById('dashboard');
     const widgets = document.getElementById('widgets');
     if (!dashboard || dashboard.hidden || !widgets || !widgets.children.length) {
       F.toast && F.toast('Open the dashboard with data to export');
+      return;
+    }
+
+    const items = resolveExportItems(widgets, opts);
+    if (!items.length) {
+      F.toast && F.toast('Select at least one section to export');
       return;
     }
 
@@ -243,7 +269,6 @@
       const subEl = document.getElementById('rangeSub');
       const title = titleEl ? titleEl.textContent : 'Spending overview';
       const meta = subEl ? subEl.textContent : '';
-      const items = sortedWidgetItems(widgets);
 
       const headRoot = makeCaptureRoot(width, bg);
       applyPdfTheme(headRoot, bg);

@@ -1268,6 +1268,26 @@
   }
 
   // ============ Top-level render ============
+  function syncFiltersPanel() {
+    const headFilters = $('#headFilters');
+    const dateControls = $('#dateControls');
+    const ftBtn = $('#filtersToggle');
+    if (!headFilters || !dateControls) return;
+    const collapsed = filtersHidden;
+    headFilters.classList.toggle('filters-collapsed', collapsed);
+    if (ftBtn) {
+      ftBtn.classList.toggle('collapsed', collapsed);
+      ftBtn.setAttribute('aria-expanded', String(!collapsed));
+    }
+    const label = $('#filtersToggleLabel');
+    if (label) label.textContent = collapsed ? 'Show filters' : 'Hide filters';
+    dateControls.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+    if (collapsed) dateControls.setAttribute('inert', '');
+    else dateControls.removeAttribute('inert');
+    if (document.body.classList.contains('is-mobile')) dateControls.hidden = collapsed;
+    else dateControls.hidden = false;
+  }
+
   function render() {
     allTxns = enriched();
     enforceProLayout();
@@ -1335,12 +1355,8 @@
     const headFilters = $('#headFilters');
     const ftBtn = $('#filtersToggle');
     if (headFilters) headFilters.hidden = !showFilters;
-    if (ftBtn) {
-      ftBtn.classList.toggle('collapsed', filtersHidden);
-      ftBtn.setAttribute('aria-expanded', String(!filtersHidden));
-    }
-    $('#filtersToggleLabel').textContent = filtersHidden ? 'Show filters' : 'Filters';
-    $('#dateControls').hidden = !showFilters || filtersHidden;
+    if (ftBtn) ftBtn.hidden = !showFilters;
+    if (showFilters) syncFiltersPanel();
     const pdfBtn = $('#exportPdfBtn');
     if (pdfBtn) pdfBtn.hidden = !(hasData && viewName === 'dashboard');
 
@@ -3919,6 +3935,53 @@
     document.body.classList.remove('modal-open');
   }
 
+  function openPdfExportModal() {
+    const sections = visibleOrder();
+    if (!sections.length) {
+      toast('Nothing to export');
+      return;
+    }
+    const rows = sections.map((id) => {
+      const w = WIDGET_MAP[id];
+      return `<label class="pdf-export-row">
+        <input type="checkbox" class="pdf-export-check" data-widget="${id}" checked>
+        <span class="pdf-export-row-title">${esc(w.title)}</span>
+      </label>`;
+    }).join('');
+    const body = openModal(
+      `<h2>Export to PDF</h2>
+       <p class="muted pdf-export-intro">Uncheck sections to leave out. Title and date range are always included.</p>
+       <div class="pdf-export-toolbar">
+         <button type="button" class="linkish" id="pdfSelectAll">Select all</button>
+         <span class="pdf-export-sep" aria-hidden="true">·</span>
+         <button type="button" class="linkish" id="pdfSelectNone">Select none</button>
+       </div>
+       <div class="pdf-export-list">${rows}</div>
+       <div class="import-actions">
+         <button class="btn" id="pdfExportCancel" type="button">Cancel</button>
+         <button class="btn primary" id="pdfExportGo" type="button">Export PDF</button>
+       </div>`);
+    body.querySelector('#pdfExportCancel').onclick = closeModal;
+    body.querySelector('#pdfSelectAll').onclick = () => {
+      $$('.pdf-export-check', body).forEach((cb) => { cb.checked = true; });
+    };
+    body.querySelector('#pdfSelectNone').onclick = () => {
+      $$('.pdf-export-check', body).forEach((cb) => { cb.checked = false; });
+    };
+    body.querySelector('#pdfExportGo').onclick = () => {
+      const selected = [...body.querySelectorAll('.pdf-export-check:checked')].map((cb) => cb.dataset.widget);
+      if (!selected.length) {
+        toast('Select at least one section');
+        return;
+      }
+      const selectedSet = new Set(selected);
+      const ordered = sections.filter((id) => selectedSet.has(id));
+      closeModal();
+      if (F.exportDashboardPdf) F.exportDashboardPdf({ widgetIds: ordered });
+      else toast('PDF export unavailable');
+    };
+  }
+
   function confirmModal(opts) {
     const title = esc(opts.title || 'Confirm');
     const message = esc(opts.message || '');
@@ -4064,6 +4127,7 @@
     detectMobile();
     addEventListener('resize', () => {
       detectMobile();
+      syncFiltersPanel();
       if (viewName === 'dashboard' && $('#summaryCards')) {
         applySummaryLayout();
         adjustOverviewHeight();
@@ -4072,6 +4136,7 @@
     // Filter bar starts collapsed on mobile (it's cramped); remembers your choice.
     const storedFilters = localStorage.getItem('finalyze.filtersHidden');
     filtersHidden = storedFilters == null ? document.body.classList.contains('is-mobile') : storedFilters === '1';
+    syncFiltersPanel();
     await Store.init();
     if (F.Demo?.ensureScope) await F.Demo.ensureScope();
     censored = await Store.getCensor();
@@ -4089,10 +4154,7 @@
     $('#importInput').addEventListener('change', (e) => { if (e.target.files[0]) importBackup(e.target.files[0]); });
     $('#exportBtn').addEventListener('click', exportBackup);
     const pdfBtn = $('#exportPdfBtn');
-    if (pdfBtn) pdfBtn.addEventListener('click', () => {
-      if (F.exportDashboardPdf) F.exportDashboardPdf();
-      else toast('PDF export unavailable');
-    });
+    if (pdfBtn) pdfBtn.addEventListener('click', openPdfExportModal);
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#censorBtn').addEventListener('click', () => applyCensor(!censored));
     $('#menuBtn').addEventListener('click', (e) => { e.stopPropagation(); document.body.classList.toggle('nav-open'); });
@@ -4106,11 +4168,7 @@
     $('#filtersToggle').addEventListener('click', () => {
       filtersHidden = !filtersHidden;
       localStorage.setItem('finalyze.filtersHidden', filtersHidden ? '1' : '0');
-      const btn = $('#filtersToggle');
-      btn.classList.toggle('collapsed', filtersHidden);
-      btn.setAttribute('aria-expanded', String(!filtersHidden));
-      $('#filtersToggleLabel').textContent = filtersHidden ? 'Show filters' : 'Filters';
-      $('#dateControls').hidden = filtersHidden;
+      syncFiltersPanel();
     });
     $('#settingsBtn').addEventListener('click', () => { viewName = viewName === 'prefs' ? 'dashboard' : 'prefs'; render(); });
     $('#datePreset').addEventListener('change', (e) => {

@@ -15,7 +15,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
   <link rel="stylesheet" href="vendor/gridstack.min.css" />
-  <link rel="stylesheet" href="styles.css?v=120" />
+  <link rel="stylesheet" href="styles.css?v=126" />
 </head>
 <body>
   <div id="betaBanner" class="beta-banner" hidden>
@@ -78,15 +78,19 @@
             <span class="logo"><img src="assets/icon.svg" alt="" /></span>
             <span class="name">Finalyze</span>
           </a>
-          <h1>Spending overview</h1>
-          <div class="sub" id="rangeSub">Import a bank statement to begin.</div>
-          <button class="btn sm page-export-pdf" id="exportPdfBtn" type="button" title="Download dashboard as PDF" hidden>Export PDF</button>
+          <div class="page-head-copy">
+            <h1>Spending overview</h1>
+            <div class="sub" id="rangeSub">Import a bank statement to begin.</div>
+          </div>
+          <div class="page-head-actions">
+            <button class="btn sm filters-toggle" id="filtersToggle" type="button" aria-expanded="true" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span id="filtersToggleLabel">Hide filters</span>
+            </button>
+            <button class="btn sm page-export-pdf" id="exportPdfBtn" type="button" title="Download dashboard as PDF" hidden>Export PDF</button>
+          </div>
         </div>
         <div class="head-filters" id="headFilters" hidden>
-          <button class="btn filters-toggle" id="filtersToggle" aria-expanded="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            <span id="filtersToggleLabel">Filters</span>
-          </button>
           <div class="head-actions" id="dateControls">
             <div class="filter-group filter-group-period">
               <span class="filter-group-label">Period</span>
@@ -348,8 +352,8 @@
   <script src="js/store.js?v=48"></script>
   <script src="js/analyze.js?v=53"></script>
   <script src="js/charts.js?v=54"></script>
-  <script src="js/export-pdf.js?v=5"></script>
-  <script src="js/app.js?v=116"></script>
+  <script src="js/export-pdf.js?v=12"></script>
+  <script src="js/app.js?v=122"></script>
   <script src="js/account.js?v=57"></script>
   <script src="js/ai.js?v=24"></script>
   <script src="js/chat.js?v=25"></script>
