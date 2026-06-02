@@ -1167,17 +1167,23 @@
     syncDateInputs();
     syncFilterInputs();
     syncAccountFilter();
+    recomputeViewData();
+    buildNav(true);
+    buildWidgets();
+    renderFilterBanner();
+    renderSizeBanner();
+  }
+
+  function recomputeViewData() {
     const accountTxns = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
     periodTxns = filterTxns(accountTxns, { dateFrom, dateTo });
     datedTxns = filterTxns(accountTxns, { dateFrom, dateTo, amountMin, amountMax, flowFilter });
     if (activeCategory && !datedTxns.some((t) => txnMatchesSlice(t, activeCategory))) activeCategory = null;
     if (activeCardmember && !datedTxns.some((t) => t.cardmember === activeCardmember)) activeCardmember = null;
     if (!isPro() && activeCardmember) activeCardmember = null;
-    // Analytics base optionally drops tagged (business/reimbursable) txns; the ledger keeps them.
     const anaBase = excludeTagged ? datedTxns.filter((t) => !(t.tags && t.tags.length)) : datedTxns;
     const matchCross = (base) => base.filter((t) =>
       (!activeCategory || txnMatchesSlice(t, activeCategory)) && (!activeCardmember || t.cardmember === activeCardmember));
-    // Each chart's base ignores its own filter so you can switch selections.
     catScopeTxns = activeCardmember ? anaBase.filter((t) => t.cardmember === activeCardmember) : anaBase;
     cardScopeTxns = activeCategory ? anaBase.filter((t) => txnMatchesSlice(t, activeCategory)) : anaBase;
     viewTxns = matchCross(anaBase);
@@ -1189,11 +1195,23 @@
     if (amountMin || amountMax) filterBits.push(`amount ${amountMin || '…'}–${amountMax || '…'}`);
     if (flowFilter !== 'all') filterBits.push(flowFilterLabel(flowFilter).toLowerCase());
     const rangeNote = filterBits.length ? ` · filtered ${filterBits.join(' · ')}` : '';
-    $('#rangeSub').textContent = `${s.count} transactions · ${s.dateFrom || '-'} → ${s.dateTo || '-'} · ${Store.currency()}${rangeNote}`;
-    buildNav(true);
-    buildWidgets();
+    const sub = $('#rangeSub');
+    if (sub) sub.textContent = `${s.count} transactions · ${s.dateFrom || '-'} → ${s.dateTo || '-'} · ${Store.currency()}${rangeNote}`;
+  }
+
+  function refreshDashboardWidgets() {
+    if (viewName !== 'dashboard') return;
+    visibleOrder().forEach((id) => {
+      const w = WIDGET_MAP[id];
+      if (w && w.render) w.render();
+    });
     renderFilterBanner();
-    renderSizeBanner();
+  }
+
+  function refreshAfterCategoryChange() {
+    allTxns = enriched();
+    recomputeViewData();
+    refreshDashboardWidgets();
   }
 
   const SIZE_WARN = 4 * 1024 * 1024;
@@ -1912,7 +1930,7 @@
     const cat = $('#bulkCat').value;
     keys.forEach((mk) => Store.setOverride(mk, cat));
     toast(`Recategorized ${keys.length} merchant${keys.length === 1 ? '' : 's'} → ${cat}`);
-    render();
+    refreshAfterCategoryChange();
   }
   function applyBulkCardholder() {
     const tids = selectedTids();
@@ -3203,14 +3221,16 @@
       const mode = Store.getCategoryApplyMode();
       if (mode === 'one') {
         applyCategoryOne(opts.tid, opts.txnName, opts.newCat);
+        t.category = opts.newCat;
         toast('Category saved for this transaction');
-        render();
+        refreshAfterCategoryChange();
         return;
       }
       if (mode === 'all') {
         applyCategoryAll(opts.merchantKey, opts.newCat);
+        t.category = opts.newCat;
         toast('Category saved for all transactions at this merchant');
-        render();
+        refreshAfterCategoryChange();
         return;
       }
       promptCategoryApply(opts);
@@ -3234,13 +3254,13 @@
       applyCategoryOne(tid, txnName, newCat);
       closeModal();
       toast('Category saved for this transaction');
-      render();
+      refreshAfterCategoryChange();
     };
     body.querySelector('#catApplyAll').onclick = () => {
       applyCategoryAll(merchantKey, newCat);
       closeModal();
       toast('Category saved for all transactions at this merchant');
-      render();
+      refreshAfterCategoryChange();
     };
     body.querySelector('#catApplyCancel').onclick = () => closeModal();
   }
@@ -3329,7 +3349,9 @@
 
     body.querySelector('#dmCat').onchange = (e) => {
       Store.setOverride(merchantKey, e.target.value);
-      render(); toast(`Category set for ${merchantKey}`); openMerchantDrill(merchantKey);
+      refreshAfterCategoryChange();
+      toast(`Category set for ${merchantKey}`);
+      openMerchantDrill(merchantKey);
     };
     body.querySelectorAll('[data-mtag]').forEach((btn) => btn.onclick = () => {
       const tag = btn.dataset.mtag;
