@@ -315,7 +315,7 @@
         <button class="btn" id="acctEdit">Edit preferences</button>
         <button class="btn ghost danger" id="acctSignOut">Sign out</button>
       </div>
-      <p class="muted acct-note">Your transactions never leave this device. Only your email and account settings are synced.</p>`);
+      <p class="muted acct-note">Your transactions never leave this device. Only your email and license are stored on our servers.</p>`);
     panel.querySelector('.acct-close').onclick = close;
     panel.querySelector('#acctEdit').onclick = () => openOnboarding(profile);
     panel.querySelector('#acctSignOut').onclick = async () => { await Auth.signOut(); close(); renderChip(); };

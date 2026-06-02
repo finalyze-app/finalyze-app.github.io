@@ -880,7 +880,7 @@ details p a { color: var(--accent); font-weight: 600; }
 }
 .footer-grid {
   display: grid;
-  grid-template-columns: minmax(200px, 1.25fr) repeat(3, 1fr);
+  grid-template-columns: minmax(200px, 1.25fr) repeat(4, 1fr);
   gap: 36px 24px;
   align-items: start;
 }

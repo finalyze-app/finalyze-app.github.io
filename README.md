@@ -116,8 +116,8 @@ questions, because the app only holds past spend data - not income, savings, or 
 
 Your financial data never leaves your computer. By default there are no external requests -
 Chart.js is bundled locally in `vendor/`. Two **optional** features reach the network only when
-you choose to use them: (1) signing in (Supabase stores just your email/account settings - never
-transactions), and (2) the first download of an AI model. After an AI model is cached, it runs
+you choose to use them: (1) signing in (Supabase stores just your email and license - never
+transactions), referrals and support tickets when you use those features, and (2) the first download of an AI model. After an AI model is cached, it runs
 offline. IndexedDB is tied to the browser/origin you use, so open the app the same way
 (always `file://` or always `localhost`) to keep one continuous history, and export a backup
 before clearing browser data.

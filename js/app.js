@@ -978,7 +978,7 @@
     const q = email ? '?prefilled_email=' + encodeURIComponent(email) : '';
     openModal(
       `<h2>Upgrade to Pro</h2>
-       <p class="muted">Unlock your full transaction history, AI chat, custom KPI cards, categorization rules, unlimited accounts, and family mode. Your data stays in your browser - Pro lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
+       <p class="muted">Unlock your full transaction history, AI chat, custom KPI cards, categorization rules, unlimited accounts, and cardmember breakdown. Your data stays in your browser - Pro lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
        <div class="upgrade-plans">
          <a class="btn primary upgrade-plan" href="${STRIPE_MONTHLY}${q}" target="_blank" rel="noopener">
            <span class="up-amt">$7<small>/month</small></span><span class="up-label">Monthly</span></a>
@@ -1067,7 +1067,7 @@
         if (hiddenOlder > 0) missParts.push(`${hiddenOlder} older transaction${hiddenOlder === 1 ? '' : 's'}`);
         if (hiddenMonths > 0) missParts.push(`~${hiddenMonths} month${hiddenMonths === 1 ? '' : 's'} of history`);
         const missLine = missParts.length ? ` · ${missParts.join(' and ')} waiting in Pro` : '';
-        freeBn.innerHTML = `<span><strong>Free plan</strong> - showing the last ${FREE_MONTHS} months${missLine}. Pro unlocks AI chat, custom cards, rules, multi-account &amp; family mode.</span> <button class="linkish" id="freeUpgrade" type="button">Upgrade to Pro →</button>`;
+        freeBn.innerHTML = `<span><strong>Free plan</strong> - showing the last ${FREE_MONTHS} months${missLine}. Pro unlocks AI chat, custom cards, rules, multi-account &amp; cardmember breakdown.</span> <button class="linkish" id="freeUpgrade" type="button">Upgrade to Pro →</button>`;
         const fu = $('#freeUpgrade'); if (fu) fu.onclick = openUpgradeModal;
       } else { freeBn.hidden = true; freeBn.innerHTML = ''; }
     }
@@ -2366,7 +2366,7 @@
         <input type="text" id="newAcctName" placeholder="New account label, e.g. Personal Visa">
         <button class="btn primary" id="addAcctBtn">Add account</button>
       </div>`
-        : `<p class="muted" style="margin-top:10px">Free plan includes one account. <button type="button" class="linkish" id="acctProUpgrade">Upgrade to Pro</button> for unlimited accounts and family mode.</p>`);
+        : `<p class="muted" style="margin-top:10px">Free plan includes one account. <button type="button" class="linkish" id="acctProUpgrade">Upgrade to Pro</button> for unlimited accounts and cardmember breakdown.</p>`);
     const upg = container.querySelector('#acctProUpgrade');
     if (upg) upg.onclick = openUpgradeModal;
     const addBtn = $('#addAcctBtn');
@@ -2905,7 +2905,7 @@
       }
       const fmt = sources.size ? ' · ' + [...sources].join(', ') : '';
       toast(`Imported ${totalAdded} new · ${totalDup} already in history${fmt}`);
-      if (totalAdded > 0) maybeOfferSettingsTour();
+      if (totalAdded > 0) maybeOfferFirstImportTours();
     };
 
     const readText = (file) => new Promise((resolve, reject) => {
@@ -3067,7 +3067,7 @@
       closeModal();
       render();
       toast(`Imported ${added} new · ${duplicates} already in history · PDF`);
-      if (added > 0) maybeOfferSettingsTour();
+      if (added > 0) maybeOfferFirstImportTours();
     };
   }
 
@@ -3477,18 +3477,30 @@
     }
   }
 
-  // ---- First-import: offer a guided tour of Settings ----
-  function maybeOfferSettingsTour() {
-    if (F.Demo && F.Demo.active && F.Demo.active()) return;     // skip during demo data
-    if (localStorage.getItem('finalyze.settingsTourOffered')) return;
+  // ---- First-import: offer dashboard and/or settings tours ----
+  function maybeOfferFirstImportTours() {
+    if (F.Demo && F.Demo.active && F.Demo.active()) return;
     if (!allTxns.length) return;
+    const dashOffered = localStorage.getItem('finalyze.dashboardTourOffered');
+    const settingsOffered = localStorage.getItem('finalyze.settingsTourOffered');
+    if (dashOffered && settingsOffered) return;
+    localStorage.setItem('finalyze.dashboardTourOffered', '1');
     localStorage.setItem('finalyze.settingsTourOffered', '1');
     const body = openModal(
-      `<h2>Make Finalyze yours</h2>
-       <p class="muted">Nice - your statement is in! Want a quick tour of Settings to set up categories, rules, budgets and custom cards the way you like?</p>
-       <div class="import-actions"><button class="btn" id="tourNo">Not now</button><button class="btn primary" id="tourYes">Show me around</button></div>`);
+      `<h2>Your data is in</h2>
+       <p class="muted">Nice — your statement imported successfully. Want a quick tour of the dashboard, settings, or both?</p>
+       <div class="import-actions import-actions-stack">
+         <button class="btn primary" id="tourDash">Tour the dashboard</button>
+         <button class="btn" id="tourSettings">Tour settings</button>
+         <button class="btn ghost-dim" id="tourNo">Not now</button>
+       </div>`);
     body.querySelector('#tourNo').onclick = closeModal;
-    body.querySelector('#tourYes').onclick = () => { closeModal(); startSettingsTour(); };
+    body.querySelector('#tourDash').onclick = () => { closeModal(); startDashboardTour(); };
+    body.querySelector('#tourSettings').onclick = () => { closeModal(); startSettingsTour(); };
+  }
+
+  function maybeOfferSettingsTour() {
+    maybeOfferFirstImportTours();
   }
 
   function startSettingsTour() {

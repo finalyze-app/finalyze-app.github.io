@@ -86,7 +86,9 @@
     const body = await jsonOrThrow(res);
     if (body && body.access_token) {
       if (global.Finalyze.Referral && global.Finalyze.Referral.clearRef) global.Finalyze.Referral.clearRef();
-      stash(body); notify(); return { signedIn: true };
+      stash(body); notify();
+      await touchLastLogin();
+      return { signedIn: true };
     }
     if (global.Finalyze.Referral && global.Finalyze.Referral.clearRef) global.Finalyze.Referral.clearRef();
     return { signedIn: false, needsConfirmation: true };
@@ -101,6 +103,7 @@
     });
     const body = await jsonOrThrow(res);
     stash(body); notify();
+    await touchLastLogin();
     return { signedIn: true };
   }
 
@@ -135,7 +138,6 @@
     if (!access_token) return false;
     stash({ access_token, refresh_token, expires_in: p.get('expires_in') });
     if (global.Finalyze.Referral && global.Finalyze.Referral.clearRef) global.Finalyze.Referral.clearRef();
-    // Strip the token hash (and any ?ref=) from the URL without reloading.
     try {
       const clean = global.location.origin + global.location.pathname;
       global.history.replaceState(null, '', clean);
@@ -190,13 +192,25 @@
     if (!enabled()) return null;
     loadSession();
     // If we just came back from Google, the hash carries fresh tokens.
-    if (handleOAuthCallback()) { await fetchUser(); notify(); return session && session.user; }
+    if (handleOAuthCallback()) { await fetchUser(); await touchLastLogin(); notify(); return session && session.user; }
     if (session) {
       if (session.expires_at && Date.now() > session.expires_at - 60000) await refresh();
       await fetchUser();
     }
     notify();
     return session && session.user;
+  }
+
+  async function touchLastLogin() {
+    if (!isSignedIn()) return null;
+    try {
+      const res = await fetch(restUrl('/rpc/touch_last_login'), {
+        method: 'POST', headers: authedHeaders(), body: '{}',
+      });
+      return await jsonOrThrow(res);
+    } catch (e) {
+      return null;
+    }
   }
 
   // ---- profile (non-sensitive account data only) ----

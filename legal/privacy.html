@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy · Finalyze</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/icon.svg" />
+  <meta name="description" content="Finalyze privacy policy — how we handle your account and your data." />
+  <link rel="canonical" href="https://finalyze.cc/legal/privacy.html" />
+  <link rel="stylesheet" href="../docs/docs.css" />
+  <link rel="stylesheet" href="legal.css" />
+  <script>
+    (function () {
+      try { document.documentElement.dataset.theme = localStorage.getItem('finalyze.theme') || 'light'; }
+      catch (e) { document.documentElement.dataset.theme = 'light'; }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="legal-top">
+    <div class="legal-top-inner">
+      <a class="brand" href="/"><img src="../assets/icon.svg" alt="" />Finalyze</a>
+      <span class="spacer"></span>
+      <a class="btn ghost" href="/">Home</a>
+      <a class="btn primary" href="/app">Open app</a>
+    </div>
+  </header>
+
+  <main id="content" class="legal-page">
+    <h1>Privacy Policy</h1>
+    <p class="legal-meta"><strong>Effective date:</strong> June 1, 2026<br /><strong>Last updated:</strong> June 1, 2026</p>
+    <div class="legal-body" id="legalBody">
+      <p>This Privacy Policy explains how Finalyze ("Finalyze," "we," "us," or "our") handles information in connection with the Finalyze web application and related services (the "Service"). Finalyze is a personal financial analysis tool that is designed, from the ground up, to keep your financial data on your own device.</p>
+      <p>Please read this Policy together with our <a href="/legal/terms.html">Terms of Service</a>. By using the Service, you agree to the practices described here.</p>
+
+      <hr />
+
+      <h2>1. The short version</h2>
+      <p>Finalyze is built so that your financial data never leaves your device.</p>
+      <ul>
+        <li>Your imported statements, transactions, categories, budgets, tags, merchant merges, accounts, and downloaded AI models are stored <strong>locally in your browser</strong> (using IndexedDB). They are <strong>not</strong> transmitted to, or stored on, our servers.</li>
+        <li>The only personal information we hold on a server is what is needed to operate your account: your <strong>email address</strong>, your <strong>encrypted authentication credentials</strong>, your <strong>plan, license, and referral flags</strong>, and the <strong>onboarding preferences</strong> you provide (such as country, currency, and goals, which only adjust labels in the app).</li>
+        <li>We do <strong>not</strong> sell your personal information, and we do <strong>not</strong> use your financial data for advertising or profiling.</li>
+      </ul>
+      <p>The sections below provide the detail behind this summary.</p>
+
+      <hr />
+
+      <h2>2. Information we do not collect</h2>
+      <p>Because of how Finalyze is designed, we do not receive or store the following:</p>
+      <ul>
+        <li>Your uploaded statement files (PDF, OFX/QFX, CSV) or their contents.</li>
+        <li>Your individual transactions, balances, merchants, amounts, or dates.</li>
+        <li>Your categories, budgets, tags, rules, merchant merges, or dashboard layout.</li>
+        <li>The prompts you type into, or the responses you receive from, the on-device AI assistant.</li>
+      </ul>
+      <p>This information is parsed and processed <strong>entirely within your browser</strong> and is stored only on the device you use. We have no technical means of accessing it.</p>
+
+      <hr />
+
+      <h2>3. Information we collect and process</h2>
+      <h3>3.1 Account information</h3>
+      <p>To create and operate your account, we collect and store:</p>
+      <ul>
+        <li><strong>Email address</strong> — used to identify your account, for sign-in, and for essential account communications.</li>
+        <li><strong>Authentication credentials</strong> — your password is stored in an encrypted/hashed form by our authentication provider; we do not have access to your plaintext password. If you choose to sign in with Google (where available), we receive a basic identifier and email from that provider rather than a password.</li>
+        <li><strong>Account and entitlement flags</strong> — for example, whether you are on the Free or Pro plan, your subscription status, and referral-program flags.</li>
+        <li><strong>Onboarding preferences</strong> — such as country, currency, and stated goals. These tune labels and display in the app and are not linked to your transaction data.</li>
+      </ul>
+      <h3>3.2 Payment information</h3>
+      <p>If you upgrade to a paid plan, payments are processed by our third-party payment processor, <strong>Stripe</strong>. Your card and billing details are submitted directly to Stripe and are governed by Stripe's privacy policy. We do <strong>not</strong> receive or store your full payment card number. We may receive limited billing-related confirmations from Stripe (for example, subscription status, the last four digits of a card, or a billing country) to manage your subscription.</p>
+      <h3>3.3 Technical and log information</h3>
+      <p>When you connect to our servers for the limited purposes described in Section 4, standard technical information may be processed by us or our infrastructure providers, including IP address, browser type, device type, and timestamps. This is used for security, fraud prevention, debugging, and to keep the Service running. We aim to keep this minimal and do not use it to build advertising profiles.</p>
+      <h3>3.4 Information stored locally on your device</h3>
+      <p>The following is stored <strong>only on your device</strong> and is under your control: transactions, categories, category groups, budgets, tags, merchant overrides and merges, rules, accounts, dashboard layout, JSON backups you create, and any AI models you download. You can export this data to a JSON backup or clear it at any time from within the app.</p>
+
+      <hr />
+
+      <h2>4. When your device contacts our servers</h2>
+      <p>Finalyze is designed to minimize network activity. Your device communicates with our servers or our service providers only for the following purposes:</p>
+      <ol>
+        <li><strong>Sign-in and account management</strong> — to authenticate you and load your account settings.</li>
+        <li><strong>Pro upgrade and checkout</strong> — to process a subscription payment through Stripe.</li>
+        <li><strong>One-time AI model download</strong> — when you opt in to on-device AI, the model files are downloaded once and then cached and run locally in your browser.</li>
+      </ol>
+      <p>Outside of these events, your financial data is processed locally and is not sent anywhere.</p>
+
+      <hr />
+
+      <h2>5. On-device AI</h2>
+      <p>Finalyze's AI features (categorization, chat, and narrative insights) are <strong>opt-in</strong> and run <strong>on your device</strong> using your browser's hardware (e.g., WebGPU). When you enable AI, the relevant model is downloaded once and cached locally. After that, your transactions and the questions you ask the assistant are processed locally and are <strong>not transmitted to us or to any third party</strong> for AI processing.</p>
+
+      <hr />
+
+      <h2>6. How we use information</h2>
+      <p>We use the limited information we collect to:</p>
+      <ul>
+        <li>Create, authenticate, and maintain your account.</li>
+        <li>Provide, operate, and secure the Service.</li>
+        <li>Process and manage subscriptions and the referral program.</li>
+        <li>Send essential account and transactional messages (for example, email confirmation, password resets, and billing notices).</li>
+        <li>Detect, prevent, and respond to fraud, abuse, and security incidents.</li>
+        <li>Comply with legal obligations and enforce our Terms of Service.</li>
+      </ul>
+      <p>We rely on the legal bases of performance of a contract (providing the Service you request), our legitimate interests (security and operating the Service), consent (where required, such as optional features), and compliance with legal obligations.</p>
+
+      <hr />
+
+      <h2>7. Service providers (sub-processors)</h2>
+      <p>We use a small number of trusted third parties to operate the Service. They process information only on our behalf and for the purposes described above:</p>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Provider</th>
+            <th scope="col">Purpose</th>
+            <th scope="col">Data processed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Authentication &amp; database provider (e.g., Supabase)</td>
+            <td>Account creation, sign-in, storing account settings</td>
+            <td>Email, encrypted credentials, plan/referral flags, onboarding preferences</td>
+          </tr>
+          <tr>
+            <td>Stripe</td>
+            <td>Payment processing for paid plans</td>
+            <td>Billing and payment details (handled by Stripe), subscription status</td>
+          </tr>
+          <tr>
+            <td>Google (optional)</td>
+            <td>Optional "Sign in with Google"</td>
+            <td>Basic profile identifier and email</td>
+          </tr>
+          <tr>
+            <td>Model/hosting and content-delivery provider</td>
+            <td>Serving the app and one-time AI model download</td>
+            <td>Technical request data (e.g., IP, timestamps)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>We do <strong>not</strong> share your locally stored financial data with any of these providers, because we never receive it.</p>
+
+      <hr />
+
+      <h2>8. We do not sell your data</h2>
+      <p>We do not sell your personal information, and we do not share it with third parties for their own advertising or marketing. We do not use your financial data to build advertising or behavioral profiles.</p>
+
+      <hr />
+
+      <h2>9. Cookies and local storage</h2>
+      <p>Finalyze uses browser storage technologies for core functionality:</p>
+      <ul>
+        <li><strong>IndexedDB</strong> — to store your financial data and AI model cache locally on your device.</li>
+        <li><strong>Local/session storage and authentication tokens</strong> — to keep you signed in and remember app settings.</li>
+      </ul>
+      <p>These are strictly functional and necessary to provide the Service. We do not use third-party advertising or cross-site tracking cookies.</p>
+
+      <hr />
+
+      <h2>10. Data retention</h2>
+      <ul>
+        <li><strong>Account data</strong> (email, credentials, plan/referral flags, onboarding preferences) is retained for as long as your account is active, and afterward only as needed to comply with legal, accounting, or fraud-prevention obligations.</li>
+        <li><strong>Locally stored data</strong> remains on your device until you clear it, your browser clears it, or you change browsers/origins. We do not control this data and cannot retain or recover it.</li>
+        <li><strong>Payment records</strong> are retained by Stripe and by us as required for tax and accounting purposes.</li>
+      </ul>
+
+      <hr />
+
+      <h2>11. Your choices and rights</h2>
+      <p>Depending on where you live, you may have rights to access, correct, delete, port, or restrict the processing of your personal information, and to object to certain processing or withdraw consent.</p>
+      <ul>
+        <li><strong>Access and portability of local data:</strong> You can export a full JSON backup of your data at any time from within the app.</li>
+        <li><strong>Deletion of local data:</strong> Use <strong>Clear data</strong> in the app to wipe all locally stored data on a device. (Export a backup first if you want to keep it.)</li>
+        <li><strong>Account data:</strong> To access, correct, or delete the account information we hold (such as your email), or to delete your account entirely, contact us at the address in Section 16.</li>
+        <li><strong>Marketing:</strong> We send essential account messages only. If we ever introduce optional communications, you will be able to opt out.</li>
+      </ul>
+      <p>We will respond to verified requests within the time required by applicable law. We will not discriminate against you for exercising these rights.</p>
+
+      <hr />
+
+      <h2>12. Security</h2>
+      <p>We use measures intended to protect the limited account information we hold, including encryption in transit, encrypted/hashed credentials, and reputable infrastructure providers. Your financial data benefits from an additional structural protection: because it never leaves your device, it is not exposed to a server breach.</p>
+      <p>No method of transmission or storage is completely secure. You are responsible for keeping your password confidential, securing your device and browser, and maintaining your own backups of locally stored data.</p>
+
+      <hr />
+
+      <h2>13. International data transfers</h2>
+      <p>Our service providers may process the limited account information described above in countries other than the one in which you reside. Where required, we rely on appropriate safeguards (such as standard contractual clauses) for these transfers. Your financial data is not transferred internationally by us because it remains on your device.</p>
+
+      <hr />
+
+      <h2>14. Children's privacy</h2>
+      <p>The Service is not directed to children and is not intended for use by anyone under the age of 16 (or the minimum age required in your jurisdiction). We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us and we will delete it.</p>
+
+      <hr />
+
+      <h2>15. Changes to this Policy</h2>
+      <p>We may update this Privacy Policy from time to time. If we make material changes, we will update the "Last updated" date above and, where appropriate, provide additional notice. Your continued use of the Service after an update means you accept the revised Policy.</p>
+
+      <hr />
+
+      <h2>16. Contact us</h2>
+      <p>If you have questions about this Privacy Policy or wish to exercise your rights, contact us at:</p>
+      <p><strong>Finalyze</strong><br />Email: <a href="mailto:contact@finalyze.cc">contact@finalyze.cc</a><br />Support: available within the app</p>
+    </div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand">
+        <a class="brand" href="/"><img src="../assets/icon.svg" alt="" />Finalyze</a>
+        <p>Your personal AI financial analyst. Statements stay on your device — we only store your email and license on our servers.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/app?demo=1">Try live demo</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="/docs/">Docs</a></li>
+          <li><a href="/docs/#first-import">First import</a></li>
+          <li><a href="/docs/#ai-enable">On-device AI</a></li>
+          <li><a href="/docs/#plans">Free vs Pro</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Referrals</h4>
+        <ul>
+          <li><a href="/docs/#referrals">How it works</a></li>
+          <li><a href="/app">Get your referral link</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal Stuff</h4>
+        <ul>
+          <li><a href="/legal/privacy.html">Privacy Policy</a></li>
+          <li><a href="/legal/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Finalyze · Your money, analyzed privately.</span>
+      <span class="footer-meta">Give a month, get a month - for Pro subscribers</span>
+    </div>
+  </footer>
+</body>
+</html>

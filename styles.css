@@ -88,6 +88,7 @@ body {
   padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; flex-shrink: 0;
 }
 .beta-text { text-align: center; line-height: 1.4; }
+.beta-hint { color: var(--ink-2); font-weight: 500; }
 body.has-beta-banner { padding-top: var(--beta-banner-h, 46px); }
 body.has-beta-banner .sidebar { top: var(--beta-banner-h, 46px); height: calc(100vh - var(--beta-banner-h, 46px)); }
 
@@ -760,6 +761,8 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
 .import-acct select { flex: 1; }
 .import-acct input { flex: 1; }
 .import-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.import-actions-stack { flex-direction: column; align-items: stretch; }
+.import-actions-stack .btn { justify-content: center; }
 
 /* CSV import column mapping */
 .csv-import { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
