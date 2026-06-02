@@ -979,14 +979,51 @@
     openModal(
       `<h2>Upgrade to Pro</h2>
        <p class="muted">Unlock your full transaction history, AI chat, custom KPI cards, categorization rules, unlimited accounts, and cardmember breakdown. Your data stays in your browser - Pro lifts the ${FREE_MONTHS}-month limit and unlocks premium features.</p>
-       <div class="upgrade-plans">
-         <a class="btn primary upgrade-plan" href="${STRIPE_MONTHLY}${q}" target="_blank" rel="noopener">
-           <span class="up-amt">$7<small>/month</small></span><span class="up-label">Monthly</span></a>
-         <a class="btn primary upgrade-plan" href="${STRIPE_ANNUAL}${q}" target="_blank" rel="noopener">
-           <span class="up-amt">$70<small>/year</small></span><span class="up-label">Annual · save 17%</span></a>
+       <div class="pro-plans upgrade-plans" role="group" aria-label="Choose Pro billing">
+         <button type="button" class="pro-plan pro-plan-pick" data-plan="monthly" data-href="${STRIPE_MONTHLY}${q}" aria-pressed="false">
+           <div class="pro-plan-head"><span class="pro-plan-name">Monthly</span></div>
+           <div class="pro-plan-price"><strong>$7</strong><span>/mo</span></div>
+         </button>
+         <button type="button" class="pro-plan pro-plan-pick is-selected" data-plan="annual" data-href="${STRIPE_ANNUAL}${q}" aria-pressed="true">
+           <div class="pro-plan-head">
+             <span class="pro-plan-name">Annual</span>
+             <span class="pro-plan-pill">3-day free trial</span>
+           </div>
+           <div class="pro-plan-price">
+             <s class="price-was">$84</s>
+             <strong>$70</strong><span>/yr</span>
+           </div>
+         </button>
        </div>
-       <p class="muted" style="font-size:12px;margin-top:14px">After paying, your account upgrades automatically once payment is confirmed. Use the same email as your Finalyze account.</p>
+       <a class="btn primary upgrade-checkout" id="upgCheckout" href="${STRIPE_ANNUAL}${q}" target="_blank" rel="noopener" style="width:100%;justify-content:center;margin-top:12px">Start free trial</a>
+       <p class="muted upgrade-trial-note" id="upgTrialNote" style="font-size:12px;margin-top:14px">Annual Pro includes a 3-day free trial — cancel before it ends to avoid charges. After checkout, Pro unlocks once Stripe confirms your subscription. Use the same email as your Finalyze account.</p>
+       <p class="muted upgrade-bill-note" id="upgBillNote" hidden style="font-size:12px;margin-top:14px">Monthly Pro is billed today at $7/month. After checkout, Pro unlocks once Stripe confirms your subscription. Use the same email as your Finalyze account.</p>
        <div class="import-actions"><button class="btn" id="upgRefresh">I’ve paid - refresh</button><button class="btn" id="upgClose">Close</button></div>`);
+    const body = $('#modalBody');
+    const labels = { annual: 'Start free trial', monthly: 'Subscribe' };
+    const picks = body ? body.querySelectorAll('.upgrade-plan-pick, .pro-plan-pick') : [];
+    const checkout = $('#upgCheckout');
+    const trialNote = $('#upgTrialNote');
+    const billNote = $('#upgBillNote');
+    function selectPlan(btn) {
+      picks.forEach((b) => { b.classList.remove('is-selected'); b.setAttribute('aria-pressed', 'false'); });
+      btn.classList.add('is-selected');
+      btn.setAttribute('aria-pressed', 'true');
+      if (checkout) {
+        checkout.href = btn.dataset.href;
+        checkout.textContent = labels[btn.dataset.plan] || 'Continue';
+        checkout.target = '_blank';
+        checkout.rel = 'noopener';
+        checkout.classList.remove('is-disabled');
+        checkout.removeAttribute('aria-disabled');
+        checkout.removeAttribute('tabindex');
+      }
+      if (trialNote) trialNote.hidden = btn.dataset.plan !== 'annual';
+      if (billNote) billNote.hidden = btn.dataset.plan !== 'monthly';
+    }
+    picks.forEach((btn) => { btn.onclick = () => selectPlan(btn); });
+    const pre = body && body.querySelector('.pro-plan-pick[data-plan="annual"]');
+    if (pre) selectPlan(pre);
     const c = $('#upgClose'); if (c) c.onclick = closeModal;
     const r = $('#upgRefresh');
     if (r) r.onclick = async () => {
@@ -1033,6 +1070,7 @@
       $('#dashboard').hidden = true;
       $('#prefs').hidden = true;
       $('#filtersToggle').hidden = true;
+      $('#headFilters').hidden = true;
       $('#dateControls').hidden = true;
       document.body.classList.remove('settings-mode');
       $('#nav').innerHTML = '';
@@ -1078,10 +1116,13 @@
     $('#prefs').hidden = viewName !== 'prefs';
 
     const showHead = hasData && viewName !== 'prefs';
+    const headFilters = $('#headFilters');
     const ftBtn = $('#filtersToggle');
-    ftBtn.hidden = !showHead;
-    ftBtn.classList.toggle('collapsed', filtersHidden);
-    ftBtn.setAttribute('aria-expanded', String(!filtersHidden));
+    if (headFilters) headFilters.hidden = !showHead;
+    if (ftBtn) {
+      ftBtn.classList.toggle('collapsed', filtersHidden);
+      ftBtn.setAttribute('aria-expanded', String(!filtersHidden));
+    }
     $('#filtersToggleLabel').textContent = filtersHidden ? 'Show filters' : 'Filters';
     $('#dateControls').hidden = !showHead || filtersHidden;
 
@@ -2408,8 +2449,10 @@
             `<div class="merge-suggest-row">
               <span class="ms-names"><strong>${esc(s.a)}</strong> + <strong>${esc(s.b)}</strong></span>
               <span class="mi-meta">${fmt(s.combined)} combined</span>
-              <button class="btn sm merge-sugg-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Merge</button>
-              <button class="btn sm ghost merge-dismiss-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Dismiss</button>
+              <div class="merge-suggest-actions">
+                <button class="btn sm merge-sugg-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Merge</button>
+                <button class="btn sm ghost merge-dismiss-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Dismiss</button>
+              </div>
             </div>`).join('') + `</div>`
         : '') +
       `<div class="field merge-search">${svg(SEARCH)}<input type="search" id="mergeSearch" placeholder="Filter merchants…"></div>
@@ -2491,10 +2534,10 @@
         <input type="color" class="cat-color" value="${categoryColor(c)}" data-cat="${encodeURIComponent(c)}">
         <span class="cat-name">${chip(c)}</span>
         ${typeSelect('cat-type', c, categoryType(c))}
-        <button class="icon-btn cat-rename" data-cat="${encodeURIComponent(c)}" title="Rename category">${svg(PENCIL)}</button>
-        ${custom.has(c)
-          ? `<button class="icon-btn cat-remove" data-cat="${encodeURIComponent(c)}" title="Remove category">${svg(TRASH)}</button>`
-          : '<span class="badge-builtin">built-in</span>'}
+        <span class="cat-actions">
+          <button class="icon-btn cat-rename" data-cat="${encodeURIComponent(c)}" title="Rename category">${svg(PENCIL)}</button>
+          ${custom.has(c) ? `<button class="icon-btn cat-remove" data-cat="${encodeURIComponent(c)}" title="Remove category">${svg(TRASH)}</button>` : ''}
+        </span>
       </div>`).join('');
     $$('#catManager .cat-color').forEach((inp) => inp.onchange = () => {
       Store.setCategoryColor(decodeURIComponent(inp.dataset.cat), inp.value); renderCatManager();
@@ -2994,7 +3037,7 @@
         <span class="dc-spacer"></span>
         <button type="button" class="btn sm" id="pdfFlip" title="Flip the sign of every amount">⇅ Flip all signs</button>
       </div>
-      <p class="muted pdf-hint">Amount: <strong>negative</strong> = money out (spend), <strong>positive</strong> = money in (refund/payment).</p>
+      <p class="muted pdf-hint">Amount: <strong>negative</strong> = out, <strong>positive</strong> = in.</p>
       <div class="table-wrap pdf-review-wrap"><table class="pdf-review"><thead><tr>
         <th class="chk-cell"></th><th>Date</th><th>Description</th><th class="num">Amount</th><th>Type</th>
       </tr></thead><tbody id="pdfReviewBody"></tbody></table></div>
@@ -3006,7 +3049,7 @@
       <td data-label="Date"><input type="date" class="pdf-date" value="${r.date}"></td>
       <td data-label="Description"><input type="text" class="pdf-name" value="${esc(r.name || '')}"></td>
       <td class="num" data-label="Amount"><input type="number" step="0.01" class="pdf-amt" value="${r.amount}"></td>
-      <td data-label="Type"><span class="pdf-type ${r.amount < 0 ? 'amt-neg' : 'amt-pos'}">${r.amount < 0 ? 'Spend' : 'In'}</span><button type="button" class="pdf-flip-row" title="Flip this transaction’s sign">⇅</button></td>
+      <td data-label="Type"><span class="pdf-type ${r.amount < 0 ? 'amt-neg' : 'amt-pos'}">${r.amount < 0 ? 'Out' : 'In'}</span><button type="button" class="pdf-flip-row" title="Flip this transaction’s sign">⇅</button></td>
     </tr>`).join('');
 
     const selA = body.querySelector('#impAccount'), newName = body.querySelector('#impNewName');
@@ -3019,7 +3062,7 @@
     const refreshType = (tr) => {
       const amt = Number(tr.querySelector('.pdf-amt').value) || 0;
       const tp = tr.querySelector('.pdf-type');
-      tp.textContent = amt < 0 ? 'Spend' : 'In';
+      tp.textContent = amt < 0 ? 'Out' : 'In';
       tp.className = 'pdf-type ' + (amt < 0 ? 'amt-neg' : 'amt-pos');
     };
     tbody.addEventListener('input', (e) => {
@@ -3474,6 +3517,10 @@
     // (only when there's no data yet, so it never clobbers a real import).
     if (new URLSearchParams(location.search).get('demo') && !allTxns.length && F.Demo) {
       F.Demo.start();
+    }
+    // Local/preview: ?upgrade=1 opens the Pro checkout modal without signing in.
+    if (new URLSearchParams(location.search).get('upgrade')) {
+      openUpgradeModal();
     }
   }
 

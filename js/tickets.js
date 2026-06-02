@@ -118,6 +118,17 @@
     $('#modalClose').onclick = closeModal;
   }
 
+  let bannerResizeObs = null;
+
+  function syncBetaBannerHeight() {
+    const banner = $('#betaBanner');
+    if (!banner || banner.hidden) {
+      document.documentElement.style.removeProperty('--beta-banner-h');
+      return;
+    }
+    document.documentElement.style.setProperty('--beta-banner-h', banner.offsetHeight + 'px');
+  }
+
   function refresh() {
     const banner = $('#betaBanner');
     const btn = $('#betaTicketBtn');
@@ -129,13 +140,20 @@
       btn.hidden = !show;
       btn.disabled = !show;
     }
+    syncBetaBannerHeight();
   }
 
   function init() {
     const btn = $('#betaTicketBtn');
+    const banner = $('#betaBanner');
     if (btn) btn.onclick = openTicketForm;
     if (Auth && Auth.onChange) Auth.onChange(() => refresh());
     refresh();
+    if (banner && typeof ResizeObserver !== 'undefined') {
+      bannerResizeObs = new ResizeObserver(() => syncBetaBannerHeight());
+      bannerResizeObs.observe(banner);
+    }
+    window.addEventListener('resize', syncBetaBannerHeight);
   }
 
   F.Tickets = { init, refresh, openForm: openTicketForm };

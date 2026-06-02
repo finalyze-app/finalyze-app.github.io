@@ -17,7 +17,8 @@ alter table public.profiles add column if not exists stripe_customer_id text;
 ## 2. Make the Payment Links carry the email (recommended)
 In each Stripe **Payment Link** (the Monthly and Annual links used on the site):
 - Turn **“Collect customers’ email”** ON (so checkout always has an email).
-- Optionally enable **“Let customers adjust quantity” = off** and a **trial** if you want one.
+- On the **Annual** Payment Link only: add a **3-day free trial** (Stripe → Payment Link → After payment → Free trial).
+- Monthly Pro bills immediately; no trial unless you change that deliberately.
 - You can also pass the user’s email by appending
   `?prefilled_email=USER_EMAIL` to the link (the app could do this later).
 

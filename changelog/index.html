@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog · Finalyze</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/icon.svg" />
+  <meta name="description" content="What's new in Finalyze — release notes and product updates." />
+  <link rel="canonical" href="https://finalyze.cc/changelog/" />
+  <link rel="stylesheet" href="../docs/docs.css" />
+  <link rel="stylesheet" href="../legal/legal.css" />
+  <link rel="stylesheet" href="changelog.css" />
+  <script>
+    (function () {
+      try { document.documentElement.dataset.theme = localStorage.getItem('finalyze.theme') || 'light'; }
+      catch (e) { document.documentElement.dataset.theme = 'light'; }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="legal-top">
+    <div class="legal-top-inner">
+      <a class="brand" href="/"><img src="../assets/icon.svg" alt="" />Finalyze</a>
+      <span class="spacer"></span>
+      <a class="btn ghost" href="/">Home</a>
+      <a class="btn primary" href="/app">Open app</a>
+    </div>
+  </header>
+
+  <main id="content" class="legal-page">
+    <h1>Changelog</h1>
+    <p class="legal-meta"><strong>Last updated:</strong> June 1, 2026</p>
+    <p class="changelog-intro">Release notes for Finalyze — new features, improvements, and fixes. Your financial data still stays on your device; these updates are about the app experience around it.</p>
+
+    <div class="changelog-list">
+
+      <article class="changelog-release">
+        <header class="changelog-release-head">
+          <h2>Dashboard &amp; demo tour</h2>
+          <time class="changelog-date" datetime="2026-06-01">June 1, 2026</time>
+        </header>
+        <ul class="changelog-items">
+          <li><span class="changelog-tag new">New</span>Drag-and-resize dashboard widgets with GridStack — layout persists across sessions.</li>
+          <li><span class="changelog-tag improved">Improved</span>Demo tour: animated cursor on the AI step; sample data includes duplicates, large charges, and recurring subscriptions.</li>
+          <li><span class="changelog-tag improved">Improved</span>Hide dashboard widgets without reloading the whole page.</li>
+          <li><span class="changelog-tag improved">Improved</span>On-device AI models restore automatically after a browser refresh.</li>
+          <li><span class="changelog-tag improved">Improved</span>Download PNG buttons on dashboard chart widgets (category, merchants, trend, and more).</li>
+        </ul>
+      </article>
+
+      <article class="changelog-release">
+        <header class="changelog-release-head">
+          <h2>Pre-launch &amp; beta</h2>
+          <time class="changelog-date" datetime="2026-05">May 2026</time>
+        </header>
+        <ul class="changelog-items">
+          <li><span class="changelog-tag new">New</span>Changelog, Privacy Policy, and Terms of Service pages.</li>
+          <li><span class="changelog-tag new">New</span>Interactive landing hero demo with live charts (and a playful AI easter egg).</li>
+          <li><span class="changelog-tag new">New</span>In-app feedback tickets for signed-in beta users.</li>
+          <li><span class="changelog-tag new">New</span>Supported bank logo strip on the landing page.</li>
+          <li><span class="changelog-tag improved">Improved</span>Pro pricing on the landing page and in-app upgrade modal — monthly or annual, with a 3-day free trial on annual.</li>
+          <li><span class="changelog-tag improved">Improved</span>Beta banner with backup reminder (no cloud sync).</li>
+          <li><span class="changelog-tag improved">Improved</span>Optional dashboard and settings tours after your first import.</li>
+          <li><span class="changelog-tag improved">Improved</span>Email confirmation modal after sign-up and branded confirmation email.</li>
+          <li><span class="changelog-tag improved">Improved</span>Landing page polish: hero theme follows light/dark toggle, scroll cues, back-to-top.</li>
+          <li><span class="changelog-tag improved">Improved</span>Trend chart modes, reimbursable %/$ amounts, and category apply preferences (ask / one / all).</li>
+          <li><span class="changelog-tag improved">Improved</span>On-device AI: CSP and WebAssembly updates so models download reliably.</li>
+          <li><span class="changelog-tag improved">Improved</span>Marketing and in-app copy aligned with how Finalyze actually works.</li>
+          <li><span class="changelog-tag fixed">Fixed</span>Footer layout on narrow screens; trend chart PNG export with opaque themed background.</li>
+        </ul>
+      </article>
+
+      <article class="changelog-release">
+        <header class="changelog-release-head">
+          <h2>Building in stealth</h2>
+          <time class="changelog-date" datetime="2026-04">April 2026</time>
+        </header>
+        <ul class="changelog-items">
+          <li><span class="changelog-tag new">New</span>Local-first app: statements parsed and stored in IndexedDB in your browser.</li>
+          <li><span class="changelog-tag new">New</span>Import pipeline for PDF, OFX/QFX, and CSV bank exports with automatic categorization.</li>
+          <li><span class="changelog-tag new">New</span>Dashboard widgets, charts, budgets, and spending analysis.</li>
+          <li><span class="changelog-tag new">New</span>Accounts, Pro licensing, and referrals — email and license only on the server.</li>
+          <li><span class="changelog-tag improved">Improved</span>Early on-device AI assistant — models run in the browser, not in the cloud.</li>
+        </ul>
+      </article>
+
+    </div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand">
+        <a class="brand" href="/"><img src="../assets/icon.svg" alt="" />Finalyze</a>
+        <p>Your personal AI financial analyst. Statements stay on your device — we only store your email and license on our servers.</p>
+      </div>
+      <div class="footer-links">
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/changelog/">Changelog</a></li>
+          <li><a href="/app?demo=1">Try live demo</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="/docs/">Docs</a></li>
+          <li><a href="/docs/#first-import">First import</a></li>
+          <li><a href="/docs/#ai-enable">On-device AI</a></li>
+          <li><a href="/docs/#plans">Free vs Pro</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Referrals</h4>
+        <ul>
+          <li><a href="/docs/#referrals">How it works</a></li>
+          <li><a href="/app">Get your referral link</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal Stuff</h4>
+        <ul>
+          <li><a href="/legal/privacy.html">Privacy Policy</a></li>
+          <li><a href="/legal/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Finalyze · Your money, analyzed privately.</span>
+      <span class="footer-meta">Give a month, get a month - for Pro subscribers</span>
+    </div>
+  </footer>
+</body>
+</html>
