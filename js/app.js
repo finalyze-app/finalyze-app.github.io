@@ -1341,6 +1341,8 @@
     }
     $('#filtersToggleLabel').textContent = filtersHidden ? 'Show filters' : 'Filters';
     $('#dateControls').hidden = !showFilters || filtersHidden;
+    const pdfBtn = $('#exportPdfBtn');
+    if (pdfBtn) pdfBtn.hidden = !(hasData && viewName === 'dashboard');
 
     document.body.classList.toggle('settings-mode', viewName === 'prefs');
     document.body.classList.toggle('analysis-mode', isAnalysis);
@@ -4086,6 +4088,11 @@
     [$('#fileInput'), $('#fileInput2')].forEach((inp) => inp && inp.addEventListener('change', (e) => handleFiles(e.target.files)));
     $('#importInput').addEventListener('change', (e) => { if (e.target.files[0]) importBackup(e.target.files[0]); });
     $('#exportBtn').addEventListener('click', exportBackup);
+    const pdfBtn = $('#exportPdfBtn');
+    if (pdfBtn) pdfBtn.addEventListener('click', () => {
+      if (F.exportDashboardPdf) F.exportDashboardPdf();
+      else toast('PDF export unavailable');
+    });
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#censorBtn').addEventListener('click', () => applyCensor(!censored));
     $('#menuBtn').addEventListener('click', (e) => { e.stopPropagation(); document.body.classList.toggle('nav-open'); });

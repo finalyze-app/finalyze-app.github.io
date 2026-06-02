@@ -166,9 +166,10 @@ body.has-beta-banner .sidebar {
 /* ============ Main ============ */
 main { padding: 26px 30px 60px; width: 100%; min-width: 0; }
 .page-head { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
-.page-head-top { width: 100%; min-width: 0; }
+.page-head-top { width: 100%; min-width: 0; position: relative; }
 .page-head h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
 .page-head .sub { color: var(--muted); font-size: 13.5px; margin-top: 5px; }
+.page-export-pdf { position: absolute; top: 0; right: 0; }
 .mobile-brand { display: none; }
 .page-head .head-filters {
   width: 100%;
@@ -212,6 +213,13 @@ main { padding: 26px 30px 60px; width: 100%; min-width: 0; }
 .head-actions #flowFilter { font-weight: 600; min-width: 120px; }
 .patterns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 760px) { .patterns-grid { grid-template-columns: 1fr; } }
+
+/* PDF export capture (off-screen clone) */
+.pdf-export-root { font-family: inherit; background: var(--bg); }
+.pdf-export-head { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.pdf-export-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 6px; }
+.pdf-export-meta { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.pdf-export-root .grid-stack-item { break-inside: avoid; page-break-inside: avoid; }
 .patterns-grid .canvas-wrap { height: 220px; }
 input[type="date"] {
   padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 13px;
@@ -619,6 +627,14 @@ body.is-mobile .page-head .sub {
   font-size: 12px;
   line-height: 1.4;
   word-break: break-word;
+}
+body.is-mobile .page-export-pdf {
+  grid-column: 2;
+  grid-row: 2;
+  position: static;
+  justify-self: end;
+  align-self: start;
+  margin-top: 2px;
 }
 
 body.is-mobile .pref-row { flex-direction: column; align-items: stretch; gap: 8px; }
