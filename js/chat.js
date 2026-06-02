@@ -199,7 +199,7 @@
 
   function trimContext(text) {
     if (text.length <= MAX_CONTEXT_CHARS) return text;
-    return text.slice(0, MAX_CONTEXT_CHARS - 80) + '\n\n[Context truncated to fit model limits — ask about a specific category, merchant, or month for detail.]';
+    return text.slice(0, MAX_CONTEXT_CHARS - 80) + '\n\n[Context truncated to fit model limits - ask about a specific category, merchant, or month for detail.]';
   }
 
   function contextText() {
@@ -317,7 +317,7 @@
     return full;
   }
 
-  const SYS = 'You are Finalyze, a concise spending-analysis assistant. You ONLY analyze the user\'s recorded transaction history from the detailed summary provided — overview, all categories, top merchants, monthly trends, category changes, subscriptions, budgets, largest transactions, cardmembers, and tags. Use the user\'s currency, cite specific numbers, and never invent data. Do NOT give affordability, budgeting-advice, forecasting, or investment answers (e.g. "can I afford X", "should I buy Y") — the app only has past spend data, not income, savings, or balances. If asked something like that, briefly say you can only analyze recorded spending and offer a relevant breakdown instead. If the summary lacks the answer, say so clearly.';
+  const SYS = 'You are Finalyze, a concise spending-analysis assistant. You ONLY analyze the user\'s recorded transaction history from the detailed summary provided - overview, all categories, top merchants, monthly trends, category changes, subscriptions, budgets, largest transactions, cardmembers, and tags. Use the user\'s currency, cite specific numbers, and never invent data. Do NOT give affordability, budgeting-advice, forecasting, or investment answers (e.g. "can I afford X", "should I buy Y") - the app only has past spend data, not income, savings, or balances. If asked something like that, briefly say you can only analyze recorded spending and offer a relevant breakdown instead. If the summary lacks the answer, say so clearly.';
 
   async function ask(question, onToken) {
     if (!engine) throw new Error('AI chat is not enabled yet.');

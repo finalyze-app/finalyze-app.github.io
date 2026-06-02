@@ -27,7 +27,7 @@
       aiFocus: true,
       scroll: false,
       title: 'Ask the AI (optional)',
-      body: 'Finalyze AI opens with instant insights from your data — no upload. Optional on-device models add chat and richer narratives; enable them anytime under Models.',
+      body: 'Finalyze AI opens with instant insights from your data - no upload. Optional on-device models add chat and richer narratives; enable them anytime under Models.',
       before: animateDemoAIClick,
       after: closeDemoAI,
     },
@@ -347,7 +347,7 @@
     await ensureScope();
     F.Store.clearTransactions();
     F.render && F.render();
-    F.toast && F.toast('Demo transactions cleared — demo settings kept');
+    F.toast && F.toast('Demo transactions cleared - demo settings kept');
   }
 
   async function teardownDemo() {
@@ -360,7 +360,7 @@
     endTour();
     await teardownDemo();
     F.render && F.render();
-    F.toast && F.toast('Demo cleared — your own saved data was not affected');
+    F.toast && F.toast('Demo cleared - your own saved data was not affected');
   }
 
   async function clearAndImport() {

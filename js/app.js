@@ -99,7 +99,7 @@
     const max = txns.reduce((mx, t) => (t.date > mx ? t.date : mx), txns[0].date);
     return max.slice(0, 7);
   }
-  // Month used for budget alerts — local calendar month, aligned with filters/demo data.
+  // Month used for budget alerts - local calendar month, aligned with filters/demo data.
   function budgetMonthYm() {
     const now = ymOfDate(new Date());
     const demo = !!(F.Demo && F.Demo.active && F.Demo.active());
@@ -1160,7 +1160,7 @@
          </button>
        </div>
        <a class="btn primary upgrade-checkout" id="upgCheckout" href="${STRIPE_ANNUAL}${q}" target="_blank" rel="noopener" style="width:100%;justify-content:center;margin-top:12px">Start free trial</a>
-       <p class="muted upgrade-trial-note" id="upgTrialNote" style="font-size:12px;margin-top:14px">Annual Pro includes a 3-day free trial — cancel before it ends to avoid charges. After checkout, Pro unlocks once Stripe confirms your subscription. Use the same email as your Finalyze account.</p>
+       <p class="muted upgrade-trial-note" id="upgTrialNote" style="font-size:12px;margin-top:14px">Annual Pro includes a 3-day free trial - cancel before it ends to avoid charges. After checkout, Pro unlocks once Stripe confirms your subscription. Use the same email as your Finalyze account.</p>
        <p class="muted upgrade-bill-note" id="upgBillNote" hidden style="font-size:12px;margin-top:14px">Monthly Pro is billed today at $7/month. After checkout, Pro unlocks once Stripe confirms your subscription. Use the same email as your Finalyze account.</p>
        <div class="import-actions"><button class="btn" id="upgRefresh">I’ve paid - refresh</button><button class="btn" id="upgClose">Close</button></div>`);
     const body = $('#modalBody');
@@ -2610,7 +2610,7 @@
         renderAccountManager();
         syncAccountFilter();
         toast('Account renamed');
-      } else toast('Could not rename — name is empty or already in use');
+      } else toast('Could not rename - name is empty or already in use');
     });
     const addBtn = $('#addAcctBtn');
     if (addBtn) addBtn.onclick = () => {
@@ -3752,7 +3752,7 @@
     localStorage.setItem('finalyze.settingsTourOffered', '1');
     const body = openModal(
       `<h2>Your data is in</h2>
-       <p class="muted">Nice — your statement imported successfully. Want a quick tour of the dashboard, settings, or both?</p>
+       <p class="muted">Nice - your statement imported successfully. Want a quick tour of the dashboard, settings, or both?</p>
        <div class="import-actions import-actions-stack">
          <button class="btn primary" id="tourDash">Tour the dashboard</button>
          <button class="btn" id="tourSettings">Tour settings</button>
@@ -3781,7 +3781,7 @@
       { before: goTab('rules'), sel: '#set-merge-rules', title: 'Auto-merge rules', body: 'Automatically fold matching merchant names into one canonical name - applied to every import.' },
       { before: goTab('budgets'), sel: '#set-budgets', title: 'Budgets', body: 'Set monthly limits per category or group. The overview warns at 80% and over.' },
       { before: goTab('accounts'), sel: '#set-accounts', title: 'Accounts & data', body: 'Track multiple cards/accounts, check storage use, and back up or restore your data.' },
-      { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, and reorder widgets here. On the dashboard, drag by the grip handle and resize from the edges — widths snap to tidy sizes and panels pack together automatically.' },
+      { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, and reorder widgets here. On the dashboard, drag by the grip handle and resize from the edges - widths snap to tidy sizes and panels pack together automatically.' },
       { before: goTab('categories'), title: 'You’re all set', body: 'Tweak anything anytime from Settings. Enjoy Finalyze!', final: true },
     ];
     F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
@@ -3806,7 +3806,7 @@
         aiFocus: true,
         scroll: false,
         title: 'Ask the AI',
-        body: 'Finalyze AI surfaces instant insights from your data. Enable on-device models for chat and richer answers — all locally, opt-in.',
+        body: 'Finalyze AI surfaces instant insights from your data. Enable on-device models for chat and richer answers - all locally, opt-in.',
         after: () => F.Demo.closeDemoAI && F.Demo.closeDemoAI(),
         final: true,
       },

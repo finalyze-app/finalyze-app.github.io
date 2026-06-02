@@ -338,7 +338,7 @@ code { background: var(--accent-soft); color: var(--accent); padding: 1px 7px; b
   flex-direction: column;
   box-sizing: border-box;
 }
-/* Dashboard widgets never scroll internally — content flexes to the grid cell. */
+/* Dashboard widgets never scroll internally - content flexes to the grid cell. */
 #widgets .widget-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -1508,7 +1508,7 @@ body.is-mobile.settings-mode #prefs {
   z-index: 50;
   box-shadow: 0 0 0 9999px rgba(8, 11, 22, .5);
 }
-/* Dashboard widgets live inside overflow:hidden grid cells — highlight the grid item, not the inner panel. */
+/* Dashboard widgets live inside overflow:hidden grid cells - highlight the grid item, not the inner panel. */
 #widgets .grid-stack-item.demo-target > .grid-stack-item-content {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
