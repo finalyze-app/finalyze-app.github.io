@@ -22,6 +22,7 @@
   // ESM build of Transformers.js, loaded lazily from CDN only on opt-in.
   const LIB_URL = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
   const MODEL = 'Xenova/all-MiniLM-L6-v2';
+  const LS_CAT_ENABLED = 'finalyze.aiCatEnabled';
 
   // Seed phrases per built-in category - used when the user has no matching
   // correction yet. Custom categories fall back to their own name.
@@ -52,6 +53,39 @@
   }
   function ready() { return !!extractor; }
 
+  function enabledPrefKey() {
+    try {
+      const u = F.Auth && F.Auth.user && F.Auth.user();
+      if (u && u.id) return `${LS_CAT_ENABLED}.${u.id}`;
+    } catch (e) { /* ignore */ }
+    return LS_CAT_ENABLED;
+  }
+  function markEnabledPref() {
+    try {
+      localStorage.setItem(LS_CAT_ENABLED, '1');
+      localStorage.setItem(enabledPrefKey(), '1');
+    } catch (e) { /* ignore */ }
+  }
+  function clearEnabledPref() {
+    try {
+      localStorage.removeItem(LS_CAT_ENABLED);
+      localStorage.removeItem(enabledPrefKey());
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(LS_CAT_ENABLED + '.')) localStorage.removeItem(k);
+      }
+    } catch (e) { /* ignore */ }
+  }
+  function wantsAutoEnable() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(LS_CAT_ENABLED) && localStorage.getItem(k) === '1') return true;
+      }
+    } catch (e) { /* ignore */ }
+    return false;
+  }
+
   async function enable(onProgress) {
     if (extractor) return true;
     if (enabling) return enabling;
@@ -66,9 +100,20 @@
         quantized: true,
         progress_callback: (p) => { if (onProgress) onProgress(p); },
       });
+      markEnabledPref();
       return true;
     })();
     try { return await enabling; } finally { enabling = null; }
+  }
+
+  async function unload() {
+    if (enabling) {
+      try { await enabling; } catch (e) { /* ignore */ }
+    }
+    extractor = null;
+    cache.clear();
+    enabling = null;
+    clearEnabledPref();
   }
 
   async function embed(text) {
@@ -137,5 +182,5 @@
     return out.sort((a, b) => b.score - a.score);
   }
 
-  F.AICat = { available, ready, enable, suggestUncategorized, uncategorizedMerchants, candidateCategories };
+  F.AICat = { available, ready, enable, unload, suggestUncategorized, uncategorizedMerchants, candidateCategories, wantsAutoEnable };
 })(window);

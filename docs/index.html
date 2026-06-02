@@ -155,21 +155,20 @@
         <h2>Dashboard</h2>
         <h3>Spending overview</h3>
         <p>The default view shows summary cards: total spend, refunds, net spend, transaction count, averages, and optional custom KPI cards (<span class="pro-chip" style="font-size:11px;font-weight:700;color:var(--accent)">Pro</span>). Use the date preset (This month, YTD, All time, etc.) or pick a custom range in the header.</p>
-        <p>Budget alerts appear here when a category or group is at ≥80% (caution) or ≥100% (over) of its monthly limit.</p>
       </section>
 
       <section id="views">
         <h3>Charts &amp; views</h3>
         <p>Use the sidebar to move between specialized views:</p>
         <ul>
-          <li><strong>By category</strong> - pie chart; click a slice to filter. Toggle <em>Groups</em> to roll up categories.</li>
-          <li><strong>Merchants</strong> - top merchants bar chart; click a bar for drill-down.</li>
-          <li><strong>Trend</strong> - spend over time, top merchants, or top categories (adjustable count); download as PNG.</li>
+          <li><strong>By category</strong> - pie chart; click a slice to filter. Toggle <em>Groups</em> to roll up categories. Download as PNG from the widget header.</li>
+          <li><strong>Merchants</strong> - top merchants bar chart; click a bar for drill-down (download trend from the drill-down modal).</li>
+          <li><strong>Trend</strong> - spend over time, top merchants, or top categories (adjustable count). Download as PNG from the widget header.</li>
           <li><strong>Cardmembers</strong> - per-person spend when your export includes card members (<span class="pro-chip" style="font-size:11px;font-weight:700;color:var(--accent)">Pro</span>).</li>
-          <li><strong>Month over month</strong> - monthly totals and biggest category movers (builds as you import more months).</li>
+          <li><strong>Month over month</strong> - monthly totals and biggest category movers (builds as you import more months). Chart PNG via widget header.</li>
           <li><strong>Recurring</strong> - repeating charges and subscription keyword matches.</li>
-          <li><strong>Anomalies</strong> - possible duplicates and large outliers.</li>
-          <li><strong>Patterns</strong> - spend by day of week and week of month.</li>
+          <li><strong>Anomalies</strong> - budget overruns (≥80% of limit), possible duplicates, and large outliers.</li>
+          <li><strong>Patterns</strong> - spend by day of week and week of month (two PNG downloads in the widget header).</li>
           <li><strong>Heatmap</strong> - calendar view; click a day to filter.</li>
           <li><strong>Compare</strong> - two arbitrary periods side by side.</li>
           <li><strong>Year in review</strong> - appears with 12+ months of data.</li>
@@ -217,6 +216,14 @@
         <p>Set a monthly limit per category group or ungrouped category. Group limits apply to combined member spend. Overview flags budgets at ≥80% or ≥100% for the current calendar month.</p>
       </section>
 
+      <section id="layout">
+        <h3>Dashboard layout</h3>
+        <p>The dashboard uses a <strong>12-column grid</strong>. Drag widgets by the grip handle in each header, and resize from the edges or corners. Your layout is saved automatically on this device.</p>
+        <p>To keep things tidy, widths <strong>snap to half or full</strong> (6 or 12 columns). Chart widgets stay half-width; tables and the ledger can span full width. The spend heatmap calendar stays square inside the widget as you resize. After every drag or resize, widgets <strong>pack together</strong> with no awkward gaps.</p>
+        <p>Widgets never scroll internally — content flexes to the cell size. The transactions table paginates (25 rows per page).</p>
+        <p>In <strong>Settings → Layout</strong>, show or hide widgets and reorder the list.</p>
+      </section>
+
       <section id="accounts">
         <h3>Accounts &amp; backups</h3>
         <ul>
@@ -234,8 +241,8 @@
         <p>AI is <strong>opt-in</strong>. Open <strong>Finalyze AI</strong> → <strong>Models</strong> → <strong>Download &amp; enable</strong>. Models run in your browser; transactions are never sent to a server.</p>
         <ul>
           <li><strong>Categorization</strong> - small embedding model (~30 MB) improves auto-sorting.</li>
-          <li><strong>Chat</strong> - WebLLM model (~1 GB, requires WebGPU).</li>
-          <li><strong>Insights</strong> - works without any model via locally computed observations.</li>
+          <li><strong>Chat</strong> - choose Standard (~1 GB) or Enhanced (~2.3 GB, smarter). Only one chat tier loads at a time; categorization can run alongside chat.</li>
+          <li><strong>Insights</strong> - works without any model via locally computed observations; AI narrative uses the loaded chat model with a detailed spending summary.</li>
         </ul>
         <div class="callout">
           <p><strong>HTTPS required for chat:</strong> WebGPU and model caching need a secure context (<code>https://</code> or <code>localhost</code>). Over plain HTTP on a LAN IP, chat may show "No WebGPU". GitHub Pages and finalyze.cc work out of the box.</p>

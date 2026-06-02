@@ -372,6 +372,7 @@
     const u = await Auth.init();
     renderChip();
     Auth.onChange(renderChip);
+    if (F.AIUI?.autoRestoreModels) F.AIUI.autoRestoreModels();
     // Deep link from the landing page: ?signin=1 / ?signup=1 opens the form.
     const params = new URLSearchParams(location.search);
     if (!u && (params.get('signin') || params.get('signup'))) {

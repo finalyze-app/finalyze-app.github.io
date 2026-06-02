@@ -13,7 +13,12 @@
   let dateFrom = '', dateTo = '';      // manual date-range filter (YYYY-MM-DD)
   let amountMin = '', amountMax = '';  // absolute amount range filter
   let flowFilter = 'all';              // 'all' | 'spend' | 'payment' | 'refund'
-  let txnQuery = '', txnCatFilter = '';
+  let txnQuery = '', txnCatFilter = '', txnPage = 0;
+  const TXN_PAGE_MIN = 1;
+  const TXN_PAGE_MAX = 200;
+  const TXN_PAGE_FALLBACK = 25;
+  let txnPageSize = TXN_PAGE_FALLBACK;
+  let txnResizeObs = null;
   let mergeSort = 'alpha';             // 'alpha' | 'spend$' | 'spend#'
   let excludeTagged = false;           // exclude business/reimbursable from spend
   let activeAccount = 'all';           // 'all' | account id
@@ -67,6 +72,7 @@
   };
   const GRIP = '<path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/>';
   const EYE_OFF = '<path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.12 9.12 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>';
+  const DOWNLOAD = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>';
   const TRASH = '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>';
   const SEARCH = '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>';
   const PENCIL = '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>';
@@ -84,6 +90,42 @@
   function fmtPct(p) { return p == null ? '-' : (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; }
   function fmtYMD(d) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function ymOfDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+  function latestTxnMonth(txns) {
+    if (!txns.length) return '';
+    const max = txns.reduce((mx, t) => (t.date > mx ? t.date : mx), txns[0].date);
+    return max.slice(0, 7);
+  }
+  // Month used for budget alerts — local calendar month, aligned with filters/demo data.
+  function budgetMonthYm() {
+    const now = ymOfDate(new Date());
+    const demo = !!(F.Demo && F.Demo.active && F.Demo.active());
+    if (demo) return latestTxnMonth(allTxns) || now;
+    if (dateFrom && dateTo) {
+      const fromYm = dateFrom.slice(0, 7);
+      const toYm = dateTo.slice(0, 7);
+      if (fromYm === toYm) return fromYm;
+    }
+    const budgets = Store.getBudgets();
+    if (Object.keys(budgets).length && allTxns.length) {
+      const { byCat, byGroup } = monthGroupSpend(now);
+      const groups = getCategoryGroups();
+      const inGroup = new Set();
+      groups.forEach((g) => g.categories.forEach((c) => inGroup.add(c)));
+      const spentFor = (key) => {
+        if (groups.some((g) => g.name === key)) return byGroup[key] || 0;
+        if (inGroup.has(key)) return 0;
+        return byCat[key] || 0;
+      };
+      if (!Object.keys(budgets).some((key) => spentFor(key) > 0)) {
+        const latest = latestTxnMonth(allTxns);
+        if (latest && latest !== now) return latest;
+      }
+    }
+    return now;
   }
   function datePresetRange(preset) {
     const now = new Date();
@@ -364,22 +406,28 @@
     { id: 'overview', nav: 'Overview', eyebrow: 'Summary', title: 'Spending overview',
       body: `<div class="cards" id="summaryCards"></div>`, render: renderSummary },
     { id: 'category', nav: 'By category', eyebrow: 'Breakdown', title: 'Spend by category',
-      hint: 'Click a slice to filter', body: `<div class="cat-view-toggle"><label>View <select id="catViewMode"><option value="categories">Categories</option><option value="groups">Groups</option></select></label></div><div class="canvas-wrap"><canvas id="chartCategory"></canvas></div>`, render: renderCategory },
+      hint: 'Click a slice to filter',
+      export: { canvasId: 'chartCategory', filename: 'spend-by-category.png' },
+      body: `<div class="cat-view-toggle"><label>View <select id="catViewMode"><option value="categories">Categories</option><option value="groups">Groups</option></select></label></div><div class="canvas-wrap"><canvas id="chartCategory"></canvas></div>`, render: renderCategory },
     { id: 'merchants', nav: 'Merchants', eyebrow: 'Merchants', title: 'Top merchants',
+      export: { canvasId: 'chartMerchant', filename: 'top-merchants.png' },
       body: `<div class="canvas-wrap"><canvas id="chartMerchant"></canvas></div>`, render: () => charts.merchantBar(analyze.byMerchant(viewTxns)) },
     { id: 'trend', nav: 'Trend', eyebrow: 'Trend', title: 'Spend over time',
+      export: 'trend',
       body: `<div class="trend-controls">
           <label>View <select id="trendMode"><option value="time">Spend over time</option><option value="merchants">Top merchants</option><option value="categories">Top categories</option></select></label>
           <label id="trendTopWrap" hidden>Show top <input type="number" id="trendTopN" min="1" max="50" step="1" value="5"> <span id="trendTopUnit">merchants</span></label>
-          <button type="button" class="btn" id="trendDownloadPng">Download PNG</button>
         </div>
         <div class="canvas-wrap"><canvas id="chartTrend"></canvas></div>`,
       render: renderTrend },
     { id: 'cardmember', nav: 'Cardmembers', eyebrow: 'People', title: 'By cardmember', pro: true,
-      hint: 'Click a bar to filter', body: `<div class="canvas-wrap"><canvas id="chartCardmember"></canvas></div>`,
+      hint: 'Click a bar to filter',
+      export: { canvasId: 'chartCardmember', filename: 'by-cardmember.png' },
+      body: `<div class="canvas-wrap"><canvas id="chartCardmember"></canvas></div>`,
       render: () => charts.cardmemberBar(analyze.byCardmember(cardScopeTxns), activeCardmember) },
     { id: 'mom', nav: 'Month over month', eyebrow: 'Comparison', title: 'Month over month',
       hint: 'Builds up as you import more statements',
+      export: { canvasId: 'chartMoM', filename: 'month-over-month.png' },
       body: `<div class="canvas-wrap tall"><canvas id="chartMoM"></canvas></div>
         <div class="table-wrap"><table id="momTable"></table></div>
         <h3>Biggest category movers (vs previous month)</h3>
@@ -388,9 +436,15 @@
     { id: 'recurring', nav: 'Recurring', eyebrow: 'Subscriptions', title: 'Recurring charges',
       hint: 'Same merchant & exact amount', body: `<div class="table-wrap"><table id="recurringTable"></table></div>`, render: renderRecurring },
     { id: 'anomalies', nav: 'Anomalies', eyebrow: 'Flags', title: 'Anomalies',
+      hint: 'Budget overruns · duplicates · large charges',
       body: `<div class="table-wrap"><table id="anomalyTable"></table></div>`, render: () => renderAnomalies(viewTxns) },
     { id: 'patterns', nav: 'Patterns', eyebrow: 'Behavior', title: 'Spending patterns',
-      hint: 'Spend-only · respects filters', body: `<div class="patterns-grid"><div class="canvas-wrap"><canvas id="chartDow"></canvas></div><div class="canvas-wrap"><canvas id="chartWom"></canvas></div></div>`,
+      hint: 'Spend-only · respects filters',
+      export: [
+        { canvasId: 'chartDow', filename: 'spending-by-day-of-week.png', label: 'Day of week chart' },
+        { canvasId: 'chartWom', filename: 'spending-by-week-of-month.png', label: 'Week of month chart' },
+      ],
+      body: `<div class="patterns-grid"><div class="canvas-wrap"><canvas id="chartDow"></canvas></div><div class="canvas-wrap"><canvas id="chartWom"></canvas></div></div>`,
       render: renderPatterns },
     { id: 'heatmap', nav: 'Heatmap', eyebrow: 'Calendar', title: 'Spend heatmap',
       hint: 'Click a day to filter', body: `<div class="hm-head"><select id="hmMonth"></select><div class="hm-legend" id="hmLegend"></div></div><div id="heatmapGrid"></div>`,
@@ -427,6 +481,11 @@
           <span class="bulk-sep"></span>
           <button class="btn danger" id="bulkDelete" disabled>Delete 0</button>
         </div>
+        <div class="txn-pager" id="txnPager" hidden>
+          <button type="button" class="btn sm" id="txnPrev" disabled>Previous</button>
+          <span id="txnPageLabel">1 / 1</span>
+          <button type="button" class="btn sm" id="txnNext" disabled>Next</button>
+        </div>
         <div class="table-wrap"><table id="txnTable"><thead><tr>
           <th class="chk-cell"></th><th data-sort="date">Date</th><th data-sort="name">Merchant</th><th data-sort="cardmember">Cardmember</th>
           <th data-sort="category">Category</th><th data-sort="amount" class="num">Amount</th><th class="tag-cell">Tags</th><th class="sub-cell">Sub</th><th class="txn-actions"></th>
@@ -435,33 +494,416 @@
   ];
   const WIDGET_MAP = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
   const DEFAULT_ORDER = WIDGETS.map((w) => w.id);
-  // Default sizes: dashboard widgets come up half-width (two per row); the
-  // transactions ledger stays full-width since it needs the room.
-  const DEFAULT_SIZES = Object.fromEntries(
-    DEFAULT_ORDER.filter((id) => id !== 'transactions').map((id) => [id, 'half'])
-  );
-  const effectiveSize = (id, sizes) => (sizes && sizes[id]) || DEFAULT_SIZES[id] || 'full';
+  const WIDGET_SPAN = {
+    overview: 'full',
+    category: 'half',
+    merchants: 'half',
+    trend: 'half',
+    cardmember: 'half',
+    patterns: 'half',
+    heatmap: 'half',
+    anomalies: 'half',
+    mom: 'full',
+    recurring: 'full',
+    uncategorized: 'full',
+    compare: 'full',
+    yearReview: 'full',
+    transactions: 'full',
+  };
+  const GRID_COLS = 12;
+  const GRID_CELL_H = 96;
+  const GRID_GAP = 12;
+  const WIDTH_SNAP = [6, 12];
+  const DEFAULT_GRID_H = {
+    overview: 3, category: 4, merchants: 4, trend: 4, cardmember: 4, mom: 7,
+    recurring: 5, anomalies: 4, patterns: 4, heatmap: 5, uncategorized: 5,
+    compare: 6, yearReview: 6, transactions: 7,
+  };
+  const GRID_MAX_W = {
+    overview: 12, category: 6, merchants: 6, trend: 6, cardmember: 6, mom: 12,
+    recurring: 12, anomalies: 6, patterns: 12, heatmap: 12, uncategorized: 12,
+    compare: 12, yearReview: 12, transactions: 12,
+  };
+  const GRID_MAX_H = {
+    overview: 12, category: 4, merchants: 6, trend: 5, cardmember: 5, mom: 10,
+    recurring: 8, anomalies: 6, patterns: 4, heatmap: 12, uncategorized: 8,
+    compare: 10, yearReview: 10, transactions: 12,
+  };
+  let gridStack = null;
+  let gridSaveTimer = null;
+  let gridReady = false;
+  let gridNormalizing = false;
+  let summaryCardCount = 7;
+  let summaryCardCols = 4;
+  const SUMMARY_CARD_MIN_W = 190;
+  const SUMMARY_CARD_ROW_PX = 96;
+  const SUMMARY_WIDGET_HEAD_PX = 72;
+  const SUMMARY_WIDGET_PAD_PX = 36;
+
+  function maxSummaryCols() {
+    if (document.body.classList.contains('is-mobile')) return 2;
+    const el = document.getElementById('widget-overview');
+    const w = el ? el.clientWidth - 40 : (document.getElementById('widgets')?.clientWidth || 900);
+    return Math.max(1, Math.min(8, Math.floor(w / SUMMARY_CARD_MIN_W)));
+  }
+
+  // Pick a column count that avoids a trailing row with a single tile.
+  function summaryColsForCount(n, maxCols) {
+    const cap = Math.max(1, Math.min(n, maxCols || maxSummaryCols()));
+    let best = cap;
+    let bestScore = Infinity;
+    const score = (c) => {
+      const rows = Math.ceil(n / c);
+      const last = n % c || c;
+      if (last === 1 && rows > 1) return Infinity;
+      return rows * 1000 - last * 10 + Math.abs(c - last);
+    };
+    for (let c = 1; c <= cap; c++) {
+      const s = score(c);
+      if (s < bestScore) { bestScore = s; best = c; }
+    }
+    if (bestScore === Infinity) {
+      bestScore = Infinity;
+      for (let c = 1; c <= cap; c++) {
+        const rows = Math.ceil(n / c);
+        const last = n % c || c;
+        const s = rows * 1000 + (last === 1 && rows > 1 ? 500 : 0) - last * 5;
+        if (s < bestScore) { bestScore = s; best = c; }
+      }
+    }
+    return best;
+  }
+
+  function overviewHeightForSummary(count, cols) {
+    const n = count != null ? count : summaryCardCount;
+    const c = cols || summaryCardCols || summaryColsForCount(n, maxSummaryCols());
+    const rows = Math.ceil(n / c);
+    const bodyPx = rows * SUMMARY_CARD_ROW_PX + Math.max(0, rows - 1) * 14;
+    const totalPx = SUMMARY_WIDGET_HEAD_PX + bodyPx + SUMMARY_WIDGET_PAD_PX;
+    return Math.max(3, Math.ceil((totalPx + GRID_GAP) / (GRID_CELL_H + GRID_GAP)));
+  }
+
+  function applySummaryLayout() {
+    const host = $('#summaryCards');
+    if (!host) return;
+    summaryCardCols = summaryColsForCount(summaryCardCount, maxSummaryCols());
+    host.style.gridTemplateColumns = `repeat(${summaryCardCols}, minmax(0, 1fr))`;
+  }
+
+  function adjustOverviewHeight() {
+    if (!visibleOrder().includes('overview')) return;
+    const h = overviewHeightForSummary();
+    if (!gridStack || !gridReady) return;
+    const el = gridStack.el.querySelector('.grid-stack-item[gs-id="overview"]');
+    if (!el) return;
+    const curH = +el.getAttribute('gs-h');
+    if (curH === h) return;
+    gridNormalizing = true;
+    try {
+      gridStack.update(el, {
+        h, w: 12, x: 0, y: 0,
+        minW: 12, maxW: 12, minH: h, maxH: h,
+        noMove: true, noResize: true,
+      });
+    } finally {
+      gridNormalizing = false;
+    }
+    normalizeGridLayout(true);
+  }
+
+  function defaultWidgetW(id) { return id === 'overview' ? 12 : (WIDGET_SPAN[id] === 'full' ? 12 : 6); }
+  function gridHeight(id) {
+    if (id === 'overview') return overviewHeightForSummary();
+    return DEFAULT_GRID_H[id] || 4;
+  }
+  function gridMinW(id) { return id === 'overview' ? 12 : 6; }
+  function gridMinH(id) {
+    if (id === 'overview') return overviewHeightForSummary();
+    return 3;
+  }
+  function normalizeLegacyW(w) {
+    if (!w || w <= 0) return 0;
+    if (w > 6) return 12;
+    return 6;
+  }
+  function gridMaxW(id) {
+    return GRID_MAX_W[id] || GRID_COLS;
+  }
+  function gridMaxH(id) {
+    if (id === 'overview') return overviewHeightForSummary();
+    const base = GRID_MAX_H[id] || 8;
+    if (id === 'merchants') {
+      const n = Math.min(12, analyze.byMerchant(viewTxns).length || 1);
+      return Math.max(gridMinH(id), Math.min(base, 2 + Math.ceil(n / 2)));
+    }
+    if (id === 'category') return Math.max(gridMinH(id), Math.min(base, 4));
+    return base;
+  }
+  function syncPeopleTrendHeight(grid) {
+    if (!grid.trend || !grid.cardmember) return;
+    grid.cardmember.h = grid.trend.h;
+  }
+  function syncPeopleTrendHeightOnGrid() {
+    if (!gridStack || gridNormalizing) return;
+    const trendEl = gridStack.el.querySelector('.grid-stack-item[gs-id="trend"]');
+    const cmEl = gridStack.el.querySelector('.grid-stack-item[gs-id="cardmember"]');
+    if (!trendEl || !cmEl) return;
+    const trendH = +trendEl.getAttribute('gs-h') || gridHeight('trend');
+    const cmH = +cmEl.getAttribute('gs-h');
+    if (cmH === trendH) return;
+    gridNormalizing = true;
+    try {
+      gridStack.update(cmEl, {
+        h: trendH,
+        maxW: gridMaxW('cardmember'), maxH: gridMaxH('cardmember'),
+        minW: gridMinW('cardmember'), minH: gridMinH('cardmember'),
+      });
+    } finally {
+      gridNormalizing = false;
+    }
+  }
+  function allowedWidths(id) {
+    const min = gridMinW(id);
+    const max = gridMaxW(id);
+    return WIDTH_SNAP.filter((w) => w >= min && w <= max);
+  }
+  function snapWidth(id, w) {
+    const opts = allowedWidths(id);
+    if (!opts.length) return Math.max(gridMinW(id), Math.min(gridMaxW(id), w));
+    let best = opts[0];
+    opts.forEach((val) => { if (Math.abs(val - w) < Math.abs(best - w)) best = val; });
+    return best;
+  }
+  function clampGridItem(id, g) {
+    const rawW = normalizeLegacyW(g.w || defaultWidgetW(id));
+    const w = id === 'overview' ? 12 : snapWidth(id, rawW);
+    const rawH = g.h || gridHeight(id);
+    const h = Math.max(gridMinH(id), Math.min(gridMaxH(id), rawH < gridMinH(id) ? gridHeight(id) : rawH));
+    return { x: id === 'overview' ? 0 : (g.x || 0), y: id === 'overview' ? 0 : (g.y || 0), w, h };
+  }
+  function repackGrid(grid, visibleIds) {
+    const next = {};
+    let x = 0;
+    let y = 0;
+    let rowH = 0;
+
+    const pack = (id) => {
+      const g = clampGridItem(id, grid[id] || { w: defaultWidgetW(id), h: gridHeight(id) });
+      if (x + g.w > GRID_COLS) { y += rowH; x = 0; rowH = 0; }
+      next[id] = { x, y, w: g.w, h: g.h };
+      x += g.w;
+      rowH = Math.max(rowH, g.h);
+      if (x >= GRID_COLS) { y += rowH; x = 0; rowH = 0; }
+    };
+
+    if (visibleIds.includes('overview')) {
+      const oh = clampGridItem('overview', { w: 12, h: gridHeight('overview'), ...(grid.overview || {}) });
+      next.overview = oh;
+      y = oh.h;
+      x = 0;
+      rowH = 0;
+    }
+
+    orderFromGrid(grid, visibleIds.filter((id) => id !== 'overview')).forEach(pack);
+    syncPeopleTrendHeight(next);
+    return next;
+  }
+  function migrateOrderToGrid(order, hidden) {
+    return repackGrid(
+      Object.fromEntries(
+        order.filter((id) => !hidden.includes(id)).map((id) => [id, { w: defaultWidgetW(id), h: gridHeight(id), x: 0, y: 0 }])
+      ),
+      order.filter((id) => !hidden.includes(id))
+    );
+  }
+  function orderFromGrid(grid, visibleIds) {
+    return visibleIds.slice().sort((a, b) => {
+      const ga = grid[a] || { y: 0, x: 0 };
+      const gb = grid[b] || { y: 0, x: 0 };
+      if (ga.y !== gb.y) return ga.y - gb.y;
+      return ga.x - gb.x;
+    });
+  }
+  function ensureGrid(order, hidden, grid) {
+    const next = { ...grid };
+    order.filter((id) => !hidden.includes(id)).forEach((id) => {
+      if (!next[id]) next[id] = clampGridItem(id, { w: defaultWidgetW(id), h: gridHeight(id) });
+      else next[id] = clampGridItem(id, next[id]);
+    });
+    Object.keys(next).forEach((id) => {
+      if (!WIDGET_MAP[id] || hidden.includes(id)) delete next[id];
+    });
+    syncPeopleTrendHeight(next);
+    return next;
+  }
 
   function getLayout() {
     const l = Store.getLayout() || {};
     let order = Array.isArray(l.order) ? l.order.filter((id) => WIDGET_MAP[id]) : [];
     DEFAULT_ORDER.forEach((id) => { if (!order.includes(id)) order.push(id); });
     const hidden = (Array.isArray(l.hidden) ? l.hidden : []).filter((id) => WIDGET_MAP[id]);
-    const sizes = (l.sizes && typeof l.sizes === 'object') ? l.sizes : {};
-    return { order, hidden, sizes };
+    if (!hidden.includes('overview') && order.includes('overview')) {
+      order = ['overview', ...order.filter((id) => id !== 'overview')];
+    }
+    let grid = (l.grid && typeof l.grid === 'object') ? { ...l.grid } : migrateOrderToGrid(order, hidden);
+    grid = ensureGrid(order, hidden, grid);
+    const visible = order.filter((id) => !hidden.includes(id));
+    grid = repackGrid(grid, visible);
+    return { order, hidden, grid };
   }
   function saveLayout(l) {
     const cur = getLayout();
-    Store.setLayout({ order: l.order || cur.order, hidden: l.hidden || cur.hidden, sizes: l.sizes || cur.sizes });
+    Store.setLayout({
+      order: l.order || cur.order,
+      hidden: l.hidden || cur.hidden,
+      grid: l.grid || cur.grid,
+    });
+  }
+  function destroyGridStack() {
+    if (gridStack) {
+      gridStack.destroy(false);
+      gridStack = null;
+    }
+  }
+  function gridFromStack() {
+    const grid = {};
+    if (!gridStack) return grid;
+    gridStack.save(false).forEach((n) => {
+      const id = n.id || n.el?.getAttribute('gs-id') || n.el?.querySelector('[data-widget]')?.dataset.widget;
+      if (!id || !WIDGET_MAP[id]) return;
+      grid[id] = clampGridItem(id, { x: n.x, y: n.y, w: n.w, h: n.h });
+    });
+    return grid;
+  }
+  function normalizeGridLayout(force) {
+    if (!gridStack || gridNormalizing) return;
+    if (!force && !gridReady) return;
+    gridNormalizing = true;
+    const ids = visibleOrder();
+    const { order, hidden } = getLayout();
+    let grid = gridFromStack();
+    if (!Object.keys(grid).length) {
+      ids.forEach((id) => {
+        const saved = getLayout().grid[id];
+        if (saved) grid[id] = clampGridItem(id, saved);
+      });
+    }
+    const packed = repackGrid(grid, ids);
+    ids.forEach((id) => {
+      const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el || !packed[id]) return;
+      const cur = grid[id] || packed[id];
+      const next = packed[id];
+      const maxW = gridMaxW(id);
+      const maxH = gridMaxH(id);
+      if (cur.x === next.x && cur.y === next.y && cur.w === next.w && cur.h === next.h) {
+        gridStack.update(el, { maxW, maxH, minW: gridMinW(id), minH: gridMinH(id) });
+        return;
+      }
+      gridStack.update(el, {
+        x: next.x, y: next.y, w: next.w, h: next.h,
+        maxW, maxH, minW: gridMinW(id), minH: gridMinH(id),
+      });
+    });
+    const hiddenIds = order.filter((id) => hidden.includes(id));
+    const sortedVisible = orderFromGrid(packed, ids);
+    saveLayout({ grid: packed, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
+    gridNormalizing = false;
+    syncPeopleTrendHeightOnGrid();
+  }
+  function refreshGridConstraints() {
+    if (!gridStack || gridNormalizing) return;
+    visibleOrder().forEach((id) => {
+      const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const g = clampGridItem(id, {
+        x: +el.getAttribute('gs-x') || 0,
+        y: +el.getAttribute('gs-y') || 0,
+        w: +el.getAttribute('gs-w') || defaultWidgetW(id),
+        h: +el.getAttribute('gs-h') || gridHeight(id),
+      });
+      gridStack.update(el, {
+        w: g.w, h: g.h,
+        maxW: gridMaxW(id), maxH: gridMaxH(id),
+        minW: gridMinW(id), minH: gridMinH(id),
+      });
+    });
+    syncPeopleTrendHeightOnGrid();
+  }
+  function onGridLayoutChange() {
+    if (!gridStack || !gridReady || gridNormalizing) return;
+    clearTimeout(gridSaveTimer);
+    gridSaveTimer = setTimeout(() => {
+      const ids = visibleOrder();
+      const grid = repackGrid(gridFromStack(), ids);
+      const { order, hidden } = getLayout();
+      const hiddenIds = order.filter((id) => hidden.includes(id));
+      const sortedVisible = orderFromGrid(grid, ids);
+      saveLayout({ grid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
+      buildNav(true);
+    }, 200);
+  }
+  function initGridStack(container) {
+    if (typeof GridStack === 'undefined') return;
+    destroyGridStack();
+    gridReady = false;
+    gridStack = GridStack.init({
+      column: GRID_COLS,
+      cellHeight: GRID_CELL_H,
+      margin: GRID_GAP,
+      animate: true,
+      float: false,
+      handle: '.drag-handle',
+      draggable: { handle: '.drag-handle' },
+      disableOneColumnMode: false,
+    }, container);
+    gridStack.on('change', onGridLayoutChange);
+    gridStack.on('dragstop', () => { normalizeGridLayout(); });
+    gridStack.on('resizestop', () => {
+      if (typeof Chart !== 'undefined' && Chart.instances) {
+        Object.values(Chart.instances).forEach((c) => { if (c && c.resize) c.resize(); });
+      }
+      normalizeGridLayout();
+      if ($('#txnTable') && refineTxnPageSize()) renderTxnTable(true);
+    });
+    requestAnimationFrame(() => {
+      normalizeGridLayout(true);
+      gridReady = true;
+    });
+  }
+  function widgetExportButtons(w) {
+    if (!w.export) return '';
+    if (w.export === 'trend') {
+      return `<button type="button" class="icon-btn widget-dl" data-export="trend" title="Download chart">${svg(DOWNLOAD)}</button>`;
+    }
+    if (Array.isArray(w.export)) {
+      return w.export.map((e) =>
+        `<button type="button" class="icon-btn widget-dl" data-canvas="${e.canvasId}" data-filename="${e.filename}" title="Download ${e.label}">${svg(DOWNLOAD)}</button>`
+      ).join('');
+    }
+    return `<button type="button" class="icon-btn widget-dl" data-canvas="${w.export.canvasId}" data-filename="${w.export.filename}" title="Download chart">${svg(DOWNLOAD)}</button>`;
+  }
+  function trendExportFilename() {
+    const slug = trendWidgetTitle().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trend';
+    return `${slug}.png`;
+  }
+  function bindWidgetDownloads(container) {
+    container.querySelectorAll('.widget-dl').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const canvasId = btn.dataset.export === 'trend' ? 'chartTrend' : btn.dataset.canvas;
+        const filename = btn.dataset.export === 'trend' ? trendExportFilename() : btn.dataset.filename;
+        charts.downloadPng(canvasId, filename, (ok) => toast(ok ? 'Chart downloaded' : 'Chart not ready'));
+      });
+    });
   }
   function isProWidget(id) { return !!(WIDGET_MAP[id] && WIDGET_MAP[id].pro); }
   function enforceProLayout() {
     if (isPro()) return;
-    const { order, hidden, sizes } = getLayout();
+    const { order, hidden } = getLayout();
     const set = new Set(hidden);
     let changed = false;
     order.filter(isProWidget).forEach((id) => { if (!set.has(id)) { set.add(id); changed = true; } });
-    if (changed) saveLayout({ order, hidden: [...set], sizes });
+    if (changed) saveLayout({ order, hidden: [...set], grid: getLayout().grid });
   }
   // Some widgets are only meaningful with enough data (e.g. year-in-review needs ≥12 months).
   function widgetAvailable(id) {
@@ -796,26 +1238,40 @@
   function buildWidgets() {
     const container = $('#widgets');
     const ids = visibleOrder();
-    const { sizes } = getLayout();
+    const { grid: savedGrid } = getLayout();
+    const grid = repackGrid(savedGrid, ids);
+    destroyGridStack();
+    unbindTxnResizeObserver();
+    container.classList.add('grid-stack');
     container.innerHTML = ids.map((id) => {
       const w = WIDGET_MAP[id];
-      const half = effectiveSize(id, sizes) === 'half' ? ' half' : '';
-      return `<section class="panel widget${half}" id="widget-${id}" data-widget="${id}">
-        <div class="widget-head">
-          <span class="drag-handle" title="Drag to reorder">${svg(GRIP)}</span>
-          <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}</h2></div>
-          <div class="widget-tools">${w.hint ? `<span class="hint">${w.hint}</span>` : ''}<button class="icon-btn widget-hide" title="Hide widget">${svg(EYE_OFF)}</button></div>
+      const g = clampGridItem(id, grid[id] || { w: defaultWidgetW(id), h: gridHeight(id) });
+      const pinned = id === 'overview';
+      const lockAttrs = pinned ? ' gs-no-move="true" gs-no-resize="true" gs-locked="true"' : '';
+      const drag = pinned ? '' : `<span class="drag-handle" title="Drag to move">${svg(GRIP)}</span>`;
+      return `<div class="grid-stack-item${pinned ? ' overview-pinned' : ''}" gs-id="${id}" gs-x="${g.x}" gs-y="${g.y}" gs-w="${g.w}" gs-h="${g.h}" gs-min-w="${gridMinW(id)}" gs-min-h="${gridMinH(id)}" gs-max-w="${gridMaxW(id)}" gs-max-h="${gridMaxH(id)}"${lockAttrs}>
+        <div class="grid-stack-item-content">
+          <section class="panel widget${pinned ? ' widget-pinned' : ''}" id="widget-${id}" data-widget="${id}">
+            <div class="widget-head">
+              ${drag}
+              <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}</h2></div>
+              <div class="widget-tools">${w.hint ? `<span class="hint">${w.hint}</span>` : ''}${widgetExportButtons(w)}<button class="icon-btn widget-hide" title="Hide widget">${svg(EYE_OFF)}</button></div>
+            </div>
+            <div class="widget-body">${w.body}</div>
+          </section>
         </div>
-        <div class="widget-body">${w.body}</div>
-      </section>`;
+      </div>`;
     }).join('');
 
+    initGridStack(container);
     ids.forEach((id) => WIDGET_MAP[id].render());
+    refreshGridConstraints();
+    adjustOverviewHeight();
 
     $$('#widgets .widget-hide').forEach((btn) =>
       btn.addEventListener('click', () => hideWidget(btn.closest('.widget').dataset.widget)));
 
-    makeSortable(container, '.widget', onDashboardReorder);
+    bindWidgetDownloads(container);
     initScrollSpy();
   }
 
@@ -871,22 +1327,22 @@
     }
 
     $('#summaryCards').innerHTML = cards.join('');
-
-    renderBudgetAlerts();
+    summaryCardCount = cards.length;
+    applySummaryLayout();
+    adjustOverviewHeight();
   }
 
   // ---- Feature 3: budget alerts ----
-  // Current calendar-month spend per category, scoped to the active account.
-  function currentMonthByCategory() {
-    const ym = new Date().toISOString().slice(0, 7);
+  // Calendar-month spend per category for budgetMonthYm(), scoped to the active account.
+  function monthByCategory(ym) {
     const base = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
     const byCat = {};
     base.forEach((t) => { if (t.isSpend && t.date.slice(0, 7) === ym) byCat[t.category] = (byCat[t.category] || 0) + t.spend; });
     return byCat;
   }
 
-  function currentMonthGroupSpend() {
-    const byCat = currentMonthByCategory();
+  function monthGroupSpend(ym) {
+    const byCat = monthByCategory(ym);
     const groups = getCategoryGroups();
     const inGroup = new Set();
     const byGroup = {};
@@ -899,7 +1355,8 @@
 
   function overBudgetCategories() {
     const budgets = Store.getBudgets();
-    const { byCat, byGroup, inGroup } = currentMonthGroupSpend();
+    const ym = budgetMonthYm();
+    const { byCat, byGroup, inGroup } = monthGroupSpend(ym);
     const alerts = [];
     getCategoryGroups().forEach((g) => {
       if (budgets[g.name] == null) return;
@@ -916,29 +1373,35 @@
     });
     return alerts.filter((a) => a.pct >= 80).sort((a, b) => b.pct - a.pct);
   }
-  function renderBudgetAlerts() {
-    const overview = document.getElementById('widget-overview');
-    if (!overview) return;
-    let host = overview.querySelector('#budgetAlerts');
+  function buildBudgetAlertsHtml() {
     const alerts = overBudgetCategories();
-    if (!alerts.length) { if (host) host.remove(); return; }
-    if (!host) {
-      host = document.createElement('div');
-      host.id = 'budgetAlerts';
-      host.className = 'budget-alerts';
-      const cardsEl = overview.querySelector('#summaryCards');
-      cardsEl.parentNode.insertBefore(host, cardsEl.nextSibling);
+    if (!alerts.length) return '';
+    const ym = budgetMonthYm();
+    return `<div id="budgetAlerts" class="budget-alerts"><div class="ba-head">Budgets · ${ym}</div>` +
+      alerts.map((a) => {
+        const over = a.pct >= 100;
+        const c = sliceColor(a.cat);
+        return `<div class="ba-row ${over ? 'over' : 'near'}">
+          <span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${esc(a.cat)}${a.isGroup ? ' <small>(group)</small>' : ''}</span>
+          <div class="ba-bar"><span style="width:${Math.min(100, a.pct).toFixed(0)}%;background:${over ? 'var(--danger,#ef4655)' : c}"></span></div>
+          <span class="ba-num">${fmt(a.spent)} / ${fmt(a.budget)} <strong>${a.pct.toFixed(0)}%</strong>${over ? ' ⚠' : ''}</span>
+        </div>`;
+      }).join('') + '</div>';
+  }
+  function renderBudgetAlerts() {
+    const widget = document.getElementById('widget-anomalies');
+    if (!widget) return;
+    const body = widget.querySelector('.widget-body');
+    if (!body) return;
+    const html = buildBudgetAlertsHtml();
+    const existing = body.querySelector('#budgetAlerts');
+    if (!html) { existing?.remove(); return; }
+    if (existing) existing.outerHTML = html;
+    else {
+      const tableWrap = body.querySelector('.table-wrap');
+      if (tableWrap) tableWrap.insertAdjacentHTML('beforebegin', html);
+      else body.insertAdjacentHTML('afterbegin', html);
     }
-    const ym = new Date().toISOString().slice(0, 7);
-    host.innerHTML = `<div class="ba-head">Budgets · ${ym}</div>` + alerts.map((a) => {
-      const over = a.pct >= 100;
-      const c = sliceColor(a.cat);
-      return `<div class="ba-row ${over ? 'over' : 'near'}">
-        <span class="chip" style="background:${c}1a;color:${c}"><span class="dot" style="background:${c}"></span>${esc(a.cat)}${a.isGroup ? ' <small>(group)</small>' : ''}</span>
-        <div class="ba-bar"><span style="width:${Math.min(100, a.pct).toFixed(0)}%;background:${over ? 'var(--danger,#ef4655)' : c}"></span></div>
-        <span class="ba-num">${fmt(a.spent)} / ${fmt(a.budget)} <strong>${a.pct.toFixed(0)}%</strong>${over ? ' ⚠' : ''}</span>
-      </div>`;
-    }).join('');
   }
 
   function renderCategory() {
@@ -1004,6 +1467,7 @@
             `<td class="num amt-neg">${fmt(r.amount)}</td></tr>`;
         }).join('') + '</tbody>'
       : '<tbody><tr><td class="muted-cell">No anomalies detected.</td></tr></tbody>';
+    renderBudgetAlerts();
   }
 
   function renderPatterns() {
@@ -1044,15 +1508,6 @@
         topN.value = trendTopN;
         updateTrendTitle();
         updateTrendChart();
-      };
-    }
-    const dl = $('#trendDownloadPng');
-    if (dl) {
-      dl.onclick = () => {
-        const slug = trendWidgetTitle().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'trend';
-        charts.downloadPng('chartTrend', `${slug}.png`, (ok) => {
-          toast(ok ? 'Chart downloaded' : 'Chart not ready');
-        });
       };
     }
     updateTrendTitle();
@@ -1161,7 +1616,7 @@
       `</tbody></table></div>
       <h3>By category</h3>
       <div class="table-wrap"><table><thead><tr><th>Category</th><th class="num">A</th><th class="num">B</th><th class="num">Δ</th></tr></thead><tbody>${
-        cmp.categories.map((c) => `<tr><td>${chip(c.category)}</td><td class="num">${fmt(c.a)}</td><td class="num">${fmt(c.b)}</td>${dcell(c.delta)}</tr>`).join('')
+        cmp.categories.slice(0, 20).map((c) => `<tr><td>${chip(c.category)}</td><td class="num">${fmt(c.a)}</td><td class="num">${fmt(c.b)}</td>${dcell(c.delta)}</tr>`).join('')
       }</tbody></table></div>
       <h3>Top merchants</h3>
       <div class="table-wrap"><table><thead><tr><th>Merchant</th><th class="num">A</th><th class="num">B</th><th class="num">Δ</th></tr></thead><tbody>${
@@ -1250,6 +1705,53 @@
     table.querySelectorAll('select.cat-select').forEach((sel, i) => wireCategorySelect(sel, rows[i]));
   }
 
+  function unbindTxnResizeObserver() {
+    if (txnResizeObs) { txnResizeObs.disconnect(); txnResizeObs = null; }
+  }
+
+  function measureTxnPageSize() {
+    const widget = document.getElementById('widget-transactions');
+    if (!widget) return txnPageSize || TXN_PAGE_FALLBACK;
+    const wrap = widget.querySelector('.table-wrap');
+    const table = widget.querySelector('#txnTable');
+    if (!wrap || !table) return txnPageSize || TXN_PAGE_FALLBACK;
+    const wrapH = wrap.clientHeight;
+    if (wrapH < 24) return txnPageSize || TXN_PAGE_FALLBACK;
+    const headH = table.querySelector('thead')?.offsetHeight || 0;
+    const sample = table.querySelector('tbody tr');
+    const rowH = sample?.offsetHeight || 38;
+    const available = wrapH - headH;
+    if (available < rowH) return TXN_PAGE_MIN;
+    return Math.max(TXN_PAGE_MIN, Math.min(TXN_PAGE_MAX, Math.floor(available / rowH)));
+  }
+
+  function bindTxnResizeObserver() {
+    const widget = document.getElementById('widget-transactions');
+    if (!widget) return;
+    unbindTxnResizeObserver();
+    const body = widget.querySelector('.widget-body');
+    if (!body || typeof ResizeObserver === 'undefined') return;
+    txnResizeObs = new ResizeObserver(() => {
+      if (!$('#txnTable')) return;
+      const next = measureTxnPageSize();
+      if (next === txnPageSize) return;
+      const firstRow = txnPage * txnPageSize;
+      txnPageSize = next;
+      txnPage = Math.max(0, Math.floor(firstRow / txnPageSize));
+      renderTxnTable(true);
+    });
+    txnResizeObs.observe(body);
+  }
+
+  function refineTxnPageSize() {
+    const next = measureTxnPageSize();
+    if (next === txnPageSize) return false;
+    const firstRow = txnPage * txnPageSize;
+    txnPageSize = next;
+    txnPage = Math.max(0, Math.floor(firstRow / txnPageSize));
+    return true;
+  }
+
   function renderCategoryFilterOptions() {
     const present = [...new Set(allTxns.map((t) => t.category))].sort();
     const sel = $('#txnCategory');
@@ -1272,8 +1774,10 @@
       $('#cardholderList').innerHTML = [...new Set(allTxns.map((t) => t.cardmember))].sort()
         .map((c) => `<option value="${esc(c)}"></option>`).join('');
     }
-    $('#txnSearch').oninput = () => { txnQuery = $('#txnSearch').value; renderTxnTable(); };
-    $('#txnCategory').onchange = () => { txnCatFilter = $('#txnCategory').value; renderTxnTable(); };
+    $('#txnSearch').oninput = () => { txnQuery = $('#txnSearch').value; txnPage = 0; renderTxnTable(); };
+    $('#txnCategory').onchange = () => { txnCatFilter = $('#txnCategory').value; txnPage = 0; renderTxnTable(); };
+    $('#txnPrev').onclick = () => { if (txnPage > 0) { txnPage--; renderTxnTable(); } };
+    $('#txnNext').onclick = () => { txnPage++; renderTxnTable(); };
     $('#txnSelectAll').onchange = () => {
       const on = $('#txnSelectAll').checked;
       $$('#txnTable .row-check').forEach((cb) => { cb.checked = on; });
@@ -1286,9 +1790,11 @@
     $$('#txnTable th[data-sort]').forEach((th) => th.onclick = () => {
       const k = th.dataset.sort;
       if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = (k === 'date' || k === 'amount') ? -1 : 1; }
+      txnPage = 0;
       renderTxnTable();
     });
     renderTxnTable();
+    bindTxnResizeObserver();
   }
 
   function selectedRowChecks() {
@@ -1375,7 +1881,7 @@
     render();
   }
 
-  function renderTxnTable() {
+  function renderTxnTable(skipRefine) {
     if (!$('#txnTable')) return;
     const subs = Store.getSubscriptions();
     const opts = getCategories().map((c) => `<option value="${c}">${c}</option>`).join('');
@@ -1391,9 +1897,25 @@
       return 0;
     });
 
-    $('#txnCount').textContent = `${rows.length} of ${ledgerTxns.length}`;
+    txnPageSize = measureTxnPageSize();
+    const totalPages = Math.max(1, Math.ceil(rows.length / txnPageSize));
+    if (txnPage >= totalPages) txnPage = totalPages - 1;
+    if (txnPage < 0) txnPage = 0;
+    const pageStart = txnPage * txnPageSize;
+    const pageRows = rows.slice(pageStart, pageStart + txnPageSize);
+    const pageEnd = pageStart + pageRows.length;
+    $('#txnCount').textContent = rows.length
+      ? `${pageStart + 1}–${pageEnd} of ${rows.length} (${ledgerTxns.length} total)`
+      : `0 of ${ledgerTxns.length}`;
+    const pager = $('#txnPager');
+    if (pager) {
+      pager.hidden = totalPages <= 1;
+      $('#txnPageLabel').textContent = `${txnPage + 1} / ${totalPages}`;
+      $('#txnPrev').disabled = txnPage <= 0;
+      $('#txnNext').disabled = txnPage >= totalPages - 1;
+    }
     const showCm = isPro();
-    $('#txnTable tbody').innerHTML = rows.map((t) => {
+    $('#txnTable tbody').innerHTML = pageRows.map((t) => {
       const amtCls = t.isSpend ? 'amt-neg' : 'amt-pos';
       const key = analyze.subKey(t.merchantKey, t.spend);
       const subCell = t.isSpend
@@ -1414,7 +1936,7 @@
     }).join('');
 
     const tb = $('#txnTable tbody');
-    tb.querySelectorAll('select.cat-select').forEach((sel, i) => wireCategorySelect(sel, rows[i]));
+    tb.querySelectorAll('select.cat-select').forEach((sel, i) => wireCategorySelect(sel, pageRows[i]));
     tb.querySelectorAll('input.sub-check').forEach((cb) => {
       cb.onchange = () => {
         Store.setSubscription(decodeURIComponent(cb.dataset.key), cb.checked);
@@ -1442,6 +1964,16 @@
       deleteTransactionRow(decodeURIComponent(btn.dataset.storeKey), decodeURIComponent(btn.dataset.name));
     });
     updateBulkButton();
+
+    if (!skipRefine) {
+      const wrap = document.querySelector('#widget-transactions .table-wrap');
+      const needsLayout = wrap && wrap.clientHeight < 24;
+      const retry = () => {
+        if (refineTxnPageSize()) renderTxnTable(true);
+      };
+      if (needsLayout) requestAnimationFrame(() => requestAnimationFrame(retry));
+      else if (refineTxnPageSize()) renderTxnTable(true);
+    }
   }
 
   function renderFilterBanner() {
@@ -1465,10 +1997,34 @@
   }
 
   // ============ Preferences ============
+  function renderDangerZoneDemoCopy() {
+    const zone = $('#set-danger');
+    if (!zone) return;
+    const demo = isDemoActive();
+    const intro = zone.querySelector('p.muted');
+    const opts = zone.querySelectorAll('.danger-opt .muted');
+    if (intro) {
+      intro.textContent = demo
+        ? 'These actions only affect demo sample data. Your own saved data on this device is not touched.'
+        : 'Export a backup first if you might want any of this back.';
+    }
+    if (opts[0]) {
+      opts[0].textContent = demo
+        ? 'Removes demo transactions only; keeps demo settings (categories, rules, budgets, layout).'
+        : 'Removes imported transactions, keeps all your settings (categories, rules, budgets, custom cards, accounts, layout).';
+    }
+    if (opts[1]) {
+      opts[1].textContent = demo
+        ? 'Clears all demo data and exits demo mode. Your own saved data is not affected.'
+        : 'Removes all transactions and every saved setting from this device.';
+    }
+  }
+
   function renderPrefs() {
     renderCategoryApplyPref();
     renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderMergeRuleManager(); renderCardManager(); renderGroupManager(); renderBudgetManager();
     renderAccountManager(); renderMergeManager(); renderWidgetManager(); renderAccountSize();
+    renderDangerZoneDemoCopy();
   }
 
   function renderCategoryApplyPref() {
@@ -1721,10 +2277,15 @@
       (ungrouped.length ? `<h3${groups.length ? ' style="margin-top:18px"' : ''}>Category budgets</h3><p class="muted" style="margin:0 0 10px">Categories not in a group.</p>` +
         ungrouped.map((c) => row(c, c, false)).join('') : '<p class="muted-cell">Add categories or groups first.</p>');
 
-    $$('#budgetManager .budget-amt').forEach((inp) => inp.onchange = () => {
-      const cat = decodeURIComponent(inp.dataset.cat);
-      Store.setBudget(cat, inp.value);
-      toast(inp.value ? `Budget set for ${cat}` : `Budget cleared for ${cat}`);
+    $$('#budgetManager .budget-amt').forEach((inp) => {
+      const save = () => {
+        const cat = decodeURIComponent(inp.dataset.cat);
+        Store.setBudget(cat, inp.value);
+        toast(inp.value ? `Budget set for ${cat}` : `Budget cleared for ${cat}`);
+        if (viewName === 'dashboard') render();
+      };
+      inp.onchange = save;
+      inp.onblur = save;
     });
   }
 
@@ -1956,12 +2517,11 @@
 
   function renderWidgetManager() {
     enforceProLayout();
-    const { order, hidden, sizes } = getLayout();
+    const { order, hidden } = getLayout();
     const hiddenSet = new Set(hidden);
     const container = $('#widgetManager');
     container.innerHTML = order.map((id) => {
       const w = WIDGET_MAP[id];
-      const half = effectiveSize(id, sizes) === 'half';
       const pro = isProWidget(id);
       const locked = pro && !isPro();
       const visible = !hiddenSet.has(id);
@@ -1972,34 +2532,91 @@
       return `<div class="wm-row${locked ? ' wm-pro-locked' : ''}" data-widget="${id}">
         <span class="drag-handle" title="Drag to reorder">${svg(GRIP)}</span>
         <span class="wm-name">${svg(NAV_ICON[id] || '')}${w.title}${proBadge}</span>
-        <select class="wm-size" data-widget="${id}" title="Widget width">
-          <option value="full"${half ? '' : ' selected'}>Full width</option>
-          <option value="half"${half ? ' selected' : ''}>Half width</option>
-        </select>
         ${visCtrl}
       </div>`;
     }).join('');
     $$('#widgetManager .wm-vis:not(:disabled)').forEach((cb) => cb.onchange = () => toggleWidgetHidden(cb.dataset.widget, !cb.checked));
-    $$('#widgetManager .wm-size').forEach((sel) => sel.onchange = () => setWidgetSize(sel.dataset.widget, sel.value));
     makeSortable(container, '.wm-row', (ids) => { saveLayout({ order: ids }); });
   }
 
   // ============ Layout mutations ============
-  function hideWidget(id) {
-    const { order, hidden } = getLayout();
-    if (!hidden.includes(id)) hidden.push(id);
-    saveLayout({ order, hidden });
-    toast(`Hid “${WIDGET_MAP[id].title}” - re-enable in Settings`);
-    render();
+  function destroyWidgetCharts(id) {
+    const root = document.getElementById('widget-' + id);
+    if (!root || typeof Chart === 'undefined' || !Chart.getChart) return;
+    root.querySelectorAll('canvas').forEach((canvas) => {
+      const inst = Chart.getChart(canvas);
+      if (inst) inst.destroy();
+    });
   }
-  function setWidgetSize(id, size) {
-    const { sizes } = getLayout();
-    // Persist only when it differs from the default, so the size picker can
-    // override either default (half or full) and storage stays minimal.
-    if (size === (DEFAULT_SIZES[id] || 'full')) delete sizes[id];
-    else sizes[id] = size;
-    saveLayout({ sizes });
-    toast(`“${WIDGET_MAP[id].title}” set to ${size} width`);
+
+  function removeWidgetFromDashboard(id) {
+    const { order, hidden, grid } = getLayout();
+    if (hidden.includes(id)) return;
+    const newHidden = [...hidden, id];
+
+    let currentGrid = gridFromStack();
+    if (!Object.keys(currentGrid).length) {
+      Object.keys(grid).forEach((k) => { currentGrid[k] = grid[k]; });
+    }
+    delete currentGrid[id];
+
+    const ids = order.filter((wid) => !newHidden.includes(wid) && widgetAvailable(wid));
+    const packed = repackGrid(currentGrid, ids);
+    const hiddenIds = order.filter((wid) => newHidden.includes(wid));
+    const sortedVisible = orderFromGrid(packed, ids);
+    const nextLayout = {
+      order: [...sortedVisible, ...hiddenIds.filter((wid) => !sortedVisible.includes(wid))],
+      hidden: newHidden,
+      grid: packed,
+    };
+
+    if (!gridStack) {
+      saveLayout(nextLayout);
+      buildNav(allTxns.length > 0);
+      return;
+    }
+
+    gridNormalizing = true;
+    try {
+      destroyWidgetCharts(id);
+      if (id === 'transactions') unbindTxnResizeObserver();
+      const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (el) gridStack.removeWidget(el, true);
+      ids.forEach((wid) => {
+        const widgetEl = gridStack.el.querySelector(`.grid-stack-item[gs-id="${wid}"]`);
+        if (!widgetEl || !packed[wid]) return;
+        gridStack.update(widgetEl, {
+          x: packed[wid].x, y: packed[wid].y, w: packed[wid].w, h: packed[wid].h,
+          maxW: gridMaxW(wid), maxH: gridMaxH(wid),
+          minW: gridMinW(wid), minH: gridMinH(wid),
+        });
+      });
+      syncPeopleTrendHeightOnGrid();
+    } finally {
+      gridNormalizing = false;
+    }
+
+    saveLayout(nextLayout);
+    buildNav(allTxns.length > 0);
+    initScrollSpy();
+    if (typeof Chart !== 'undefined' && Chart.instances) {
+      Object.values(Chart.instances).forEach((c) => { if (c && c.resize) c.resize(); });
+    }
+  }
+
+  function hideWidget(id) {
+    const w = WIDGET_MAP[id];
+    if (!w) return;
+    confirmModal({
+      title: `Hide “${w.title}”?`,
+      message: 'You can show it again in Settings → Layout.',
+      confirmLabel: 'Hide widget',
+      confirmClass: 'btn danger',
+      onConfirm: () => {
+        removeWidgetFromDashboard(id);
+        toast(`Hid “${w.title}” - re-enable in Settings`);
+      },
+    });
   }
   function toggleWidgetHidden(id, hide) {
     if (!hide && isProWidget(id) && !isPro()) {
@@ -2007,17 +2624,11 @@
       renderWidgetManager();
       return;
     }
-    const { order, hidden } = getLayout();
+    const { order, hidden, grid } = getLayout();
     const set = new Set(hidden);
     if (hide) set.add(id); else set.delete(id);
-    saveLayout({ order, hidden: [...set] });
+    saveLayout({ order, hidden: [...set], grid });
     buildNav(allTxns.length > 0);
-  }
-  function onDashboardReorder(visibleIds) {
-    const { order, hidden } = getLayout();
-    const hiddenIds = order.filter((id) => hidden.includes(id));
-    saveLayout({ order: [...visibleIds, ...hiddenIds], hidden });
-    buildNav(true);
   }
 
   // ============ Drag-to-sort (handle-gated) ============
@@ -2561,6 +3172,23 @@
     document.body.classList.remove('modal-open');
   }
 
+  function confirmModal(opts) {
+    const title = esc(opts.title || 'Confirm');
+    const message = esc(opts.message || '');
+    const confirmLabel = esc(opts.confirmLabel || 'Confirm');
+    const cancelLabel = esc(opts.cancelLabel || 'Cancel');
+    const confirmClass = opts.confirmClass || 'btn primary';
+    const body = openModal(
+      `<h2>${title}</h2>
+       <p class="muted">${message}</p>
+       <div class="import-actions">
+         <button class="btn" id="confirmCancel" type="button">${cancelLabel}</button>
+         <button class="${confirmClass}" id="confirmOk" type="button">${confirmLabel}</button>
+       </div>`);
+    body.querySelector('#confirmCancel').onclick = closeModal;
+    body.querySelector('#confirmOk').onclick = () => { closeModal(); if (opts.onConfirm) opts.onConfirm(); };
+  }
+
   // ---- Feature 7: merchant drill-down + management ----
   function openMerchantDrill(merchantKey) {
     const detail = analyze.merchantDetail(allTxns, merchantKey);
@@ -2590,6 +3218,10 @@
             )}</div>`
           : ''}
       </div>
+      <div class="drill-chart-head">
+        <h3>Monthly trend</h3>
+        <button type="button" class="btn sm" id="drillDownloadPng">Download PNG</button>
+      </div>
       <div class="canvas-wrap"><canvas id="drillTrend"></canvas></div>
       ${detail.categories.length > 1
         ? `<h3>Category history</h3><div class="drill-cats">${detail.categories.map((c) => `${chip(c.category)} <span class="muted">${c.count}×</span>`).join(' ')}</div>`
@@ -2599,6 +3231,13 @@
         detail.txns.map((t) => `<tr><td>${t.date}</td><td>${maskMerch(t.name)}</td><td>${chip(t.category)}</td><td class="num ${t.isSpend ? 'amt-neg' : 'amt-pos'}">${fmt(t.amount)}</td></tr>`).join('')
       }</tbody></table></div>`);
     charts.merchantTrend(detail.monthly, body.querySelector('#drillTrend'));
+    const drillDl = body.querySelector('#drillDownloadPng');
+    if (drillDl) {
+      drillDl.onclick = () => {
+        const slug = merchantKey.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'merchant';
+        charts.downloadPng('drillTrend', `${slug}-trend.png`, (ok) => toast(ok ? 'Chart downloaded' : 'Chart not ready'));
+      };
+    }
 
     body.querySelector('#dmCat').onchange = (e) => {
       Store.setOverride(merchantKey, e.target.value);
@@ -2663,11 +3302,18 @@
   async function init() {
     Store.onSaveError((e) => toast('Could not save: ' + (e.message || 'storage error')));
     detectMobile();
-    addEventListener('resize', detectMobile);
+    addEventListener('resize', () => {
+      detectMobile();
+      if (viewName === 'dashboard' && $('#summaryCards')) {
+        applySummaryLayout();
+        adjustOverviewHeight();
+      }
+    });
     // Filter bar starts collapsed on mobile (it's cramped); remembers your choice.
     const storedFilters = localStorage.getItem('finalyze.filtersHidden');
     filtersHidden = storedFilters == null ? document.body.classList.contains('is-mobile') : storedFilters === '1';
     await Store.init();
+    if (F.Demo?.ensureScope) await F.Demo.ensureScope();
     censored = await Store.getCensor();
     const theme = (await Store.getTheme()) || localStorage.getItem('finalyze.theme') || 'light';
     applyTheme(theme);
@@ -2720,7 +3366,16 @@
     $('#modalClose').addEventListener('click', closeModal);
     $('#modalBackdrop').addEventListener('click', closeModal);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
-    $('#clearBtn').addEventListener('click', () => {
+    $('#clearBtn').addEventListener('click', async () => {
+      if (isDemoActive()) {
+        if (!confirm('Clear all demo data and exit demo mode? Your own saved data on this device is not affected.')) return;
+        activeCategory = null; activeCardmember = null;
+        amountMin = ''; amountMax = ''; flowFilter = 'all';
+        excludeTagged = false; activeAccount = 'all'; cmpInit = false; yrSelected = '';
+        await F.Demo.clearDemoAll();
+        render();
+        return;
+      }
       if (confirm('Clear ALL data and settings on this device? This cannot be undone. Export a backup first if unsure.')) {
         Store.clearAll(); activeCategory = null; activeCardmember = null;
         amountMin = ''; amountMax = ''; flowFilter = 'all';
@@ -2739,6 +3394,14 @@
     if (F.Auth && F.Auth.onChange) {
       let lastScopeUid = (F.Auth.user && F.Auth.user() && F.Auth.user().id) || null;
       F.Auth.onChange(async (user) => {
+        if (F.Demo?.active && F.Demo.active()) {
+          F.Demo.onAuthChange(user);
+          refreshLicense();
+          if (F.AIUI?.resetAutoRestore) F.AIUI.resetAutoRestore();
+          if (F.AIUI?.autoRestoreModels) F.AIUI.autoRestoreModels();
+          render();
+          return;
+        }
         const uid = (user && user.id) || null;
         if (uid !== lastScopeUid && Store.setUserScope) {
           lastScopeUid = uid;
@@ -2751,6 +3414,8 @@
           } catch (e) { /* keep prior view on error */ }
         }
         refreshLicense();
+        if (F.AIUI?.resetAutoRestore) F.AIUI.resetAutoRestore();
+        if (F.AIUI?.autoRestoreModels) F.AIUI.autoRestoreModels();
       });
     }
     // Re-check license when returning to the tab (e.g. after paying in Stripe),
@@ -2763,7 +3428,17 @@
       lastLicenseCheck = now;
       refreshLicense();
     });
-    $('#clearTxnBtn').addEventListener('click', () => {
+    $('#clearTxnBtn').addEventListener('click', async () => {
+      if (isDemoActive()) {
+        if (!confirm('Clear demo transactions only? Demo settings stay; your own saved data is not affected.')) return;
+        activeCategory = null; activeCardmember = null;
+        dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
+        excludeTagged = false; cmpInit = false; yrSelected = '';
+        viewName = 'dashboard';
+        await F.Demo.clearDemoTransactions();
+        render();
+        return;
+      }
       if (confirm('Clear all imported transactions? Your settings (categories, rules, budgets, custom cards, accounts, layout) are kept. This cannot be undone.')) {
         Store.clearTransactions(); activeCategory = null; activeCardmember = null;
         dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
@@ -2792,6 +3467,8 @@
     });
 
     render();
+
+    if (F.AIUI?.autoRestoreModels && !(F.Auth && F.Auth.enabled())) F.AIUI.autoRestoreModels();
 
     // Deep link from the landing page: ?demo=1 loads the sample data + tour
     // (only when there's no data yet, so it never clobbers a real import).
@@ -2828,7 +3505,7 @@
       { before: goTab('rules'), sel: '#set-merge-rules', title: 'Auto-merge rules', body: 'Automatically fold matching merchant names into one canonical name - applied to every import.' },
       { before: goTab('budgets'), sel: '#set-budgets', title: 'Budgets', body: 'Set monthly limits per category or group. The overview warns at 80% and over.' },
       { before: goTab('accounts'), sel: '#set-accounts', title: 'Accounts & data', body: 'Track multiple cards/accounts, check storage use, and back up or restore your data.' },
-      { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, resize, and reorder every dashboard widget.' },
+      { before: goTab('layout'), sel: '#set-layout', title: 'Layout', body: 'Show, hide, and reorder widgets here. On the dashboard, drag by the grip handle and resize from the edges — widths snap to tidy sizes and panels pack together automatically.' },
       { before: goTab('categories'), title: 'You’re all set', body: 'Tweak anything anytime from Settings. Enjoy Finalyze!', final: true },
     ];
     F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
@@ -2847,7 +3524,16 @@
       { before: toDash, sel: '#widget-recurring', title: 'Recurring & subscriptions', body: 'Repeating charges, including keyword-matched subscriptions even when the amount varies.' },
       { before: toDash, sel: '#widget-anomalies', title: 'Anomalies', body: 'Possible duplicates and unusually large charges, surfaced automatically.' },
       { before: toDash, sel: '#widget-transactions', title: 'Transactions', body: 'Search, filter, retag, recategorise, and bulk-edit. Category changes are remembered per merchant.' },
-      { before: toDash, title: 'Ask the AI', body: 'The Finalyze AI button (sidebar) gives plain-English insights and a chat about your spending - all on-device. That’s the tour!', final: true },
+      {
+        before: () => { toDash(); return F.Demo.animateDemoAIClick && F.Demo.animateDemoAIClick(); },
+        sel: '.ai-modal .ai-panel',
+        aiFocus: true,
+        scroll: false,
+        title: 'Ask the AI',
+        body: 'Finalyze AI surfaces instant insights from your data. Enable on-device models for chat and richer answers — all locally, opt-in.',
+        after: () => F.Demo.closeDemoAI && F.Demo.closeDemoAI(),
+        final: true,
+      },
     ];
     F.Demo.runTour(steps, () => F.Demo.endTour(), 'Finish');
   }

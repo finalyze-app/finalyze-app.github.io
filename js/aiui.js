@@ -10,6 +10,7 @@
 
   let overlay = null, tab = 'insights';
   const chatLog = []; // {role, content}
+  let autoRestoreDone = false;
 
   function shell() {
     if (overlay) return overlay;
@@ -34,7 +35,14 @@
     overlay.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { tab = b.dataset.tab; renderTab(); });
     return overlay;
   }
-  function open(which) { shell(); tab = which || tab; overlay.classList.add('open'); document.body.classList.add('modal-open'); renderTab(); }
+  function open(which) {
+    shell();
+    tab = which || tab;
+    overlay.classList.add('open');
+    document.body.classList.add('modal-open');
+    renderTab();
+    autoRestoreModels(true);
+  }
   function close() { if (overlay) overlay.classList.remove('open'); document.body.classList.remove('modal-open'); }
 
   function renderTab() {
@@ -44,10 +52,26 @@
       b.classList.toggle('pro-tab', proTab && F.isPro && !F.isPro());
     });
     const body = $('#aiBody');
+    body.classList.toggle('ai-chat-pane', tab === 'chat');
     if (tab === 'insights') renderInsights(body);
     else if (tab === 'chat') renderChat(body);
     else if (tab === 'categorize') renderCategorize(body);
     else renderModels(body);
+  }
+
+  function scrollChatToBottom() {
+    requestAnimationFrame(() => {
+      const log = $('#aiChatLog');
+      if (!log) return;
+      log.scrollTop = log.scrollHeight;
+    });
+  }
+
+  function focusChatInput() {
+    requestAnimationFrame(() => {
+      const inp = $('#aiChatInput');
+      if (inp && !inp.disabled) inp.focus();
+    });
   }
 
   // ---- Insights ----
@@ -87,26 +111,40 @@
       <div class="ai-head"><h3>Chat</h3>
         <button class="btn sm" id="aiClear" ${chatLog.length ? '' : 'disabled'}>Clear chat</button>
       </div>
-      <div class="ai-chat-log" id="aiChatLog">${chatLog.map(msgHtml).join('') || '<div class="ai-empty">Ask about your recorded spending - e.g. “how much did I spend on coffee?”, “what changed from last month?”, “which subscriptions cost the most?”, “what are my top merchants?”</div>'}</div>
+      <div class="ai-chat-log" id="aiChatLog">${chatLog.map((m, i) => msgHtml(m, i)).join('') || '<div class="ai-empty">Ask about your recorded spending - e.g. “how much did I spend on coffee?”, “what changed from last month?”, “which subscriptions cost the most?”, “what are my top merchants?”</div>'}</div>
       <form class="ai-chat-form" id="aiChatForm">
         <input id="aiChatInput" placeholder="${enabled ? 'Ask your data…' : 'Enable the chat model in Models →'}" ${enabled ? '' : 'disabled'} autocomplete="off" />
         <button class="btn primary" ${enabled ? '' : 'disabled'}>Send</button>
       </form>`;
     const clr = $('#aiClear');
     if (clr) clr.onclick = () => { chatLog.length = 0; renderChat(body); };
-    const log = $('#aiChatLog');
-    log.scrollTop = log.scrollHeight;
+    scrollChatToBottom();
     $('#aiChatForm').onsubmit = async (e) => {
       e.preventDefault();
       const inp = $('#aiChatInput'); const q = inp.value.trim(); if (!q) return;
       inp.value = ''; chatLog.push({ role: 'user', content: q });
       const aId = chatLog.push({ role: 'assistant', content: '…' }) - 1;
       renderChat(body);
-      try { await AIChat.ask(q, (tok, full) => { chatLog[aId].content = full; const l = $('#aiChatLog'); if (l) { l.children[aId] && (l.children[aId].querySelector('.ai-msg-text').textContent = full); l.scrollTop = l.scrollHeight; } }); }
-      catch (err) { chatLog[aId].content = 'Error: ' + err.message; renderChat(body); }
+      scrollChatToBottom();
+      try {
+        await AIChat.ask(q, (tok, full) => {
+          chatLog[aId].content = full;
+          const log = $('#aiChatLog');
+          const el = log && log.querySelector(`[data-msg-idx="${aId}"] .ai-msg-text`);
+          if (el) el.textContent = full;
+          scrollChatToBottom();
+        });
+        focusChatInput();
+      } catch (err) {
+        chatLog[aId].content = 'Error: ' + err.message;
+        renderChat(body);
+        focusChatInput();
+      }
     };
   }
-  function msgHtml(m) { return `<div class="ai-msg ${m.role}"><span class="ai-msg-text">${esc(m.content)}</span></div>`; }
+  function msgHtml(m, i) {
+    return `<div class="ai-msg ${m.role}" data-msg-idx="${i}"><span class="ai-msg-text">${esc(m.content)}</span></div>`;
+  }
 
   // ---- Auto-categorize ----
   function renderCategorize(body) {
@@ -152,32 +190,136 @@
   }
 
   // ---- Models (opt-in downloads) ----
+  function chatModelChoices() {
+    if (!AIChat || !AIChat.models) return '';
+    const selected = AIChat.selectedModelKey();
+    const active = AIChat.activeModelKey();
+    const loaded = AIChat.ready();
+    const pendingSpec = AIChat.models()[selected];
+    return Object.values(AIChat.models()).map((m) => {
+      const on = selected === m.id;
+      const isLoaded = loaded && active === m.id;
+      return `<label class="ai-chat-tier${on ? ' on' : ''}${isLoaded ? ' loaded' : ''}">
+        <input type="radio" name="aiChatTier" value="${m.id}" ${on ? 'checked' : ''} />
+        <span class="ai-chat-tier-body">
+          <strong>${esc(m.label)}</strong> · ${esc(m.size)}
+          <span class="muted">${esc(m.desc)}</span>
+          ${isLoaded ? '<span class="ai-chat-tier-badge">Loaded</span>' : ''}
+        </span>
+      </label>`;
+    }).join('');
+  }
+
   function renderModels(body) {
+    const catReady = AICat && AICat.ready();
+    const chatReady = AIChat && AIChat.ready();
+    const chatActive = AIChat && AIChat.activeModelKey();
+    const chatSpec = chatActive && AIChat.models()[chatActive];
+    const selected = AIChat ? AIChat.selectedModelKey() : 'standard';
+    const pendingSpec = AIChat && AIChat.models()[selected];
     body.innerHTML = `
       <div class="ai-head"><h3>On-device AI models</h3></div>
-      <p class="muted">Models download once and run entirely in your browser. Your transactions are never sent anywhere. Downloading requires a network connection; after that it works offline.</p>
+      <p class="muted">Models download once and run entirely in your browser. Your transactions are never sent anywhere. Chat uses one tier at a time (Standard or Enhanced); categorization can run at the same time.</p>
       <div class="ai-model" id="aiModelCat">
         <div><strong>Categorization</strong> · ~30 MB<div class="muted">Suggests categories for uncategorized merchants.</div></div>
-        <button class="btn" id="aiEnableCat">${AICat && AICat.ready() ? 'Enabled ✓' : 'Download & enable'}</button>
+        <div class="ai-model-actions">
+          <button class="btn" id="aiEnableCat">${catReady ? 'Enabled ✓' : 'Download & enable'}</button>
+          ${catReady ? '<button class="btn ghost sm" id="aiUnloadCat">Unload</button>' : ''}
+        </div>
         <div class="ai-prog" id="aiProgCat"></div>
       </div>
-      <div class="ai-model" id="aiModelChat">
-        <div><strong>Insights &amp; chat</strong> · ~0.8–1.2 GB · needs WebGPU<div class="muted">Plain-English insights and ask-your-data chat.</div></div>
-        <button class="btn" id="aiEnableChat" ${AIChat && AIChat.webgpu() ? '' : 'disabled'}>${AIChat && AIChat.ready() ? 'Enabled ✓' : (AIChat && AIChat.webgpu() ? 'Download & enable' : 'No WebGPU')}</button>
-        <div class="ai-prog" id="aiProgChat"></div>
+      <div class="ai-model ai-model-chat" id="aiModelChat">
+        <div><strong>Insights &amp; chat</strong> · WebGPU required<div class="muted">Plain-English insights and ask-your-data chat with a detailed local spending summary.</div></div>
+        <div class="ai-chat-tiers">${chatModelChoices()}</div>
+        <div class="ai-model-actions">
+          <button class="btn" id="aiEnableChat" ${AIChat && AIChat.webgpu() ? '' : 'disabled'}>${chatReady ? 'Enabled ✓' : (AIChat && AIChat.webgpu() ? 'Download & enable' : 'No WebGPU')}</button>
+          ${chatReady && selected !== chatActive && pendingSpec ? `<button class="btn sm" id="aiSwitchChat">Switch to ${esc(pendingSpec.label)}</button>` : ''}
+          ${chatReady ? '<button class="btn ghost sm" id="aiUnloadChat">Unload</button>' : ''}
+        </div>
+        <div class="ai-prog" id="aiProgChat">${chatReady && chatSpec ? esc(chatSpec.label + ' model ready') : ''}</div>
       </div>`;
+
+    body.querySelectorAll('input[name="aiChatTier"]').forEach((inp) => {
+      inp.onchange = () => {
+        if (!inp.checked) return;
+        AIChat.setSelectedModelKey(inp.value);
+        renderModels(body);
+      };
+    });
+
     const cb = $('#aiEnableCat');
     cb && (cb.onclick = async () => {
+      if (catReady) return;
       cb.disabled = true; const p = $('#aiProgCat');
-      try { await AICat.enable((pr) => { p.textContent = pr && pr.status ? (pr.status + (pr.progress ? ' ' + Math.round(pr.progress * 100) + '%' : '')) : 'loading…'; }); p.textContent = 'Ready'; cb.textContent = 'Enabled ✓'; }
-      catch (e) { p.textContent = 'Failed: ' + e.message; cb.disabled = false; }
+      try {
+        await AICat.enable((pr) => { p.textContent = pr && pr.status ? (pr.status + (pr.progress ? ' ' + Math.round(pr.progress * 100) + '%' : '')) : 'loading…'; });
+        p.textContent = 'Ready'; renderModels(body);
+      } catch (e) { p.textContent = 'Failed: ' + e.message; cb.disabled = false; }
     });
+    const uc = $('#aiUnloadCat');
+    uc && (uc.onclick = async () => {
+      await AICat.unload();
+      F.toast && F.toast('Categorization model unloaded');
+      renderModels(body);
+    });
+
     const hb = $('#aiEnableChat');
     hb && !hb.disabled && (hb.onclick = async () => {
+      if (chatReady) return;
       hb.disabled = true; const p = $('#aiProgChat');
-      try { await AIChat.enable((r) => { p.textContent = r && r.text ? r.text : ('loading ' + Math.round((r && r.progress || 0) * 100) + '%'); }); p.textContent = 'Ready'; hb.textContent = 'Enabled ✓'; }
-      catch (e) { p.textContent = 'Failed: ' + e.message; hb.disabled = false; }
+      try {
+        await AIChat.enable((r) => { p.textContent = r && r.text ? r.text : ('loading ' + Math.round((r && r.progress || 0) * 100) + '%'); });
+        const spec = AIChat.models()[AIChat.activeModelKey()];
+        p.textContent = spec ? spec.label + ' model ready' : 'Ready';
+        renderModels(body);
+      } catch (e) { p.textContent = 'Failed: ' + e.message; hb.disabled = false; }
     });
+    const uchat = $('#aiUnloadChat');
+    uchat && (uchat.onclick = async () => {
+      await AIChat.unload();
+      F.toast && F.toast('Chat model unloaded');
+      renderModels(body);
+    });
+    const sw = $('#aiSwitchChat');
+    sw && (sw.onclick = async () => {
+      sw.disabled = true; const p = $('#aiProgChat');
+      p.textContent = 'Switching model…';
+      try {
+        await AIChat.enable((r) => { p.textContent = r && r.text ? r.text : ('loading ' + Math.round((r && r.progress || 0) * 100) + '%'); });
+        const spec = AIChat.models()[AIChat.activeModelKey()];
+        p.textContent = spec ? spec.label + ' model ready' : 'Ready';
+        F.toast && F.toast('Chat model switched');
+        renderModels(body);
+      } catch (e) { p.textContent = 'Failed: ' + e.message; sw.disabled = false; }
+    });
+  }
+
+  function resetAutoRestore() { autoRestoreDone = false; }
+
+  async function autoRestoreModels(fromOpen) {
+    if (F.isPro && !F.isPro()) return;
+    if (autoRestoreDone && !fromOpen) return;
+
+    const needCat = AICat?.wantsAutoEnable?.() && !AICat.ready();
+    const needChat = AIChat?.wantsAutoEnable?.() && AIChat.webgpu?.() && !AIChat.ready();
+    if (!needCat && !needChat) {
+      if (!fromOpen) autoRestoreDone = true;
+      return;
+    }
+
+    try {
+      if (needCat) await AICat.enable();
+      if (needChat) await AIChat.enable();
+      autoRestoreDone = true;
+      if (overlay && overlay.classList.contains('open')) {
+        const body = $('#aiBody');
+        if (body && tab === 'models') renderModels(body);
+        else if (body && tab === 'chat') renderChat(body);
+      }
+    } catch (e) {
+      console.warn('[Finalyze AI] auto-restore failed:', e);
+      if (!fromOpen) autoRestoreDone = false;
+    }
   }
 
   function init() {
@@ -190,6 +332,6 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   }
 
-  F.AIUI = { open, close };
+  F.AIUI = { open, close, autoRestoreModels, resetAutoRestore };
   document.addEventListener('DOMContentLoaded', init);
 })(window);
