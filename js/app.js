@@ -536,9 +536,28 @@
   let summaryCardCount = 7;
   let summaryCardCols = 4;
   const SUMMARY_CARD_MIN_W = 190;
-  const SUMMARY_CARD_ROW_PX = 96;
+  const SUMMARY_CARD_ROW_PX = 112;
   const SUMMARY_WIDGET_HEAD_PX = 72;
-  const SUMMARY_WIDGET_PAD_PX = 36;
+  const SUMMARY_WIDGET_PAD_PX = 40;
+
+  function gridRowsForPx(px) {
+    return Math.max(3, Math.ceil((px + GRID_GAP) / (GRID_CELL_H + GRID_GAP)));
+  }
+
+  function measureOverviewContentPx() {
+    const widget = document.getElementById('widget-overview');
+    const cards = widget?.querySelector('#summaryCards');
+    if (!widget || !cards || !cards.children.length) return null;
+    const head = widget.querySelector('.widget-head');
+    const widgetStyle = getComputedStyle(widget);
+    const padY = parseFloat(widgetStyle.paddingTop) + parseFloat(widgetStyle.paddingBottom);
+    let headBlock = SUMMARY_WIDGET_HEAD_PX;
+    if (head) {
+      const headStyle = getComputedStyle(head);
+      headBlock = head.offsetHeight + (parseFloat(headStyle.marginBottom) || 0);
+    }
+    return headBlock + cards.offsetHeight + padY + 8;
+  }
 
   function maxSummaryCols() {
     if (document.body.classList.contains('is-mobile')) return 2;
@@ -575,12 +594,15 @@
   }
 
   function overviewHeightForSummary(count, cols) {
+    const measured = measureOverviewContentPx();
+    if (measured != null) return gridRowsForPx(measured);
     const n = count != null ? count : summaryCardCount;
     const c = cols || summaryCardCols || summaryColsForCount(n, maxSummaryCols());
     const rows = Math.ceil(n / c);
-    const bodyPx = rows * SUMMARY_CARD_ROW_PX + Math.max(0, rows - 1) * 14;
+    const gap = document.body.classList.contains('is-mobile') ? 10 : 14;
+    const bodyPx = rows * SUMMARY_CARD_ROW_PX + Math.max(0, rows - 1) * gap;
     const totalPx = SUMMARY_WIDGET_HEAD_PX + bodyPx + SUMMARY_WIDGET_PAD_PX;
-    return Math.max(3, Math.ceil((totalPx + GRID_GAP) / (GRID_CELL_H + GRID_GAP)));
+    return gridRowsForPx(totalPx);
   }
 
   function applySummaryLayout() {
@@ -592,23 +614,27 @@
 
   function adjustOverviewHeight() {
     if (!visibleOrder().includes('overview')) return;
-    const h = overviewHeightForSummary();
-    if (!gridStack || !gridReady) return;
-    const el = gridStack.el.querySelector('.grid-stack-item[gs-id="overview"]');
-    if (!el) return;
-    const curH = +el.getAttribute('gs-h');
-    if (curH === h) return;
-    gridNormalizing = true;
-    try {
-      gridStack.update(el, {
-        h, w: 12, x: 0, y: 0,
-        minW: 12, maxW: 12, minH: h, maxH: h,
-        noMove: true, noResize: true,
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!gridStack || !gridReady) return;
+        const h = overviewHeightForSummary();
+        const el = gridStack.el.querySelector('.grid-stack-item[gs-id="overview"]');
+        if (!el) return;
+        const curH = +el.getAttribute('gs-h');
+        if (curH === h) return;
+        gridNormalizing = true;
+        try {
+          gridStack.update(el, {
+            h, w: 12, x: 0, y: 0,
+            minW: 12, maxW: 12, minH: h, maxH: h,
+            noMove: true, noResize: true,
+          });
+        } finally {
+          gridNormalizing = false;
+        }
+        normalizeGridLayout(true);
       });
-    } finally {
-      gridNormalizing = false;
-    }
-    normalizeGridLayout(true);
+    });
   }
 
   function defaultWidgetW(id) { return id === 'overview' ? 12 : (WIDGET_SPAN[id] === 'full' ? 12 : 6); }
@@ -869,6 +895,7 @@
     requestAnimationFrame(() => {
       normalizeGridLayout(true);
       gridReady = true;
+      adjustOverviewHeight();
     });
   }
   function widgetExportButtons(w) {
