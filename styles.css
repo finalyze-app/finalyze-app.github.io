@@ -165,21 +165,26 @@ body.has-beta-banner .sidebar {
 
 /* ============ Main ============ */
 main { padding: 26px 30px 60px; width: 100%; min-width: 0; }
-.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.page-head { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
+.page-head-top { width: 100%; min-width: 0; }
 .page-head h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
 .page-head .sub { color: var(--muted); font-size: 13.5px; margin-top: 5px; }
 .mobile-brand { display: none; }
+.page-head .head-filters {
+  width: 100%;
+  padding-top: 4px;
+  border-top: 1px solid var(--line-2);
+}
 .head-filters {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  margin-left: auto;
-  flex: 1 1 280px;
-  max-width: 100%;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: none;
 }
-.head-filters .filters-toggle { flex: none; align-self: flex-end; }
-.head-actions { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; justify-content: flex-end; width: 100%; }
+.head-filters .filters-toggle { flex: none; align-self: flex-start; width: auto; }
+.head-actions { display: flex; gap: 10px 12px; align-items: center; flex-wrap: wrap; justify-content: flex-start; width: 100%; }
 .head-actions #datePreset { font-weight: 600; min-width: 148px; }
 .daterange { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .daterange .dr-label { font-size: 12px; font-weight: 600; color: var(--muted); }
@@ -206,7 +211,7 @@ input[type="date"]:focus { outline: none; border-color: var(--accent); box-shado
 .filters-toggle.collapsed { color: var(--muted); }
 .filters-toggle svg { transition: transform .15s; }
 .filters-toggle.collapsed svg { opacity: .7; }
-body.is-mobile .filters-toggle { width: 100%; justify-content: center; margin-top: 4px; }
+body.is-mobile .filters-toggle { width: auto; justify-content: flex-start; margin-top: 0; }
 
 /* ============ KPI cards ============ */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 26px; }
@@ -461,8 +466,8 @@ body.is-mobile thead th { padding: 8px 8px; letter-spacing: .01em; }
 body.is-mobile tbody td { padding: 8px 8px; white-space: normal; overflow-wrap: anywhere; }
 
 /* ===== Mobile: header filter bar stacks vertically ===== */
-body.is-mobile .head-filters { flex: 1 1 100%; align-items: stretch; margin-left: 0; }
-body.is-mobile .head-filters .filters-toggle { align-self: stretch; }
+body.is-mobile .head-filters { align-items: stretch; }
+body.is-mobile .head-filters .filters-toggle { align-self: flex-start; width: auto; }
 body.is-mobile .head-actions { flex-direction: column; align-items: stretch; gap: 10px; justify-content: flex-start; }
 body.is-mobile .head-actions > select,
 body.is-mobile .head-actions > .btn { width: 100%; min-width: 0; }
@@ -551,8 +556,9 @@ body.is-mobile.settings-mode .panel .phead .hint { white-space: normal; line-hei
 body.is-mobile.settings-mode .panel h2 { font-size: 15px; line-height: 1.35; }
 body.is-mobile.settings-mode .panel > .muted { font-size: 13px; line-height: 1.5; }
 
-body.is-mobile .page-head { flex-direction: column; gap: 12px; margin-bottom: 16px; }
-body.is-mobile .page-head > div:first-child {
+body.is-mobile .page-head { margin-bottom: 16px; }
+body.is-mobile .page-head > div:first-child,
+body.is-mobile .page-head-top {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
@@ -933,7 +939,8 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
   body.nav-open .sidebar { transform: translateX(0); }
   body.nav-open::after { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 55; }
   .menu-btn { display: inline-flex; position: relative; z-index: 1; flex-shrink: 0; }
-  .page-head > div:first-child {
+  .page-head > div:first-child,
+  .page-head-top {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
