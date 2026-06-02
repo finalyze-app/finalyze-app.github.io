@@ -424,8 +424,9 @@
   function reimbFieldHtml(meta, opts) {
     const mode = meta && meta.mode === 'amount' ? 'amount' : 'percent';
     const val = meta != null && meta.value != null ? meta.value : (mode === 'percent' ? 100 : '');
+    const merchantAttr = opts.merchantKey ? ` data-merchant="${encodeURIComponent(opts.merchantKey)}"` : '';
     const attrs = opts.scope === 'txn'
-      ? `data-reimb-scope="txn" data-tid="${encodeURIComponent(opts.tid)}"`
+      ? `data-reimb-scope="txn" data-tid="${encodeURIComponent(opts.tid)}"${merchantAttr}`
       : `data-reimb-scope="merchant" data-merchant="${encodeURIComponent(opts.merchantKey)}"`;
     return `<div class="reimb-field" ${attrs}>
       <div class="reimb-mode-toggle" role="group" aria-label="Reimbursable units">
@@ -452,7 +453,8 @@
         if (scope === 'txn') Store.setTxnReimburse(tid, meta);
         else Store.setMerchantReimburse(merchantKey, meta);
         render();
-        if (scope === 'merchant' && merchantKey && !$('#modal').hidden) openMerchantDrill(merchantKey);
+        const drillMerchant = merchantKey || (field.dataset.merchant ? decodeURIComponent(field.dataset.merchant) : null);
+        if (drillMerchant && !$('#modal').hidden) openMerchantDrill(drillMerchant);
       };
       field.querySelectorAll('.reimb-mode').forEach((b) => {
         b.onclick = (e) => {
@@ -471,17 +473,21 @@
     });
   }
 
-  function txnTagCellHtml(t) {
-    const has = (tag) => t.tags && t.tags.includes(tag);
+  function txnTagCellHtml(t, opts = {}) {
+    const txnTags = opts.txnOnly ? tagsOf(t.tid) : (t.tags || []);
+    const has = (tag) => txnTags.includes(tag);
     const reimbOn = has('reimbursable');
     const reimbMeta = reimbOn
-      ? (Store.getTxnReimburse()[t.tid] || Store.getMerchantReimburse()[t.merchantKey] || { mode: 'percent', value: 100 })
+      ? (Store.getTxnReimburse()[t.tid]
+        || (!opts.txnOnly && Store.getMerchantReimburse()[t.merchantKey])
+        || { mode: 'percent', value: 100 })
       : null;
+    const reimbOpts = { scope: 'txn', tid: t.tid, merchantKey: t.merchantKey };
     return `<div class="tag-cell-inner">
       <button class="tag-btn${has('business') ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="business" title="Business expense">Biz</button>
       <div class="tag-reimb-group">
         <button class="tag-btn${reimbOn ? ' on' : ''}" data-tid="${encodeURIComponent(t.tid)}" data-tag="reimbursable" title="Reimbursable">Reimb</button>
-        ${reimbOn ? reimbFieldHtml(reimbMeta, { scope: 'txn', tid: t.tid }) : ''}
+        ${reimbOn ? reimbFieldHtml(reimbMeta, reimbOpts) : ''}
       </div>
     </div>`;
   }
@@ -3433,7 +3439,7 @@
         </div></div>
       <div class="drill-manage">
         <div class="dm-row"><label>Category</label><select id="dmCat">${catOptions(curCat)}</select><span class="dm-hint muted">All transactions at this merchant</span></div>
-        <div class="dm-row"><label>Tags</label><div class="dm-toggles">
+        <div class="dm-row"><label>Merchant tags</label><div class="dm-toggles">
           <button class="tag-btn${mTags.includes('business') ? ' on' : ''}" data-mtag="business">Work / Business</button>
           <button class="tag-btn${mTags.includes('reimbursable') ? ' on' : ''}" data-mtag="reimbursable">Reimbursable</button>
           <button class="tag-btn${exclAnom ? ' on' : ''}" data-mexcl="1">Exclude from anomalies</button>
@@ -3454,8 +3460,8 @@
         ? `<h3>Category history</h3><div class="drill-cats">${detail.categories.map((c) => `${chip(c.category)} <span class="muted">${c.count}×</span>`).join(' ')}</div>`
         : ''}
       <h3>Transactions</h3>
-      <div class="table-wrap drill-table"><table><thead><tr><th>Date</th><th>Name</th><th>Category</th><th class="num">Amount</th></tr></thead><tbody>${
-        detail.txns.map((t) => `<tr><td>${t.date}</td><td>${maskMerch(t.name)}</td><td>${chip(t.category)}</td><td class="num ${t.isSpend ? 'amt-neg' : 'amt-pos'}">${fmt(t.amount)}</td></tr>`).join('')
+      <div class="table-wrap drill-table"><table><thead><tr><th>Date</th><th>Name</th><th>Category</th><th class="num">Amount</th><th class="tag-cell">Tags</th></tr></thead><tbody>${
+        detail.txns.map((t) => `<tr><td>${t.date}</td><td>${maskMerch(t.name)}</td><td>${chip(t.category)}</td><td class="num ${t.isSpend ? 'amt-neg' : 'amt-pos'}">${fmt(t.amount)}</td><td class="tag-cell">${txnTagCellHtml(t, { txnOnly: true })}</td></tr>`).join('')
       }</tbody></table></div>`);
     charts.merchantTrend(detail.monthly, body.querySelector('#drillTrend'));
     const drillDl = body.querySelector('#drillDownloadPng');
@@ -3480,6 +3486,16 @@
         Store.setMerchantReimburse(merchantKey, { mode: 'percent', value: 100 });
       }
       render(); openMerchantDrill(merchantKey);
+    });
+    body.querySelectorAll('.drill-table .tag-btn[data-tid]').forEach((btn) => btn.onclick = () => {
+      const tid = decodeURIComponent(btn.dataset.tid), tag = btn.dataset.tag;
+      const turningOn = !btn.classList.contains('on');
+      Store.setTxnTag(tid, tag, turningOn);
+      if (turningOn && tag === 'reimbursable' && !Store.getTxnReimburse()[tid]) {
+        Store.setTxnReimburse(tid, { mode: 'percent', value: 100 });
+      }
+      render();
+      openMerchantDrill(merchantKey);
     });
     bindReimbFields(body);
     const exBtn = body.querySelector('[data-mexcl]');
