@@ -1045,8 +1045,9 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
 
 /* ============ Accounts (Feature 8) ============ */
 .acct-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-.acct-row { display: flex; justify-content: space-between; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--surface-2); }
-.acct-label { font-weight: 600; }
+.acct-list .acct-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--surface-2); font-size: inherit; border-bottom: 1px solid var(--line-2); }
+.acct-list .acct-label { font-weight: 600; flex: 1; min-width: 0; }
+.acct-list .acct-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .acct-add { display: flex; gap: 8px; }
 .acct-add input { flex: 1; font: inherit; font-size: 13px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
 .excl-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); white-space: nowrap; }

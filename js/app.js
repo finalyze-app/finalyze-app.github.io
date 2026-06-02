@@ -2401,7 +2401,13 @@
     const canAdd = isPro();
     container.innerHTML =
       `<div class="acct-list">` + accounts.map((a) =>
-        `<div class="acct-row"><span class="acct-label">${esc(a.label)}</span><span class="mi-meta">${counts[a.id] || 0} txns</span></div>`).join('') + `</div>` +
+        `<div class="acct-row">
+          <span class="acct-label">${esc(a.label)}</span>
+          <span class="acct-meta">
+            <span class="mi-meta">${counts[a.id] || 0} txns</span>
+            <button class="icon-btn acct-rename" data-id="${encodeURIComponent(a.id)}" title="Rename account">${svg(PENCIL)}</button>
+          </span>
+        </div>`).join('') + `</div>` +
       (canAdd
         ? `<div class="acct-add">
         <input type="text" id="newAcctName" placeholder="New account label, e.g. Personal Visa">
@@ -2410,6 +2416,18 @@
         : `<p class="muted" style="margin-top:10px">Free plan includes one account. <button type="button" class="linkish" id="acctProUpgrade">Upgrade to Pro</button> for unlimited accounts and cardmember breakdown.</p>`);
     const upg = container.querySelector('#acctProUpgrade');
     if (upg) upg.onclick = openUpgradeModal;
+    $$('.acct-rename', container).forEach((btn) => btn.onclick = () => {
+      const id = decodeURIComponent(btn.dataset.id);
+      const acc = accounts.find((a) => a.id === id);
+      if (!acc) return;
+      const next = prompt(`Rename “${acc.label}” to:`, acc.label);
+      if (next == null) return;
+      if (Store.renameAccount(id, next.trim())) {
+        renderAccountManager();
+        syncAccountFilter();
+        toast('Account renamed');
+      } else toast('Could not rename — name is empty or already in use');
+    });
     const addBtn = $('#addAcctBtn');
     if (addBtn) addBtn.onclick = () => {
       const label = $('#newAcctName').value.trim();

@@ -726,6 +726,18 @@
       return id;
     },
 
+    renameAccount(id, label) {
+      label = (label || '').trim();
+      if (!label) return false;
+      const accs = this.getAccounts();
+      const acc = accs.find((a) => a.id === id);
+      if (!acc) return false;
+      if (accs.some((a) => a.id !== id && a.label.toLowerCase() === label.toLowerCase())) return false;
+      acc.label = label;
+      persist();
+      return true;
+    },
+
     getLayout() { return cache.layout; },
     setLayout(layout) { cache.layout = layout; persist(); },
 
