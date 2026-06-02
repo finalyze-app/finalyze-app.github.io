@@ -15,7 +15,7 @@
 
   // Tour steps. `sel` is the element to spotlight (null = centered card).
   const STEPS = [
-    { sel: null, title: 'Welcome to Finalyze', body: 'This is a live demo loaded with dummy March–May 2026 transactions. Take a 60-second tour of what the app does - then load your own data.' },
+    { sel: null, title: 'Welcome to Finalyze', body: 'This is a live demo loaded with dummy April–June 2026 transactions. Take a 60-second tour of what the app does - then load your own data.' },
     { sel: '#widget-overview', title: 'Your money at a glance', body: 'KPI cards summarise total spend, refunds, payments, net, and averages for the selected period.' },
     { sel: '#widget-category', title: 'Where it goes', body: 'Spending is auto-categorised from the merchant name. Tap a slice to filter the whole dashboard to that category.' },
     { sel: '#widget-merchants', title: 'Top merchants', body: 'See who you pay most. Tap a bar to open a merchant drill-down with its history, average ticket, and category.' },

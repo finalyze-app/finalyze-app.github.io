@@ -389,14 +389,14 @@
     return key;
   }
 
-  function suggestMerchantMerges(merchantStats, merges, dismissals) {
+  function suggestNameMerges(stats, merges, dismissals) {
     merges = merges || {};
     dismissals = dismissals || {};
-    const stats = merchantStats.filter((m) => m.count >= 2);
+    const items = stats.filter((m) => m.count >= 2);
     const suggestions = [];
-    for (let i = 0; i < stats.length; i++) {
-      for (let j = i + 1; j < stats.length; j++) {
-        const a = stats[i], b = stats[j];
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i], b = items[j];
         if (a.key === b.key) continue;
         if (canonicalOf(a.key, merges) === canonicalOf(b.key, merges)) continue;
         const pk = pairKey(a.key, b.key);
@@ -415,6 +415,14 @@
       }
     }
     return suggestions.sort((x, y) => y.combined - x.combined || y.score - x.score).slice(0, 12);
+  }
+
+  function suggestMerchantMerges(merchantStats, merges, dismissals) {
+    return suggestNameMerges(merchantStats, merges, dismissals);
+  }
+
+  function suggestCardmemberMerges(cardmemberStats, merges, dismissals) {
+    return suggestNameMerges(cardmemberStats, merges, dismissals);
   }
 
   // ---- Heatmap calendar ----
@@ -496,6 +504,6 @@
     compileSubRules, matchesSubRule, topMerchantsOverTime, topCategoriesOverTime,
     byDayOfWeek, byWeekOfMonth,
     monthSpan, yearsPresent, comparePeriods, yearInReview, merchantDetail,
-    suggestMerchantMerges, dailySpendMap, heatmapMonths, byCategoryGroup, pairKey,
+    suggestMerchantMerges, suggestCardmemberMerges, dailySpendMap, heatmapMonths, byCategoryGroup, pairKey,
   };
 })(window);

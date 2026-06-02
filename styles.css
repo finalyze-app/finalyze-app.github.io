@@ -407,9 +407,12 @@ code { background: var(--accent-soft); color: var(--accent); padding: 1px 7px; b
 #widgets #compareOut h3,
 #widgets #yearReviewOut h3 { font-size: 13px; margin: 8px 0 4px; }
 #widgets #yearReviewOut .cards { flex: 0 0 auto; margin-bottom: 8px; }
-#widget-mom .widget-body > .canvas-wrap { flex: 1.4 1 0; }
-#widget-mom .widget-body > .table-wrap { flex: 0.85 1 0; }
-#widget-mom .widget-body > h3 { font-size: 13px; margin: 6px 0 4px; }
+#widget-mom .widget-body > .canvas-wrap,
+#analysis .analysis-content > .canvas-wrap.tall { flex: 1.4 1 0; min-height: 320px; }
+#widget-mom .widget-body > .table-wrap,
+#analysis .analysis-content > .table-wrap { flex: 0.85 1 0; }
+#widget-mom .widget-body > h3,
+#analysis .analysis-content > h3 { font-size: 13px; margin: 6px 0 4px; }
 #widgets #heatmapGrid .heatmap-grid { height: 100%; width: 100%; }
 #widgets .hm-cell { min-height: 0; }
 #widget-heatmap .widget-body { align-items: stretch; min-height: 0; }
@@ -1205,6 +1208,111 @@ body.modal-open { overflow: hidden; }
 .nav-section-label svg { width: 14px; height: 14px; }
 #nav a.nav-danger { color: #ff8a8a; }
 .settings-mode .sidebar { box-shadow: inset -3px 0 0 var(--accent); }
+.analysis-mode .sidebar { box-shadow: inset -3px 0 0 var(--accent); }
+
+#analysis { width: 100%; min-width: 0; }
+.analysis-page { max-width: 980px; margin: 0 auto; }
+.analysis-page .phead { margin-bottom: 16px; }
+.analysis-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.analysis-content { display: flex; flex-direction: column; gap: 14px; }
+.analysis-content .cmp-ranges { display: flex; flex-wrap: wrap; gap: 12px 18px; margin-bottom: 4px; }
+.analysis-content .yr-head { margin-bottom: 4px; }
+
+/* Full-page analysis (MoM, budget vs actual) */
+body.analysis-mom-page .analysis-page-mom,
+body.analysis-budget-page .analysis-page-budget {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px 20px;
+  box-sizing: border-box;
+}
+body.analysis-mom-page .analysis-page-mom .phead,
+body.analysis-budget-page .analysis-page-budget .phead {
+  margin-bottom: 10px;
+  justify-content: flex-end;
+}
+body.analysis-mom-page .analysis-page-mom .phead > div:first-child,
+body.analysis-budget-page .analysis-page-budget .phead > div:first-child {
+  display: none;
+}
+body.analysis-mom-page .analysis-page-mom .analysis-content,
+body.analysis-budget-page .analysis-page-budget .analysis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+body.analysis-mom-page .analysis-page-mom .canvas-wrap.tall,
+body.analysis-budget-page .analysis-page-budget .canvas-wrap.tall {
+  width: 100%;
+  min-height: 160px;
+  height: auto;
+  flex: none;
+}
+body.analysis-mom-page .analysis-page-mom .mom-details,
+body.analysis-budget-page .analysis-page-budget .budget-actual-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: none;
+}
+body.analysis-mom-page .analysis-page-mom .mom-details .table-wrap,
+body.analysis-budget-page .analysis-page-budget .budget-actual-details .table-wrap {
+  width: 100%;
+  flex: none;
+}
+body.analysis-mom-page .analysis-page-mom .mom-details > h3 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.3;
+}
+body.analysis-mom-page .analysis-page-mom table,
+body.analysis-budget-page .analysis-page-budget table {
+  font-size: 12.5px;
+}
+body.analysis-mom-page .analysis-page-mom thead th,
+body.analysis-budget-page .analysis-page-budget thead th {
+  padding: 8px 11px;
+  font-size: 10.5px;
+}
+body.analysis-mom-page .analysis-page-mom tbody td,
+body.analysis-budget-page .analysis-page-budget tbody td {
+  padding: 7px 11px;
+}
+body.analysis-mom-page .analysis-page-mom .chip,
+body.analysis-budget-page .analysis-page-budget .chip {
+  font-size: 11.5px;
+  padding: 3px 8px;
+}
+.ba-head-row { display: flex; align-items: center; gap: 10px; flex: none; flex-wrap: wrap; }
+.ba-head-row label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.ba-head-row select {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.ba-head-row input[type="date"] {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  color-scheme: light;
+}
+[data-theme="dark"] .ba-head-row input[type="date"] { color-scheme: dark; }
+.ba-head-row .dr-sep { color: var(--muted); font-size: 12px; }
 
 /* tabbed settings - centered grid, short panels pair up, wide ones span both */
 .settings-mode #prefs {

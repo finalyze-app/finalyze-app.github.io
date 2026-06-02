@@ -17,6 +17,7 @@
       mergeSuggestionsDismissed: {}, categoryGroups: [],
       accounts: [{ id: 'default', label: 'Default' }], layout: null, csvImportPrefs: null,
       categoryApplyMode: 'ask', // 'ask' | 'one' | 'all'
+      cardmemberMerges: {}, cardmemberMergeSuggestionsDismissed: {},
     };
   }
 
@@ -96,6 +97,8 @@
     if (!data.txnReimburse) { data.txnReimburse = {}; changed = true; }
     if (!data.merchantReimburse) { data.merchantReimburse = {}; changed = true; }
     if (!CATEGORY_APPLY_MODES.has(data.categoryApplyMode)) { data.categoryApplyMode = 'ask'; changed = true; }
+    if (!data.cardmemberMerges) { data.cardmemberMerges = {}; changed = true; }
+    if (!data.cardmemberMergeSuggestionsDismissed) { data.cardmemberMergeSuggestionsDismissed = {}; changed = true; }
     return changed;
   }
 
@@ -453,6 +456,35 @@
     dismissMergeSuggestion(a, b) {
       const pk = [a, b].sort().join('||');
       this.getDismissedMergeSuggestions()[pk] = true;
+      persist();
+    },
+
+    getCardmemberMerges() { return cache.cardmemberMerges || (cache.cardmemberMerges = {}); },
+
+    mergeCardmembers(aliases, canonical) {
+      canonical = (canonical || '').trim();
+      if (!canonical || !aliases || !aliases.length) return false;
+      const m = this.getCardmemberMerges();
+      const targets = new Set(aliases.concat(canonical));
+      for (const k in m) if (targets.has(m[k])) m[k] = canonical;
+      aliases.forEach((a) => { if (a !== canonical) m[a] = canonical; });
+      if (m[canonical] === canonical) delete m[canonical];
+      persist();
+      return true;
+    },
+
+    removeCardmemberMerge(alias) {
+      const m = this.getCardmemberMerges();
+      if (m[alias]) { delete m[alias]; persist(); }
+    },
+
+    getDismissedCardmemberMergeSuggestions() {
+      return cache.cardmemberMergeSuggestionsDismissed || (cache.cardmemberMergeSuggestionsDismissed = {});
+    },
+
+    dismissCardmemberMergeSuggestion(a, b) {
+      const pk = [a, b].sort().join('||');
+      this.getDismissedCardmemberMergeSuggestions()[pk] = true;
       persist();
     },
 

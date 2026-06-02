@@ -11,6 +11,7 @@
   let activeCategory = null;          // cross-filter from the category chart
   let activeCardmember = null;        // cross-filter from the cardmember chart
   let dateFrom = '', dateTo = '';      // manual date-range filter (YYYY-MM-DD)
+  let dateRangeInit = false;           // seed default period once per session
   let amountMin = '', amountMax = '';  // absolute amount range filter
   let flowFilter = 'all';              // 'all' | 'spend' | 'payment' | 'refund'
   let txnQuery = '', txnCatFilter = '', txnPage = 0;
@@ -20,6 +21,7 @@
   let txnPageSize = TXN_PAGE_FALLBACK;
   let txnResizeObs = null;
   let mergeSort = 'alpha';             // 'alpha' | 'spend$' | 'spend#'
+  let cmMergeSort = 'alpha';           // cardmember merge list sort
   let excludeTagged = false;           // subtract business + reimbursable portions from spend totals/charts
   let activeAccount = 'all';           // 'all' | account id
   let cmpA = { from: '', to: '' }, cmpB = { from: '', to: '' }; // comparison ranges
@@ -30,7 +32,11 @@
   let hmMonth = '';                    // YYYY-MM for heatmap widget
   let trendMode = 'time';              // 'time' | 'merchants' | 'categories'
   let trendTopN = 5;                   // top-N when trendMode is merchants or categories
-  let viewName = 'dashboard';          // 'dashboard' | 'prefs'
+  let viewName = 'dashboard';          // 'dashboard' | 'prefs' | 'analysis-*'
+  let momPeriod = '12';                // '3' | '6' | '12' | 'all'
+  let budgetActualPreset = 'this-month';
+  let budgetActualCustom = { from: '', to: '' };
+  let budgetActualCustomInit = false;
   let filtersHidden = false;           // collapse the header filter bar
   let userLicense = localStorage.getItem('finalyze.license') || 'free'; // cached so Pro survives offline
   const STRIPE_MONTHLY = 'https://buy.stripe.com/7sY4gyaww7Yl7RI0NI3Nm00';
@@ -68,6 +74,7 @@
     uncategorized: '<circle cx="12" cy="12" r="10"/><path d="M9.5 9a3 3 0 0 1 5 0c0 2-3 2-3 4"/><path d="M12 17h.01"/>',
     compare: '<path d="M12 3v18"/><path d="M3 7h6l-3-3M3 7l3 3"/><path d="M21 17h-6l3 3M21 17l-3-3"/>',
     yearReview: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    budgetActual: '<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/>',
     heatmap: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><rect x="5" y="6" width="3" height="3" rx=".5"/><rect x="10" y="6" width="3" height="3" rx=".5"/><rect x="15" y="6" width="3" height="3" rx=".5"/><rect x="5" y="11" width="3" height="3" rx=".5"/><rect x="10" y="11" width="3" height="3" rx=".5"/>',
   };
   const GRIP = '<path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/>';
@@ -221,8 +228,15 @@
     }
   }
 
-  function datePresetRange(preset) {
-    const now = new Date();
+  function ensureDefaultDateRange() {
+    if (dateRangeInit) return;
+    if (dateFrom || dateTo) { dateRangeInit = true; return; }
+    [dateFrom, dateTo] = datePresetRange('this-month');
+    dateRangeInit = true;
+  }
+
+  function datePresetRange(preset, refDate) {
+    const now = refDate || new Date();
     const y = now.getFullYear();
     const m = now.getMonth();
     const q = Math.floor(m / 3);
@@ -506,6 +520,14 @@
     </div>`;
   }
 
+  function resolveCardmember(name) {
+    const merges = Store.getCardmemberMerges();
+    let k = name || 'Unknown';
+    const seen = new Set();
+    while (merges[k] && !seen.has(k)) { seen.add(k); k = merges[k]; }
+    return k;
+  }
+
   function enriched() {
     const overrides = Store.getOverrides();
     const catOv = Store.getTxnCategoryOverrides();
@@ -520,7 +542,9 @@
       const mTags = Store.getMerchantTags()[row.merchantKey] || [];
       row.tags = [...new Set([...tagsOf(row.tid), ...mTags])];
       const cmOv = Store.getCardmemberOverrides()[row.tid];
-      if (cmOv) row.cardmember = cmOv;
+      let cm = t.cardmember || 'Unknown';
+      if (cmOv) cm = cmOv;
+      row.cardmember = resolveCardmember(cm);
       // Flow drives every total: a category typed 'payment'/'refund' forces the txn
       // into that bucket regardless of sign; otherwise a credit is a refund and a
       // debit is spend.
@@ -562,14 +586,6 @@
       export: { canvasId: 'chartCardmember', filename: 'by-cardmember.png' },
       body: `<div class="canvas-wrap"><canvas id="chartCardmember"></canvas></div>`,
       render: () => charts.cardmemberBar(analyze.byCardmember(cardScopeTxns), activeCardmember) },
-    { id: 'mom', nav: 'Month over month', eyebrow: 'Comparison', title: 'Month over month',
-      hint: 'Builds up as you import more statements',
-      export: { canvasId: 'chartMoM', filename: 'month-over-month.png' },
-      body: `<div class="canvas-wrap tall"><canvas id="chartMoM"></canvas></div>
-        <div class="table-wrap"><table id="momTable"></table></div>
-        <h3>Biggest category movers (vs previous month)</h3>
-        <div class="table-wrap"><table id="moversTable"></table></div>`,
-      render: () => renderMoM(viewTxns) },
     { id: 'recurring', nav: 'Recurring', eyebrow: 'Subscriptions', title: 'Recurring charges',
       hint: 'Same merchant & exact amount', body: `<div class="table-wrap"><table id="recurringTable"></table></div>`, render: renderRecurring },
     { id: 'anomalies', nav: 'Anomalies', eyebrow: 'Flags', title: 'Anomalies',
@@ -588,18 +604,6 @@
       render: renderHeatmap },
     { id: 'uncategorized', nav: 'Uncategorized', eyebrow: 'Review', title: 'Review uncategorized',
       hint: 'Assign a category to clear the backlog', body: `<div class="table-wrap"><table id="uncatTable"></table></div>`, render: renderUncategorized },
-    { id: 'compare', nav: 'Compare', eyebrow: 'Periods', title: 'Compare periods',
-      hint: 'Pick two date ranges',
-      body: `<div class="cmp-ranges">
-          <div class="cmp-range"><span class="dr-label">Period A</span><input type="date" id="cmpAFrom"><span class="dr-sep">→</span><input type="date" id="cmpATo"></div>
-          <div class="cmp-range"><span class="dr-label">Period B</span><input type="date" id="cmpBFrom"><span class="dr-sep">→</span><input type="date" id="cmpBTo"></div>
-        </div>
-        <div id="compareOut"></div>`,
-      render: renderCompare },
-    { id: 'yearReview', nav: 'Year in review', eyebrow: 'Annual', title: 'Year in review',
-      hint: 'Needs a full year of data',
-      body: `<div class="yr-head"><select id="yrSelect"></select></div><div id="yearReviewOut"></div>`,
-      render: renderYearReview },
     { id: 'transactions', nav: 'Transactions', eyebrow: 'Ledger', title: 'Transactions',
       hint: 'Category changes follow your default in Settings → Categories',
       body: `<div class="controls">
@@ -630,6 +634,46 @@
       render: renderTransactions },
   ];
   const WIDGET_MAP = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
+  const ANALYSIS_PAGES = [
+    { id: 'mom', nav: 'Month over month', eyebrow: 'Comparison', title: 'Month over month',
+      hint: 'All months in the selected account (ignores dashboard date filter)',
+      export: { canvasId: 'chartMoM', filename: 'month-over-month.png' },
+      body: `<div class="ba-head-row"><label for="momPeriod">Period</label><select id="momPeriod"></select></div>
+        <div class="canvas-wrap tall"><canvas id="chartMoM"></canvas></div>
+        <div class="mom-details">
+          <div class="table-wrap"><table id="momTable"></table></div>
+          <h3>Biggest category movers (vs previous month)</h3>
+          <div class="table-wrap"><table id="moversTable"></table></div>
+        </div>`,
+      render: renderMoM },
+    { id: 'budgetActual', nav: 'Budget vs actual', eyebrow: 'Budgets', title: 'Budget vs actual',
+      hint: 'Monthly limits scaled to the selected calendar period',
+      export: { canvasId: 'chartBudgetActual', filename: 'budget-vs-actual.png' },
+      body: `<div class="ba-head-row"><label for="budgetActualPeriod">Period</label><select id="budgetActualPeriod"></select></div>
+        <div class="ba-head-row ba-custom-range" id="budgetActualCustomRange" hidden>
+          <label for="budgetActualFrom">From</label><input type="date" id="budgetActualFrom">
+          <span class="dr-sep">→</span>
+          <label for="budgetActualTo">To</label><input type="date" id="budgetActualTo">
+        </div>
+        <div class="canvas-wrap tall"><canvas id="chartBudgetActual"></canvas></div>
+        <div class="budget-actual-details">
+          <div class="table-wrap"><table id="budgetActualTable"></table></div>
+        </div>`,
+      render: renderBudgetActual },
+    { id: 'compare', nav: 'Compare', eyebrow: 'Periods', title: 'Compare periods',
+      hint: 'Pick two date ranges',
+      body: `<div class="cmp-ranges">
+          <div class="cmp-range"><span class="dr-label">Period A</span><input type="date" id="cmpAFrom"><span class="dr-sep">→</span><input type="date" id="cmpATo"></div>
+          <div class="cmp-range"><span class="dr-label">Period B</span><input type="date" id="cmpBFrom"><span class="dr-sep">→</span><input type="date" id="cmpBTo"></div>
+        </div>
+        <div id="compareOut"></div>`,
+      render: renderCompare },
+    { id: 'yearReview', nav: 'Year in review', eyebrow: 'Annual', title: 'Year in review',
+      hint: 'Needs a full year of data',
+      body: `<div class="yr-head"><select id="yrSelect"></select></div><div id="yearReviewOut"></div>`,
+      render: renderYearReview },
+  ];
+  const ANALYSIS_MAP = Object.fromEntries(ANALYSIS_PAGES.map((p) => [p.id, p]));
   const DEFAULT_ORDER = WIDGETS.map((w) => w.id);
   const WIDGET_SPAN = {
     overview: 'full',
@@ -640,11 +684,8 @@
     patterns: 'half',
     heatmap: 'half',
     anomalies: 'half',
-    mom: 'full',
     recurring: 'full',
     uncategorized: 'full',
-    compare: 'full',
-    yearReview: 'full',
     transactions: 'full',
   };
   const GRID_COLS = 12;
@@ -1070,8 +1111,14 @@
     if (changed) saveLayout({ order, hidden: [...set], grid: getLayout().grid });
   }
   // Some widgets are only meaningful with enough data (e.g. year-in-review needs ≥12 months).
-  function widgetAvailable(id) {
+  function isAnalysisView(v) { return typeof v === 'string' && v.startsWith('analysis-'); }
+  function analysisPageId(v) { return v.slice('analysis-'.length); }
+  function analysisPageAvailable(id) {
     if (id === 'yearReview') return analyze.monthSpan(allTxns) >= 12;
+    if (id === 'budgetActual') return Object.keys(Store.getBudgets()).length > 0;
+    return !!ANALYSIS_MAP[id];
+  }
+  function widgetAvailable(id) {
     if (isProWidget(id) && !isPro()) return false;
     return true;
   }
@@ -1232,6 +1279,7 @@
       if (gate) gate.hidden = false;
       $('#empty').hidden = true;
       $('#dashboard').hidden = true;
+      $('#analysis').hidden = true;
       $('#prefs').hidden = true;
       $('#filtersToggle').hidden = true;
       $('#headFilters').hidden = true;
@@ -1275,28 +1323,59 @@
     }
 
     const hasData = allTxns.length > 0;
+    if (hasData && viewName !== 'prefs') ensureDefaultDateRange();
+    const isAnalysis = isAnalysisView(viewName);
     $('#empty').hidden = hasData || viewName === 'prefs';
-    $('#dashboard').hidden = !hasData || viewName === 'prefs';
+    $('#dashboard').hidden = !hasData || viewName === 'prefs' || isAnalysis;
+    $('#analysis').hidden = !hasData || !isAnalysis;
     $('#prefs').hidden = viewName !== 'prefs';
 
     const showHead = hasData && viewName !== 'prefs';
+    const showFilters = showHead && viewName === 'dashboard';
     const headFilters = $('#headFilters');
     const ftBtn = $('#filtersToggle');
-    if (headFilters) headFilters.hidden = !showHead;
+    if (headFilters) headFilters.hidden = !showFilters;
     if (ftBtn) {
       ftBtn.classList.toggle('collapsed', filtersHidden);
       ftBtn.setAttribute('aria-expanded', String(!filtersHidden));
     }
     $('#filtersToggleLabel').textContent = filtersHidden ? 'Show filters' : 'Filters';
-    $('#dateControls').hidden = !showHead || filtersHidden;
+    $('#dateControls').hidden = !showFilters || filtersHidden;
 
     document.body.classList.toggle('settings-mode', viewName === 'prefs');
+    document.body.classList.toggle('analysis-mode', isAnalysis);
+    document.body.classList.toggle('analysis-mom-page', viewName === 'analysis-mom');
+    document.body.classList.toggle('analysis-budget-page', viewName === 'analysis-budgetActual');
     const h1 = document.querySelector('.page-head h1');
-    if (h1) h1.textContent = viewName === 'prefs' ? 'Settings' : 'Spending overview';
+    if (h1) {
+      if (viewName === 'prefs') h1.textContent = 'Settings';
+      else if (isAnalysis) h1.textContent = (ANALYSIS_MAP[analysisPageId(viewName)] || {}).title || 'Analysis';
+      else h1.textContent = 'Spending overview';
+    }
     if (viewName === 'prefs') {
       renderPrefs();
       buildSettingsNav();
       showSettingsTab();
+      return;
+    }
+    if (isAnalysis) {
+      const pageId = analysisPageId(viewName);
+      if (!analysisPageAvailable(pageId)) {
+        viewName = 'dashboard';
+        render();
+        return;
+      }
+      populateDatePresetSelect();
+      enforceFreeDatePresets();
+      syncDateInputs();
+      syncFilterInputs();
+      syncAccountFilter();
+      recomputeViewData();
+      buildAnalysisNav();
+      renderAnalysisPage(pageId);
+      const page = ANALYSIS_MAP[pageId];
+      const sub = $('#rangeSub');
+      if (sub && page) sub.textContent = page.hint || '';
       return;
     }
     if (!hasData) { $('#rangeSub').textContent = 'Import a bank statement to begin.'; $('#nav').innerHTML = ''; return; }
@@ -1336,6 +1415,11 @@
     const rangeNote = filterBits.length ? ` · filtered ${filterBits.join(' · ')}` : '';
     const sub = $('#rangeSub');
     if (sub) sub.textContent = `${s.count} transactions · ${s.dateFrom || '-'} → ${s.dateTo || '-'} · ${Store.currency()}${rangeNote}`;
+  }
+
+  function momScopeTxns() {
+    const base = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
+    return txnsForAnalysis(base);
   }
 
   function refreshDashboardWidgets() {
@@ -1414,20 +1498,74 @@
     const nav = $('#nav');
     if (!hasData) { nav.innerHTML = ''; return; }
     const ids = visibleOrder();
-    nav.innerHTML = ids.map((id) =>
+    let html = ids.map((id) =>
       `<a href="#widget-${id}" data-widget="${id}">${svg(NAV_ICON[id] || '')} ${WIDGET_MAP[id].nav}</a>`).join('');
-    $$('#nav a').forEach((a) => a.addEventListener('click', (e) => {
+    const analysisIds = ANALYSIS_PAGES.filter((p) => analysisPageAvailable(p.id)).map((p) => p.id);
+    if (analysisIds.length) {
+      html += `<div class="nav-section-label">Analysis</div>` +
+        analysisIds.map((id) =>
+          `<a href="#" data-analysis="${id}">${svg(NAV_ICON[id] || '')} ${ANALYSIS_MAP[id].nav}</a>`).join('');
+    }
+    nav.innerHTML = html;
+    $$('#nav a[data-widget]').forEach((a) => a.addEventListener('click', (e) => {
       e.preventDefault();
       const goto = () => { const el = document.getElementById('widget-' + a.dataset.widget); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
       if (viewName !== 'dashboard') { viewName = 'dashboard'; render(); requestAnimationFrame(goto); }
       else goto();
       document.body.classList.remove('nav-open');
     }));
+    $$('#nav a[data-analysis]').forEach((a) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      viewName = 'analysis-' + a.dataset.analysis;
+      render();
+      document.body.classList.remove('nav-open');
+    }));
+  }
+
+  function buildAnalysisNav() {
+    const nav = $('#nav');
+    const cur = analysisPageId(viewName);
+    nav.innerHTML =
+      `<button class="nav-back" id="navBack">${svg(BACK)} Back to dashboard</button>` +
+      `<div class="nav-section-label">Analysis</div>` +
+      ANALYSIS_PAGES.filter((p) => analysisPageAvailable(p.id)).map((p) =>
+        `<a href="#" data-analysis="${p.id}"${p.id === cur ? ' class="active"' : ''}>${p.nav}</a>`).join('');
+    $('#navBack').onclick = () => { viewName = 'dashboard'; render(); };
+    $$('#nav a[data-analysis]').forEach((a) => a.onclick = (e) => {
+      e.preventDefault();
+      viewName = 'analysis-' + a.dataset.analysis;
+      render();
+      document.body.classList.remove('nav-open');
+    });
+  }
+
+  function renderAnalysisPage(id) {
+    const page = ANALYSIS_MAP[id];
+    const host = $('#analysisBody');
+    if (!host || !page) return;
+    host.innerHTML =
+      `<div class="analysis-page panel${id === 'mom' ? ' analysis-page-mom' : ''}${id === 'budgetActual' ? ' analysis-page-budget' : ''}">
+        <div class="phead">
+          <div><div class="eyebrow">${page.eyebrow}</div><h2>${page.title}</h2></div>
+          <div class="analysis-tools">${page.hint ? `<span class="hint">${page.hint}</span>` : ''}${widgetExportButtons(page)}</div>
+        </div>
+        <div class="analysis-content">${page.body}</div>
+      </div>`;
+    bindWidgetDownloads(host);
+    page.render();
+    if ((id === 'mom' || id === 'budgetActual') && window.Chart) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const inst = Chart.getChart(id === 'mom' ? 'chartMoM' : 'chartBudgetActual');
+        if (inst) inst.resize();
+      }));
+    }
+    const main = document.querySelector('main');
+    if (main && main.scrollTo) main.scrollTo({ top: 0 });
   }
 
   // Settings is organised into tabs; each tab shows a subset of the prefs panels.
   const SETTINGS_TABS = [
-    { id: 'categories', label: 'Categories', panels: ['set-category-apply', 'set-categories', 'set-cards', 'set-groups', 'set-merchants'] },
+    { id: 'categories', label: 'Categories', panels: ['set-category-apply', 'set-categories', 'set-cards', 'set-groups', 'set-merchants', 'set-cardmembers'] },
     { id: 'rules', label: 'Rules', panels: ['set-rules', 'set-sub-rules', 'set-merge-rules'] },
     { id: 'budgets', label: 'Budgets', panels: ['set-budgets'] },
     { id: 'accounts', label: 'Accounts & data', panels: ['set-accounts', 'set-tours', 'set-danger'] },
@@ -1482,12 +1620,12 @@
       return `<div class="grid-stack-item${pinned ? ' overview-pinned' : ''}" gs-id="${id}" gs-x="${g.x}" gs-y="${g.y}" gs-w="${g.w}" gs-h="${g.h}" gs-min-w="${gridMinW(id)}" gs-min-h="${gridMinH(id)}" gs-max-w="${gridMaxW(id)}" gs-max-h="${gridMaxH(id)}"${lockAttrs}>
         <div class="grid-stack-item-content">
           <section class="panel widget${pinned ? ' widget-pinned' : ''}" id="widget-${id}" data-widget="${id}">
-            <div class="widget-head">
+        <div class="widget-head">
               ${drag}
-              <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}</h2></div>
+          <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}</h2></div>
               <div class="widget-tools">${w.hint ? `<span class="hint">${w.hint}</span>` : ''}${widgetExportButtons(w)}<button class="icon-btn widget-hide" title="Hide widget">${svg(EYE_OFF)}</button></div>
-            </div>
-            <div class="widget-body">${w.body}</div>
+        </div>
+        <div class="widget-body">${w.body}</div>
           </section>
         </div>
       </div>`;
@@ -1584,24 +1722,249 @@
   }
 
   function overBudgetCategories() {
-    const budgets = Store.getBudgets();
     const ym = budgetMonthYm();
+    return allBudgetRows(ym).filter((a) => a.pct >= 80);
+  }
+
+  function budgetReferenceDate() {
+    if (F.Demo && F.Demo.active && F.Demo.active() && allTxns.length) {
+      const max = allTxns.reduce((mx, t) => (t.date > mx ? t.date : mx), allTxns[0].date);
+      const p = max.split('-').map(Number);
+      return new Date(p[0], p[1] - 1, p[2]);
+    }
+    return new Date();
+  }
+
+  const BUDGET_ACTUAL_PRESETS = [
+    { v: 'this-month', l: 'This month' },
+    { v: 'this-quarter', l: 'This quarter' },
+    { v: 'this-year', l: 'This year' },
+    { v: 'last-month', l: 'Last month' },
+    { v: 'last-quarter', l: 'Last quarter' },
+    { v: 'last-year', l: 'Last year' },
+    { v: 'all', l: 'All time' },
+    { v: 'custom', l: 'Custom range' },
+  ];
+
+  function monthsInDateRange(from, to) {
+    if (!from && !to) return [];
+    const startYm = (from || to).slice(0, 7);
+    const endYm = (to || from).slice(0, 7);
+    const out = [];
+    let [y, m] = startYm.split('-').map(Number);
+    const [ey, em] = endYm.split('-').map(Number);
+    while (y < ey || (y === ey && m <= em)) {
+      out.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+    return out;
+  }
+
+  function budgetActualRange(preset) {
+    if (preset === 'custom') {
+      let from = budgetActualCustom.from;
+      let to = budgetActualCustom.to;
+      if (from && to && from > to) { const t = from; from = to; to = t; }
+      return [from, to];
+    }
+    const ref = budgetReferenceDate();
+    if (preset === 'all') {
+      const base = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
+      const yms = [...new Set(base.filter((t) => t.isSpend && t.date).map((t) => t.date.slice(0, 7)))].sort();
+      if (!yms.length) return datePresetRange('this-month', ref);
+      const [ly, lm] = yms[yms.length - 1].split('-').map(Number);
+      return [yms[0] + '-01', fmtYMD(new Date(ly, lm, 0))];
+    }
+    return datePresetRange(preset, ref) || ['', ''];
+  }
+
+  function budgetActualRangeLabel(from, to, preset) {
+    if (preset === 'custom') return 'Custom range';
+    if (preset && PRESET_LABEL[preset]) return PRESET_LABEL[preset];
+    if (!from && !to) return 'All time';
+    return `${from || '…'} → ${to || '…'}`;
+  }
+
+  function allBudgetRowsForRange(from, to) {
+    const budgets = Store.getBudgets();
+    const base = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
+    const txns = filterTxns(base, { dateFrom: from, dateTo: to });
+    const monthCount = Math.max(1, monthsInDateRange(from, to).length);
+    const byCat = {};
+    txns.forEach((t) => {
+      if (t.isSpend) byCat[t.category] = (byCat[t.category] || 0) + t.spend;
+    });
+    const groups = getCategoryGroups();
+    const inGroup = new Set();
+    const byGroup = {};
+    groups.forEach((g) => {
+      g.categories.forEach((c) => inGroup.add(c));
+      byGroup[g.name] = g.categories.reduce((a, c) => a + (byCat[c] || 0), 0);
+    });
+    const rows = [];
+    getCategoryGroups().forEach((g) => {
+      if (budgets[g.name] == null) return;
+      const spent = byGroup[g.name] || 0;
+      const budget = budgets[g.name] * monthCount;
+      rows.push({
+        cat: g.name, spent, budget,
+        pct: budget ? (spent / budget) * 100 : 0,
+        remaining: budget - spent,
+        isGroup: true,
+        monthCount,
+      });
+    });
+    Object.keys(budgets).forEach((c) => {
+      if (inGroup.has(c)) return;
+      if (getCategoryGroups().some((g) => g.name === c)) return;
+      const spent = byCat[c] || 0;
+      const budget = budgets[c] * monthCount;
+      rows.push({
+        cat: c, spent, budget,
+        pct: budget ? (spent / budget) * 100 : 0,
+        remaining: budget - spent,
+        isGroup: false,
+        monthCount,
+      });
+    });
+    return rows.sort((a, b) => b.pct - a.pct);
+  }
+
+  function allBudgetRows(ym) {
+    const budgets = Store.getBudgets();
     const { byCat, byGroup, inGroup } = monthGroupSpend(ym);
-    const alerts = [];
+    const rows = [];
     getCategoryGroups().forEach((g) => {
       if (budgets[g.name] == null) return;
       const spent = byGroup[g.name] || 0;
       const budget = budgets[g.name];
-      alerts.push({ cat: g.name, spent, budget, pct: budget ? (spent / budget) * 100 : 0, isGroup: true });
+      rows.push({
+        cat: g.name, spent, budget,
+        pct: budget ? (spent / budget) * 100 : 0,
+        remaining: budget - spent,
+        isGroup: true,
+      });
     });
     Object.keys(budgets).forEach((c) => {
       if (inGroup.has(c)) return;
       if (getCategoryGroups().some((g) => g.name === c)) return;
       const spent = byCat[c] || 0;
       const budget = budgets[c];
-      alerts.push({ cat: c, spent, budget, pct: budget ? (spent / budget) * 100 : 0, isGroup: false });
+      rows.push({
+        cat: c, spent, budget,
+        pct: budget ? (spent / budget) * 100 : 0,
+        remaining: budget - spent,
+        isGroup: false,
+      });
     });
-    return alerts.filter((a) => a.pct >= 80).sort((a, b) => b.pct - a.pct);
+    return rows.sort((a, b) => b.pct - a.pct);
+  }
+
+  function analysisPeriodOptions(monthCount) {
+    const opts = [];
+    if (monthCount >= 3) opts.push({ v: '3', l: 'Last 3 months' });
+    if (monthCount >= 6) opts.push({ v: '6', l: 'Last 6 months' });
+    if (monthCount >= 12) opts.push({ v: '12', l: 'Last 12 months' });
+    opts.push({ v: 'all', l: monthCount ? `All months (${monthCount})` : 'All months' });
+    return opts;
+  }
+
+  function defaultAnalysisPeriod(monthCount) {
+    if (monthCount <= 12) return 'all';
+    return '12';
+  }
+
+  function sliceByAnalysisPeriod(sortedItems, preset) {
+    if (preset === 'all') return sortedItems;
+    const n = parseInt(preset, 10);
+    return Number.isFinite(n) ? sortedItems.slice(-n) : sortedItems;
+  }
+
+  function budgetActualChartHeight(rowCount) {
+    const n = Math.max(1, rowCount || 1);
+    return Math.min(120 + n * 26, 480);
+  }
+
+  function renderBudgetActual() {
+    const validPresets = new Set(BUDGET_ACTUAL_PRESETS.map((p) => p.v));
+    if (!validPresets.has(budgetActualPreset)) budgetActualPreset = 'this-month';
+
+    if (!budgetActualCustomInit) {
+      const [from, to] = datePresetRange('this-month', budgetReferenceDate());
+      budgetActualCustom = { from: from || '', to: to || '' };
+      budgetActualCustomInit = true;
+    }
+
+    const periodSel = $('#budgetActualPeriod');
+    if (periodSel) {
+      periodSel.innerHTML = BUDGET_ACTUAL_PRESETS.map((p) =>
+        `<option value="${p.v}"${p.v === budgetActualPreset ? ' selected' : ''}>${p.l}</option>`).join('');
+      periodSel.onchange = () => { budgetActualPreset = periodSel.value; renderBudgetActual(); };
+    }
+
+    const customRow = $('#budgetActualCustomRange');
+    const isCustom = budgetActualPreset === 'custom';
+    if (customRow) customRow.hidden = !isCustom;
+
+    if (isCustom) {
+      const fromIn = $('#budgetActualFrom');
+      const toIn = $('#budgetActualTo');
+      if (fromIn && toIn) {
+        fromIn.value = budgetActualCustom.from;
+        toIn.value = budgetActualCustom.to;
+        fromIn.onchange = (e) => { budgetActualCustom.from = e.target.value; renderBudgetActual(); };
+        toIn.onchange = (e) => { budgetActualCustom.to = e.target.value; renderBudgetActual(); };
+      }
+    }
+
+    const [from, to] = budgetActualRange(budgetActualPreset);
+    if (budgetActualPreset === 'custom' && (!from || !to)) {
+      $('#budgetActualTable').innerHTML =
+        '<tbody><tr><td class="muted-cell" colspan="6">Pick a from and to date.</td></tr></tbody>';
+      const hint = document.querySelector('.analysis-page-budget .analysis-tools .hint');
+      if (hint) hint.textContent = 'Custom range · pick dates';
+      return;
+    }
+    const rows = allBudgetRowsForRange(from, to);
+    const rangeLabel = budgetActualRangeLabel(from, to, budgetActualPreset);
+    const monthCount = rows[0]?.monthCount || monthsInDateRange(from, to).length || 1;
+    const chartWrap = document.querySelector('.analysis-page-budget .canvas-wrap');
+    if (chartWrap) chartWrap.style.height = budgetActualChartHeight(rows.length) + 'px';
+    charts.budgetActual(rows);
+    const budgetHead = monthCount > 1 ? `<th class="num">Budget <span class="muted-cell">(${monthCount} mo)</span></th>` : '<th class="num">Budget</th>';
+    $('#budgetActualTable').innerHTML = rows.length
+      ? `<thead><tr><th>Category</th>${budgetHead}<th class="num">Actual</th><th class="num">Remaining</th><th class="num">% used</th><th>Status</th></tr></thead><tbody>` +
+        rows.map((r) => {
+          const over = r.pct >= 100;
+          const near = r.pct >= 80 && !over;
+          const status = over ? '<span class="tag warn">Over</span>'
+            : near ? '<span class="tag info">Near</span>'
+            : '<span class="tag marked">OK</span>';
+          const remClass = r.remaining < 0 ? 'amt-neg' : r.remaining > 0 ? 'amt-pos' : '';
+          return `<tr><td>${chip(r.cat)}${r.isGroup ? ' <small class="muted">(group)</small>' : ''}</td>` +
+            `<td class="num">${fmt(r.budget)}</td><td class="num">${fmt(r.spent)}</td>` +
+            `<td class="num ${remClass}">${fmt(r.remaining)}</td>` +
+            `<td class="num${over ? ' amt-neg' : ''}">${r.pct.toFixed(0)}%</td><td>${status}</td></tr>`;
+        }).join('') + '</tbody>'
+      : '<tbody><tr><td class="muted-cell" colspan="6">No budgets set. Add limits in Settings → Budgets.</td></tr></tbody>';
+
+    const hint = document.querySelector('.analysis-page-budget .analysis-tools .hint');
+    if (hint) {
+      const over = rows.filter((r) => r.pct >= 100).length;
+      const near = rows.filter((r) => r.pct >= 80 && r.pct < 100).length;
+      let extra = '';
+      if (over) extra += ` · ${over} over`;
+      if (near) extra += ` · ${near} near limit`;
+      const span = from && to && from !== to ? `${from} → ${to}` : (from || to || '');
+      hint.textContent = `${rangeLabel}${span ? ` · ${span}` : ''} · ${rows.length} budget${rows.length === 1 ? '' : 's'}${extra}`;
+    }
+    if (window.Chart) {
+      requestAnimationFrame(() => {
+        const inst = Chart.getChart('chartBudgetActual');
+        if (inst) inst.resize();
+      });
+    }
   }
   function buildBudgetAlertsHtml() {
     const alerts = overBudgetCategories();
@@ -1646,8 +2009,27 @@
     charts.categoryPie(data, activeCategory);
   }
 
-  function renderMoM(txns) {
-    const mom = analyze.monthOverMonth(txns);
+  function momChartHeight(monthCount) {
+    const n = Math.max(1, monthCount || 1);
+    return Math.min(160 + n * 16, 420);
+  }
+
+  function renderMoM() {
+    const fullMom = analyze.monthOverMonth(momScopeTxns());
+    const opts = analysisPeriodOptions(fullMom.length);
+    const valid = new Set(opts.map((o) => o.v));
+    if (!valid.has(momPeriod)) momPeriod = defaultAnalysisPeriod(fullMom.length);
+
+    const sel = $('#momPeriod');
+    if (sel) {
+      sel.innerHTML = opts.map((o) =>
+        `<option value="${o.v}"${o.v === momPeriod ? ' selected' : ''}>${o.l}</option>`).join('');
+      sel.onchange = () => { momPeriod = sel.value; renderMoM(); };
+    }
+
+    const mom = sliceByAnalysisPeriod(fullMom, momPeriod);
+    const chartWrap = document.querySelector('.analysis-page-mom .canvas-wrap');
+    if (chartWrap) chartWrap.style.height = momChartHeight(mom.length) + 'px';
     charts.momBar(mom);
     $('#momTable').innerHTML =
       `<thead><tr><th>Month</th><th class="num">Spend</th><th class="num">Refunds</th><th class="num">Payments</th><th class="num">Net</th><th class="num">Δ Spend</th><th class="num">% Δ</th></tr></thead><tbody>` +
@@ -1664,7 +2046,19 @@
           `<tr><td>${chip(m.category)}</td><td class="num">${fmt(m.previous)}</td><td class="num">${fmt(m.current)}</td>` +
           `<td class="num ${m.delta > 0 ? 'amt-neg' : 'amt-pos'}">${fmt(m.delta)}</td></tr>`
         ).join('') + '</tbody>'
-      : '<tbody><tr><td class="muted-cell">Need at least two months of data.</td></tr></tbody>';
+      : '<tbody><tr><td class="muted-cell" colspan="4">Need at least two months in the selected period.</td></tr></tbody>';
+
+    const hint = document.querySelector('.analysis-page-mom .analysis-tools .hint');
+    if (hint) {
+      const label = opts.find((o) => o.v === momPeriod)?.l || `${mom.length} months`;
+      hint.textContent = `${label} · movers vs latest month in period`;
+    }
+    if (window.Chart) {
+      requestAnimationFrame(() => {
+        const inst = Chart.getChart('chartMoM');
+        if (inst) inst.resize();
+      });
+    }
   }
 
   function renderRecurring() {
@@ -2253,7 +2647,7 @@
   function renderPrefs() {
     renderCategoryApplyPref();
     renderCatManager(); renderRuleManager(); renderSubRuleManager(); renderMergeRuleManager(); renderCardManager(); renderGroupManager(); renderBudgetManager();
-    renderAccountManager(); renderMergeManager(); renderWidgetManager(); renderAccountSize();
+    renderAccountManager(); renderMergeManager(); renderCardmemberMergeManager(); renderWidgetManager(); renderAccountSize();
     renderDangerZoneDemoCopy();
   }
 
@@ -2512,7 +2906,7 @@
         const cat = decodeURIComponent(inp.dataset.cat);
         Store.setBudget(cat, inp.value);
         toast(inp.value ? `Budget set for ${cat}` : `Budget cleared for ${cat}`);
-        if (viewName === 'dashboard') render();
+        render();
       };
       inp.onchange = save;
       inp.onblur = save;
@@ -2726,6 +3120,105 @@
     });
   }
 
+  function renderCardmemberMergeManager() {
+    const container = $('#cmMergeManager');
+    if (!container) return;
+    const map = {};
+    allTxns.forEach((t) => {
+      const k = t.cardmember || 'Unknown';
+      const m = (map[k] = map[k] || { key: k, spend: 0, count: 0 });
+      m.spend += (t.spend || Math.abs(t.amount)); m.count += 1;
+    });
+    const list = Object.values(map);
+    list.sort((a, b) => {
+      if (cmMergeSort === 'spend$') return b.spend - a.spend || a.key.localeCompare(b.key);
+      if (cmMergeSort === 'spend#') return b.count - a.count || a.key.localeCompare(b.key);
+      return a.key.localeCompare(b.key);
+    });
+
+    const merges = Store.getCardmemberMerges();
+    const byCanonical = {};
+    Object.keys(merges).forEach((alias) => { (byCanonical[merges[alias]] = byCanonical[merges[alias]] || []).push(alias); });
+    const canonicals = Object.keys(byCanonical).sort();
+    const suggestions = analyze.suggestCardmemberMerges(list, merges, Store.getDismissedCardmemberMergeSuggestions());
+
+    container.innerHTML =
+      (suggestions.length
+        ? `<div class="merge-suggestions"><h3>Suggested merges</h3><p class="muted" style="margin:0 0 10px">Likely duplicate cardholders - merge to roll up spend, or dismiss to hide.</p>` +
+          suggestions.map((s) =>
+            `<div class="merge-suggest-row">
+              <span class="ms-names"><strong>${esc(s.a)}</strong> + <strong>${esc(s.b)}</strong></span>
+              <span class="mi-meta">${fmt(s.combined)} combined</span>
+              <div class="merge-suggest-actions">
+                <button class="btn sm merge-sugg-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Merge</button>
+                <button class="btn sm ghost merge-dismiss-btn" data-a="${encodeURIComponent(s.a)}" data-b="${encodeURIComponent(s.b)}">Dismiss</button>
+              </div>
+            </div>`).join('') + `</div>`
+        : '') +
+      `<div class="field merge-search">${svg(SEARCH)}<input type="search" id="cmMergeSearch" placeholder="Filter cardmembers…"></div>
+      <div class="merge-toolbar">
+        <label class="merge-all"><input type="checkbox" id="cmMergeAll"> Select all</label>
+        <label class="merge-sort">Sort
+          <select id="cmMergeSort">
+            <option value="alpha"${cmMergeSort === 'alpha' ? ' selected' : ''}>Alpha A-Z</option>
+            <option value="spend$"${cmMergeSort === 'spend$' ? ' selected' : ''}>Spend by $</option>
+            <option value="spend#"${cmMergeSort === 'spend#' ? ' selected' : ''}>Spend by #</option>
+          </select>
+        </label>
+      </div>
+      <div class="merge-list">${list.map((m) =>
+        `<label class="merge-item" data-name="${esc(m.key.toLowerCase())}">
+          <input type="checkbox" class="merge-check" value="${encodeURIComponent(m.key)}">
+          <span class="mi-name">${esc(m.key)}</span><span class="mi-meta">${m.count}× · ${fmt(m.spend)}</span>
+        </label>`).join('')}</div>
+      <div class="merge-apply">
+        <input type="text" id="cmMergeName" placeholder="Merge into… (defaults to first ticked)">
+        <button class="btn primary" id="cmMergeBtn">Merge selected</button>
+      </div>` +
+      (canonicals.length
+        ? `<h3>Remembered merges</h3>` + canonicals.map((c) =>
+            `<div class="merge-saved"><span class="ms-canon">${esc(c)}<button class="icon-btn ms-rename" data-canon="${encodeURIComponent(c)}" title="Rename merged cardmember">${svg(PENCIL)}</button></span><span class="ms-aliases">${
+              byCanonical[c].map((a) => `<span class="ms-alias">${esc(a)}<button class="ms-x" data-alias="${encodeURIComponent(a)}" title="Remove">×</button></span>`).join('')
+            }</span></div>`).join('')
+        : '');
+
+    const visibleChecks = () => $$('.merge-item', container).filter((it) => !it.hidden).map((it) => it.querySelector('.merge-check'));
+    $('#cmMergeSearch').oninput = () => {
+      const q = $('#cmMergeSearch').value.toLowerCase();
+      $$('.merge-item', container).forEach((it) => { it.hidden = !!q && !it.dataset.name.includes(q); });
+      $('#cmMergeAll').checked = false;
+    };
+    $('#cmMergeAll').onchange = () => { const on = $('#cmMergeAll').checked; visibleChecks().forEach((c) => { c.checked = on; }); };
+    $('#cmMergeSort').onchange = () => { cmMergeSort = $('#cmMergeSort').value; renderCardmemberMergeManager(); };
+    $$('.merge-sugg-btn', container).forEach((btn) => btn.onclick = () => {
+      const a = decodeURIComponent(btn.dataset.a), b = decodeURIComponent(btn.dataset.b);
+      const mapByKey = Object.fromEntries(list.map((m) => [m.key, m]));
+      const canonical = (mapByKey[a]?.spend || 0) >= (mapByKey[b]?.spend || 0) ? a : b;
+      Store.mergeCardmembers([a, b], canonical);
+      render(); toast(`Merged into “${canonical}”`);
+    });
+    $$('.merge-dismiss-btn', container).forEach((btn) => btn.onclick = () => {
+      Store.dismissCardmemberMergeSuggestion(decodeURIComponent(btn.dataset.a), decodeURIComponent(btn.dataset.b));
+      renderCardmemberMergeManager(); toast('Suggestion dismissed');
+    });
+    $$('.ms-rename', container).forEach((btn) => btn.onclick = () => {
+      const old = decodeURIComponent(btn.dataset.canon);
+      const next = prompt(`Rename merged cardmember “${old}” to:`, old);
+      if (next == null || !next.trim() || next.trim() === old) return;
+      Store.mergeCardmembers([old], next.trim()); render(); toast('Merged cardmember renamed');
+    });
+    $('#cmMergeBtn').onclick = () => {
+      const aliases = $$('.merge-check', container).filter((c) => c.checked).map((c) => decodeURIComponent(c.value));
+      if (aliases.length < 2) { toast('Tick at least two cardmembers to merge'); return; }
+      const canonical = ($('#cmMergeName').value.trim()) || aliases[0];
+      Store.mergeCardmembers(aliases, canonical);
+      render(); toast(`Merged ${aliases.length} cardmembers into “${canonical}”`);
+    };
+    $$('.ms-x', container).forEach((btn) => btn.onclick = () => {
+      Store.removeCardmemberMerge(decodeURIComponent(btn.dataset.alias)); render(); toast('Merge removed');
+    });
+  }
+
   function typeSelect(cls, cat, current) {
     return `<select class="${cls}" ${cat != null ? `data-cat="${encodeURIComponent(cat)}"` : ''}>
       <option value="spend"${current === 'spend' ? ' selected' : ''}>Spending</option>
@@ -2742,7 +3235,7 @@
         <span class="cat-name">${chip(c)}</span>
         ${typeSelect('cat-type', c, categoryType(c))}
         <span class="cat-actions">
-          <button class="icon-btn cat-rename" data-cat="${encodeURIComponent(c)}" title="Rename category">${svg(PENCIL)}</button>
+        <button class="icon-btn cat-rename" data-cat="${encodeURIComponent(c)}" title="Rename category">${svg(PENCIL)}</button>
           ${custom.has(c) ? `<button class="icon-btn cat-remove" data-cat="${encodeURIComponent(c)}" title="Remove category">${svg(TRASH)}</button>` : ''}
         </span>
       </div>`).join('');
@@ -2924,7 +3417,7 @@
   let spy = null;
   function initScrollSpy() {
     if (spy) spy.disconnect();
-    const links = $$('#nav a');
+    const links = $$('#nav a[data-widget]');
     spy = new IntersectionObserver((entries) => {
       entries.forEach((en) => {
         if (en.isIntersecting) links.forEach((l) => l.classList.toggle('active', l.getAttribute('href') === '#' + en.target.id));
@@ -3019,8 +3512,8 @@
     if (pdfFiles.length && pdfFiles.length === files.length) { openPdfReview(files); return; }
     const csvFiles = files.filter((f) => /\.csv$/i.test(f.name));
     if (!csvFiles.length) { openImportModal(files, null); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
+      const reader = new FileReader();
+      reader.onload = () => {
       try { openImportModal(files, reader.result); }
       catch (e) { toast('Could not read CSV: ' + e.message); openImportModal(files, null); }
     };
@@ -3617,11 +4110,12 @@
       const range = datePresetRange(e.target.value);
       if (!range) return;
       [dateFrom, dateTo] = range;
+      dateRangeInit = true;
       render();
     });
     $('#dateFrom').addEventListener('change', (e) => { dateFrom = e.target.value; render(); });
     $('#dateTo').addEventListener('change', (e) => { dateTo = e.target.value; render(); });
-    $('#dateClear').addEventListener('click', () => { dateFrom = ''; dateTo = ''; render(); });
+    $('#dateClear').addEventListener('click', () => { dateFrom = ''; dateTo = ''; dateRangeInit = true; render(); });
     $('#amountMin').addEventListener('change', (e) => { amountMin = e.target.value; render(); });
     $('#amountMax').addEventListener('change', (e) => { amountMax = e.target.value; render(); });
     $('#flowFilter').addEventListener('change', (e) => { flowFilter = e.target.value; render(); });
@@ -3674,7 +4168,7 @@
             await Store.setUserScope(uid);
             activeCategory = null; activeCardmember = null;
             dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
-            cmpInit = false; yrSelected = '';
+            dateRangeInit = false; cmpInit = false; yrSelected = '';
             render();
           } catch (e) { /* keep prior view on error */ }
         }
@@ -3698,7 +4192,7 @@
         if (!confirm('Clear demo transactions only? Demo settings stay; your own saved data is not affected.')) return;
         activeCategory = null; activeCardmember = null;
         dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
-        excludeTagged = false; cmpInit = false; yrSelected = '';
+        dateRangeInit = false; excludeTagged = false; cmpInit = false; yrSelected = '';
         viewName = 'dashboard';
         await F.Demo.clearDemoTransactions();
         render();
@@ -3707,7 +4201,7 @@
       if (confirm('Clear all imported transactions? Your settings (categories, rules, budgets, custom cards, accounts, layout) are kept. This cannot be undone.')) {
         Store.clearTransactions(); activeCategory = null; activeCardmember = null;
         dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
-        excludeTagged = false; cmpInit = false; yrSelected = '';
+        dateRangeInit = false; excludeTagged = false; cmpInit = false; yrSelected = '';
         viewName = 'dashboard';
         render(); toast('Transactions cleared - settings kept');
       }
@@ -3781,6 +4275,7 @@
       { before: goTab('categories'), sel: '#set-cards', title: 'Custom cards', body: 'Build KPI cards from criteria (e.g. Health + “cpap”). They appear in the overview, totalled for the selected period.' },
       { before: goTab('categories'), sel: '#set-groups', title: 'Category groups', body: 'Roll up categories (e.g. Dining + Groceries → Food) for charts and budgets.' },
       { before: goTab('categories'), sel: '#set-merchants', title: 'Merge merchants', body: 'Combine differently-named merchants into one - remembered for future imports.' },
+      { before: goTab('categories'), sel: '#set-cardmembers', title: 'Merge cardmembers', body: 'Combine duplicate cardholder names so household spend rolls up correctly.' },
       { before: goTab('rules'), sel: '#set-rules', title: 'Auto-categorization rules', body: 'Match merchant text with a keyword or regex and assign a category - applied before the built-in rules.' },
       { before: goTab('rules'), sel: '#set-sub-rules', title: 'Subscription rules', body: 'Flag a merchant as recurring by keyword, even when the charge amount changes each cycle.' },
       { before: goTab('rules'), sel: '#set-merge-rules', title: 'Auto-merge rules', body: 'Automatically fold matching merchant names into one canonical name - applied to every import.' },

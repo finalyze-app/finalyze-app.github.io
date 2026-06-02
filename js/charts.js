@@ -283,6 +283,25 @@
     });
   }
 
+  function budgetActual(rows) {
+    last.budgetActual = rows;
+    const t = theme();
+    draw('chartBudgetActual', {
+      type: 'bar',
+      data: {
+        labels: rows.map((r) => r.cat),
+        datasets: [
+          { label: 'Actual', data: rows.map((r) => r.spent), backgroundColor: t.accent, borderRadius: 6, maxBarThickness: 28 },
+          { label: 'Budget', data: rows.map((r) => r.budget), backgroundColor: t.muted + '66', borderRadius: 6, maxBarThickness: 28 },
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        scales: { x: gridScale(true), y: gridScale() },
+      },
+    });
+  }
+
   // Re-apply defaults and redraw every chart with its last data (called on theme toggle).
   function spendingPatterns(dow, wom) {
     last.spendingPatterns = { dow, wom };
@@ -320,6 +339,7 @@
     if (last.merchantBar) merchantBar(last.merchantBar);
     if (last.cardmemberBar) cardmemberBar(last.cardmemberBar, last.cardmemberActive);
     if (last.momBar) momBar(last.momBar);
+    if (last.budgetActual) budgetActual(last.budgetActual);
     if (last.spendingPatterns) spendingPatterns(last.spendingPatterns.dow, last.spendingPatterns.wom);
   }
   // Toggle censor mode; re-applies defaults and redraws all charts.
@@ -330,7 +350,7 @@
   global.Finalyze = global.Finalyze || {};
   global.Finalyze.charts = {
     categoryPie, spendLine, trendMerchants, trendCategories, downloadPng,
-    merchantBar, cardmemberBar, momBar, spendingPatterns, merchantTrend,
+    merchantBar, cardmemberBar, momBar, budgetActual, spendingPatterns, merchantTrend,
     setTheme, setCensor, setCategoryClickHandler, setCardmemberClickHandler, setMerchantClickHandler, PALETTE,
   };
 })(window);
