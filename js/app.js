@@ -20,7 +20,7 @@
   let txnPageSize = TXN_PAGE_FALLBACK;
   let txnResizeObs = null;
   let mergeSort = 'alpha';             // 'alpha' | 'spend$' | 'spend#'
-  let excludeTagged = false;           // exclude business/reimbursable from spend
+  let excludeTagged = false;           // subtract business + reimbursable portions from spend totals/charts
   let activeAccount = 'all';           // 'all' | account id
   let cmpA = { from: '', to: '' }, cmpB = { from: '', to: '' }; // comparison ranges
   let cmpInit = false;                 // seed compare ranges once
@@ -404,9 +404,6 @@
     const tags = Store.getTxnTags()[tid];
     return tags ? tags.slice() : [];
   }
-  function excludeTaggedFn() {
-    return excludeTagged ? (t) => (t.tags && t.tags.length > 0) : null;
-  }
 
   function reimbMetaForTxn(t) {
     if (!t.tags || !t.tags.includes('reimbursable')) return null;
@@ -419,6 +416,23 @@
     const spend = t.spend;
     if (meta.mode === 'amount') return Math.min(meta.value, spend);
     return Math.min(spend, spend * meta.value / 100);
+  }
+
+  function excludedTaggedSpend(t) {
+    if (!t.isSpend || !t.tags || !t.tags.length) return 0;
+    if (t.tags.includes('business')) return t.spend;
+    return reimbursableAmount(t);
+  }
+
+  // When exclude tagged is on, keep all rows but reduce spend by tagged portions.
+  function txnsForAnalysis(txns) {
+    if (!excludeTagged) return txns;
+    return txns.map((t) => {
+      if (!t.isSpend) return t;
+      const deduct = excludedTaggedSpend(t);
+      if (!deduct) return t;
+      return { ...t, spend: Math.max(0, t.spend - deduct) };
+    });
   }
 
   function reimbFieldHtml(meta, opts) {
@@ -1306,7 +1320,7 @@
     if (activeCategory && !datedTxns.some((t) => txnMatchesSlice(t, activeCategory))) activeCategory = null;
     if (activeCardmember && !datedTxns.some((t) => t.cardmember === activeCardmember)) activeCardmember = null;
     if (!isPro() && activeCardmember) activeCardmember = null;
-    const anaBase = excludeTagged ? datedTxns.filter((t) => !(t.tags && t.tags.length)) : datedTxns;
+    const anaBase = txnsForAnalysis(datedTxns);
     const matchCross = (base) => base.filter((t) =>
       (!activeCategory || txnMatchesSlice(t, activeCategory)) && (!activeCardmember || t.cardmember === activeCardmember));
     catScopeTxns = activeCardmember ? anaBase.filter((t) => t.cardmember === activeCardmember) : anaBase;
