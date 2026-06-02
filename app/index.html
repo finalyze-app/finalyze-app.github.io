@@ -15,7 +15,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
   <link rel="stylesheet" href="vendor/gridstack.min.css" />
-  <link rel="stylesheet" href="styles.css?v=105" />
+  <link rel="stylesheet" href="styles.css?v=107" />
 </head>
 <body>
   <div id="betaBanner" class="beta-banner" hidden>
@@ -87,40 +87,55 @@
             <span id="filtersToggleLabel">Filters</span>
           </button>
           <div class="head-actions" id="dateControls">
-            <select id="datePreset" title="Quick date range" aria-label="Quick date range">
-              <option value="">Custom</option>
-              <option value="this-month">This Month</option>
-              <option value="last-month">Last Month</option>
-              <option value="this-quarter">This Quarter</option>
-              <option value="last-quarter">Last Quarter</option>
-              <option value="ytd">Year to Date</option>
-              <option value="last-year">Last Year</option>
-              <option value="all">All Time</option>
-            </select>
-            <div class="daterange">
-              <span class="dr-label">Date range</span>
-              <input type="date" id="dateFrom" title="From date" />
-              <span class="dr-sep">→</span>
-              <input type="date" id="dateTo" title="To date" />
-              <button class="btn" id="dateClear" title="Clear date filter">Clear</button>
+            <div class="filter-group filter-group-period">
+              <span class="filter-group-label">Period</span>
+              <div class="filter-group-body">
+                <select id="datePreset" title="Quick date range" aria-label="Quick date range">
+                  <option value="">Custom range</option>
+                </select>
+                <div class="daterange">
+                  <span class="dr-label">From</span>
+                  <input type="date" id="dateFrom" title="From date" />
+                  <span class="dr-sep">→</span>
+                  <input type="date" id="dateTo" title="To date" />
+                  <button class="btn sm" id="dateClear" title="Clear date filter">Clear dates</button>
+                </div>
+              </div>
             </div>
-            <div class="amountrange">
-              <span class="dr-label">Amount</span>
-              <input type="number" id="amountMin" placeholder="Min" min="0" step="0.01" title="Minimum amount" />
-              <span class="dr-sep">–</span>
-              <input type="number" id="amountMax" placeholder="Max" min="0" step="0.01" title="Maximum amount" />
+            <div class="filter-group filter-group-amount">
+              <span class="filter-group-label">Amount</span>
+              <div class="filter-group-body amountrange">
+                <input type="number" id="amountMin" placeholder="Min" min="0" step="0.01" title="Minimum amount" />
+                <span class="dr-sep">–</span>
+                <input type="number" id="amountMax" placeholder="Max" min="0" step="0.01" title="Maximum amount" />
+              </div>
             </div>
-            <select id="flowFilter" title="Transaction type" aria-label="Transaction type">
-              <option value="all">All types</option>
-              <option value="spend">Spend only</option>
-              <option value="payment">Payments only</option>
-              <option value="refund">Refunds only</option>
-            </select>
-            <select id="accountFilter" title="Account" aria-label="Account" hidden></select>
-            <label class="excl-toggle" id="exclTagWrap" title="Exclude business/reimbursable tagged transactions from spend">
-              <input type="checkbox" id="exclTags" /> Exclude tagged
-            </label>
-            <button class="btn" id="txnFilterClear" title="Clear amount and type filters">Clear filters</button>
+            <div class="filter-group filter-group-type">
+              <span class="filter-group-label">Type</span>
+              <div class="filter-group-body">
+                <select id="flowFilter" title="Transaction type" aria-label="Transaction type">
+                  <option value="all">All types</option>
+                  <option value="spend">Spend only</option>
+                  <option value="payment">Payments only</option>
+                  <option value="refund">Refunds only</option>
+                </select>
+                <select id="accountFilter" title="Account" aria-label="Account" hidden></select>
+              </div>
+            </div>
+            <div class="filter-group filter-group-tags">
+              <span class="filter-group-label">Tags</span>
+              <div class="filter-group-body">
+                <label class="excl-toggle" id="exclTagWrap" title="Exclude business/reimbursable tagged transactions from spend">
+                  <input type="checkbox" id="exclTags" /> Exclude tagged
+                </label>
+              </div>
+            </div>
+            <div class="filter-group filter-group-actions">
+              <span class="filter-group-label" aria-hidden="true">&nbsp;</span>
+              <div class="filter-group-body">
+                <button class="btn sm" id="txnFilterClear" title="Clear amount and type filters">Clear filters</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -321,7 +336,7 @@
   <script src="js/store.js?v=46"></script>
   <script src="js/analyze.js?v=52"></script>
   <script src="js/charts.js?v=53"></script>
-  <script src="js/app.js?v=98"></script>
+  <script src="js/app.js?v=100"></script>
   <script src="js/account.js?v=57"></script>
   <script src="js/ai.js?v=24"></script>
   <script src="js/chat.js?v=25"></script>

@@ -127,27 +127,148 @@
     }
     return now;
   }
+  function monthBounds(year, month) {
+    return [fmtYMD(new Date(year, month, 1)), fmtYMD(new Date(year, month + 1, 0))];
+  }
+  function shiftMonth(year, month, delta) {
+    const d = new Date(year, month + delta, 1);
+    return [d.getFullYear(), d.getMonth()];
+  }
+  function quarterBounds(year, qIndex) {
+    return [fmtYMD(new Date(year, qIndex * 3, 1)), fmtYMD(new Date(year, qIndex * 3 + 3, 0))];
+  }
+  function shiftQuarter(year, qIndex, delta) {
+    let q = qIndex + delta;
+    let y = year;
+    while (q < 0) { q += 4; y--; }
+    while (q > 3) { q -= 4; y++; }
+    return [y, q];
+  }
+  function rollingDays(n) {
+    const end = fmtYMD(new Date());
+    const start = new Date();
+    start.setDate(start.getDate() - (n - 1));
+    return [fmtYMD(start), end];
+  }
+
+  const DATE_PRESET_GROUPS = [
+    { label: 'Month', presets: [
+      { id: 'this-month', label: 'This month' },
+      { id: 'last-month', label: 'Last month' },
+      { id: 'month-before-last', label: 'Month before last' },
+      { id: 'same-month-last-year', label: 'Same month last year' },
+    ]},
+    { label: 'Quarter', presets: [
+      { id: 'this-quarter', label: 'This quarter' },
+      { id: 'last-quarter', label: 'Last quarter' },
+      { id: 'quarter-before-last', label: 'Quarter before last' },
+      { id: 'same-quarter-last-year', label: 'Same quarter last year' },
+    ]},
+    { label: 'Year', presets: [
+      { id: 'this-year', label: 'This year' },
+      { id: 'last-year', label: 'Last year' },
+      { id: 'year-before-last', label: 'Year before last' },
+    ]},
+    { label: 'Rolling', presets: [
+      { id: 'last-7-days', label: 'Last 7 days' },
+      { id: 'last-30-days', label: 'Last 30 days' },
+      { id: 'last-90-days', label: 'Last 90 days' },
+      { id: 'last-12-months', label: 'Last 12 months' },
+    ]},
+    { label: 'All data', presets: [
+      { id: 'all', label: 'All time' },
+    ]},
+  ];
+  const PRESET_LABEL = Object.fromEntries(
+    DATE_PRESET_GROUPS.flatMap((g) => g.presets.map((p) => [p.id, p.label]))
+  );
+  PRESET_LABEL.ytd = 'This year';
+
+  function allPresetIds() {
+    return DATE_PRESET_GROUPS.flatMap((g) => g.presets.map((p) => p.id));
+  }
+
+  const FREE_DATE_PRESETS = ['this-month', 'last-month', 'all'];
+
+  function allowedPresetIds() {
+    return isFreeGated() ? FREE_DATE_PRESETS : allPresetIds();
+  }
+
+  function populateDatePresetSelect() {
+    const sel = $('#datePreset');
+    if (!sel) return;
+    if (isFreeGated()) {
+      const allowed = new Set(FREE_DATE_PRESETS);
+      const presets = DATE_PRESET_GROUPS.flatMap((g) => g.presets).filter((p) => allowed.has(p.id));
+      sel.innerHTML = '<option value="">Custom range</option>' +
+        presets.map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join('');
+      return;
+    }
+    sel.innerHTML = '<option value="">Custom range</option>' +
+      DATE_PRESET_GROUPS.map((g) =>
+        `<optgroup label="${esc(g.label)}">` +
+        g.presets.map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join('') +
+        '</optgroup>'
+      ).join('');
+  }
+
+  function enforceFreeDatePresets() {
+    if (!isFreeGated()) return;
+    const allowed = new Set(FREE_DATE_PRESETS);
+    const preset = detectDatePreset(dateFrom, dateTo);
+    if (preset && !allowed.has(preset)) {
+      [dateFrom, dateTo] = datePresetRange('this-month');
+    }
+  }
+
   function datePresetRange(preset) {
     const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const q = Math.floor(m / 3);
     switch (preset) {
       case 'this-month':
-        return [fmtYMD(new Date(now.getFullYear(), now.getMonth(), 1)), fmtYMD(new Date(now.getFullYear(), now.getMonth() + 1, 0))];
-      case 'last-month':
-        return [fmtYMD(new Date(now.getFullYear(), now.getMonth() - 1, 1)), fmtYMD(new Date(now.getFullYear(), now.getMonth(), 0))];
-      case 'this-quarter': {
-        const q = Math.floor(now.getMonth() / 3);
-        return [fmtYMD(new Date(now.getFullYear(), q * 3, 1)), fmtYMD(new Date(now.getFullYear(), q * 3 + 3, 0))];
+        return monthBounds(y, m);
+      case 'last-month': {
+        const [ly, lm] = shiftMonth(y, m, -1);
+        return monthBounds(ly, lm);
       }
+      case 'month-before-last': {
+        const [ly, lm] = shiftMonth(y, m, -2);
+        return monthBounds(ly, lm);
+      }
+      case 'same-month-last-year':
+        return monthBounds(y - 1, m);
+      case 'this-quarter':
+        return quarterBounds(y, q);
       case 'last-quarter': {
-        const thisQ = Math.floor(now.getMonth() / 3);
-        const y = thisQ === 0 ? now.getFullYear() - 1 : now.getFullYear();
-        const q = thisQ === 0 ? 3 : thisQ - 1;
-        return [fmtYMD(new Date(y, q * 3, 1)), fmtYMD(new Date(y, q * 3 + 3, 0))];
+        const [ly, lq] = shiftQuarter(y, q, -1);
+        return quarterBounds(ly, lq);
       }
+      case 'quarter-before-last': {
+        const [ly, lq] = shiftQuarter(y, q, -2);
+        return quarterBounds(ly, lq);
+      }
+      case 'same-quarter-last-year':
+        return quarterBounds(y - 1, q);
       case 'ytd':
-        return [fmtYMD(new Date(now.getFullYear(), 0, 1)), fmtYMD(now)];
+      case 'this-year':
+        return [fmtYMD(new Date(y, 0, 1)), fmtYMD(now)];
       case 'last-year':
-        return [fmtYMD(new Date(now.getFullYear() - 1, 0, 1)), fmtYMD(new Date(now.getFullYear() - 1, 11, 31))];
+        return [fmtYMD(new Date(y - 1, 0, 1)), fmtYMD(new Date(y - 1, 11, 31))];
+      case 'year-before-last':
+        return [fmtYMD(new Date(y - 2, 0, 1)), fmtYMD(new Date(y - 2, 11, 31))];
+      case 'last-7-days':
+        return rollingDays(7);
+      case 'last-30-days':
+        return rollingDays(30);
+      case 'last-90-days':
+        return rollingDays(90);
+      case 'last-12-months': {
+        const end = fmtYMD(now);
+        const start = new Date(y, m - 11, now.getDate());
+        return [fmtYMD(start), end];
+      }
       case 'all':
         return ['', ''];
       default:
@@ -155,16 +276,12 @@
     }
   }
   function detectDatePreset(from, to) {
-    for (const preset of ['this-month', 'last-month', 'this-quarter', 'last-quarter', 'ytd', 'last-year', 'all']) {
+    for (const preset of allowedPresetIds()) {
       const range = datePresetRange(preset);
-      if (range[0] === from && range[1] === to) return preset;
+      if (range && range[0] === from && range[1] === to) return preset;
     }
     return '';
   }
-  const PRESET_LABEL = {
-    'this-month': 'This Month', 'last-month': 'Last Month', 'this-quarter': 'This Quarter',
-    'last-quarter': 'Last Quarter', 'ytd': 'Year to Date', 'last-year': 'Last Year', 'all': 'All Time',
-  };
   // Human label for the active period, appended to custom card names.
   function periodLabel() {
     if (!dateFrom && !dateTo) return 'All Time';
@@ -1164,6 +1281,8 @@
     }
     if (!hasData) { $('#rangeSub').textContent = 'Import a bank statement to begin.'; $('#nav').innerHTML = ''; return; }
 
+    populateDatePresetSelect();
+    enforceFreeDatePresets();
     syncDateInputs();
     syncFilterInputs();
     syncAccountFilter();
@@ -3411,6 +3530,7 @@
 
   async function init() {
     Store.onSaveError((e) => toast('Could not save: ' + (e.message || 'storage error')));
+    populateDatePresetSelect();
     detectMobile();
     addEventListener('resize', () => {
       detectMobile();
