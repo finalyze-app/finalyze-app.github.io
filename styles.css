@@ -1122,7 +1122,7 @@ input[type="color"] { width: 38px; height: 32px; padding: 2px; border: 1px solid
 /* ============ Modal (Features 7 & 8) ============ */
 .modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(8, 11, 25, .55); backdrop-filter: blur(2px); }
-.modal-panel { position: relative; z-index: 1; width: min(792px, calc(100vw - 40px)); max-height: calc(100vh - 60px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 24px; }
+.modal-panel { position: relative; z-index: 1; width: min(864px, calc(100vw - 40px)); max-height: calc(100vh - 60px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 24px; }
 .modal-close { position: absolute; top: 14px; right: 14px; font-size: 18px; line-height: 1; }
 .drill-head h2 { margin: 4px 0 10px; }
 .drill-kpis { display: flex; gap: 18px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; margin-bottom: 8px; }
