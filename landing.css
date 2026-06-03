@@ -1178,6 +1178,66 @@ html[data-theme="light"] .ad-side {
   .ad-bars span { animation: none; height: var(--h); min-height: 12px; }
 }
 
-/* personal maker note - a little less polished on purpose */
-.maker-note p { max-width: 620px; }
-.maker-note em { font-style: normal; font-weight: 600; color: var(--ink); }
+/* personal maker note — human element right after the hero to make the site feel like a person built it for real reasons (counters the polished/AI-generated impression) */
+.maker-note {
+  padding: 20px 0 32px;
+}
+.maker-inner {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  max-width: 620px;
+  margin: 0 auto;
+}
+.maker-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+  flex: none;
+}
+html[data-theme="light"] .maker-photo {
+  box-shadow: 0 1px 4px rgba(11, 16, 32, .08);
+}
+.maker-copy p {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.maker-copy p:last-child {
+  margin-bottom: 0;
+}
+.maker-sign {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* tiny maker credit in the landing footer for extra human signal */
+.maker-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.maker-foot img {
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  flex: none;
+}
+@media (max-width: 520px) {
+  .maker-inner {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .maker-photo {
+    width: 60px;
+    height: 60px;
+  }
+}
