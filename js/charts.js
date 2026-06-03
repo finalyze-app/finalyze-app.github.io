@@ -63,35 +63,113 @@
 
   function draw(id, config) {
     const canvas = document.getElementById(id);
-    if (!canvas) return;
+    if (!canvas) {
+      if (registry[id]) { registry[id].destroy(); delete registry[id]; }
+      return;
+    }
     if (registry[id]) registry[id].destroy();
     registry[id] = new Chart(canvas.getContext('2d'), config);
   }
 
+  function release(id) {
+    const canvas = document.getElementById(id);
+    if (canvas) {
+      delete canvas.dataset.catClickBound;
+      delete canvas.dataset.cmClickBound;
+    }
+    if (registry[id]) { registry[id].destroy(); delete registry[id]; }
+  }
+
   let onCategoryClick = null;
+  let suppressCategoryClickUntil = 0;
+  let suppressCardmemberClickUntil = 0;
+
+  function suppressCategoryClick(ms = 120) {
+    suppressCategoryClickUntil = performance.now() + ms;
+  }
+  function suppressCardmemberClick(ms = 120) {
+    suppressCardmemberClickUntil = performance.now() + ms;
+  }
+
+  function categoryPieSliceAt(els) {
+    const rows = last.categoryPie;
+    if (!els.length || !rows) return null;
+    const idx = els[0].index;
+    if (idx < 0 || idx >= rows.length) return null;
+    return rows[idx].category;
+  }
+
+  function bindCategoryCanvasClick(canvas) {
+    if (canvas.dataset.catClickBound) return;
+    canvas.dataset.catClickBound = '1';
+    canvas.addEventListener('click', (ev) => {
+      if (performance.now() < suppressCategoryClickUntil) return;
+      const inst = registry['chartCategory'] || (Chart.getChart && Chart.getChart(canvas));
+      if (!inst || !onCategoryClick) return;
+      const els = inst.getElementsAtEventForMode(ev, 'nearest', { intersect: true }, true);
+      const cat = categoryPieSliceAt(els);
+      if (cat) onCategoryClick(cat);
+    });
+  }
 
   function categoryPie(byCategory, activeCategory) {
     last.categoryPie = byCategory;
     last.categoryActive = activeCategory;
+    const canvas = document.getElementById('chartCategory');
+    if (!canvas) { release('chartCategory'); return; }
+
+    const t = theme();
     const colors = byCategory.map((c) => c.color || F.categoryColor(c.category));
-    // Dim non-selected slices when a category filter is active.
-    const bg = byCategory.map((c, i) => (activeCategory && c.category !== activeCategory) ? colors[i] + '33' : colors[i]);
+    const selected = (c) => activeCategory && c.category === activeCategory;
+    const bg = byCategory.map((c, i) => (activeCategory && !selected(c)) ? colors[i] + '55' : colors[i]);
+    const offset = byCategory.map((c) => (selected(c) ? 14 : 0));
+    const borderW = byCategory.map((c) => (selected(c) ? 4 : 2));
+    const labels = byCategory.map((c) => c.category);
+    const values = byCategory.map((c) => c.spend);
+
+    const inst = registry['chartCategory'];
+    if (inst) {
+      try {
+        inst.data.labels = labels;
+        const ds = inst.data.datasets[0];
+        ds.data = values;
+        ds.backgroundColor = bg;
+        ds.offset = offset;
+        ds.borderWidth = borderW;
+        ds.borderColor = t.surface;
+        inst.update('none');
+        bindCategoryCanvasClick(canvas);
+        return;
+      } catch (e) {
+        release('chartCategory');
+      }
+    }
+
     draw('chartCategory', {
       type: 'doughnut',
       data: {
-        labels: byCategory.map((c) => c.category),
-        datasets: [{ data: byCategory.map((c) => c.spend), backgroundColor: bg, borderWidth: 2, borderColor: theme().surface, hoverOffset: 6 }],
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: bg,
+          offset,
+          borderWidth: borderW,
+          borderColor: t.surface,
+          hoverOffset: 6,
+        }],
       },
       options: {
         cutout: '62%',
-        plugins: { legend: { position: 'right' } },
-        onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
-        onClick: (e, els) => {
-          if (!els.length || !onCategoryClick) return;
-          onCategoryClick(byCategory[els[0].index].category);
+        plugins: {
+          legend: {
+            position: 'right',
+            onClick: () => {},
+          },
         },
+        onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
       },
     });
+    bindCategoryCanvasClick(canvas);
   }
   function setCategoryClickHandler(fn) { onCategoryClick = fn; }
 
@@ -246,23 +324,66 @@
   }
 
   let onCardmemberClick = null;
+
+  function cardmemberAt(els) {
+    const rows = last.cardmemberBar;
+    if (!els.length || !rows) return null;
+    const idx = els[0].index;
+    if (idx < 0 || idx >= rows.length) return null;
+    return rows[idx].cardmember;
+  }
+
+  function bindCardmemberCanvasClick(canvas) {
+    if (canvas.dataset.cmClickBound) return;
+    canvas.dataset.cmClickBound = '1';
+    canvas.addEventListener('click', (ev) => {
+      if (performance.now() < suppressCardmemberClickUntil) return;
+      const inst = registry['chartCardmember'] || (Chart.getChart && Chart.getChart(canvas));
+      if (!inst || !onCardmemberClick) return;
+      const els = inst.getElementsAtEventForMode(ev, 'nearest', { intersect: true }, true);
+      const cm = cardmemberAt(els);
+      if (cm) onCardmemberClick(cm);
+    });
+  }
+
   function cardmemberBar(byCardmember, active) {
     last.cardmemberBar = byCardmember;
     last.cardmemberActive = active;
+    const canvas = document.getElementById('chartCardmember');
+    if (!canvas) { release('chartCardmember'); return; }
+
     const colors = byCardmember.map((_, i) => PALETTE[i % PALETTE.length]);
     const bg = byCardmember.map((c, i) => (active && c.cardmember !== active) ? colors[i] + '55' : colors[i]);
+    const labels = byCardmember.map((c) => c.cardmember);
+    const values = byCardmember.map((c) => c.spend);
+
+    const inst = registry['chartCardmember'];
+    if (inst) {
+      try {
+        inst.data.labels = labels;
+        const ds = inst.data.datasets[0];
+        ds.data = values;
+        ds.backgroundColor = bg;
+        inst.update('none');
+        bindCardmemberCanvasClick(canvas);
+        return;
+      } catch (e) {
+        release('chartCardmember');
+      }
+    }
+
     draw('chartCardmember', {
       type: 'bar',
       data: {
-        labels: byCardmember.map((c) => c.cardmember),
-        datasets: [{ label: 'Spend', data: byCardmember.map((c) => c.spend), backgroundColor: bg, borderRadius: 8, maxBarThickness: 70 }],
+        labels,
+        datasets: [{ label: 'Spend', data: values, backgroundColor: bg, borderRadius: 8, maxBarThickness: 70 }],
       },
       options: {
         plugins: { legend: { display: false } }, scales: { x: gridScale(), y: gridScale(true) },
         onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
-        onClick: (e, els) => { if (!els.length || !onCardmemberClick) return; onCardmemberClick(byCardmember[els[0].index].cardmember); },
       },
     });
+    bindCardmemberCanvasClick(canvas);
   }
   function setCardmemberClickHandler(fn) { onCardmemberClick = fn; }
 
@@ -351,6 +472,7 @@
   global.Finalyze.charts = {
     categoryPie, spendLine, trendMerchants, trendCategories, downloadPng,
     merchantBar, cardmemberBar, momBar, budgetActual, spendingPatterns, merchantTrend,
-    setTheme, setCensor, setCategoryClickHandler, setCardmemberClickHandler, setMerchantClickHandler, PALETTE,
+    setTheme, setCensor, setCategoryClickHandler, setCardmemberClickHandler, setMerchantClickHandler,
+    suppressCategoryClick, suppressCardmemberClick, release, PALETTE,
   };
 })(window);

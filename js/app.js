@@ -453,12 +453,16 @@
   }
 
   function txnMatchesSlice(t, slice) {
+    return categoryMatchesSlice(t.category, slice);
+  }
+
+  function categoryMatchesSlice(cat, slice) {
     if (!slice) return true;
     if (categoryViewMode === 'groups') {
       const g = getCategoryGroups().find((x) => x.name === slice);
-      if (g) return g.categories.includes(t.category);
+      if (g) return g.categories.includes(cat);
     }
-    return t.category === slice;
+    return cat === slice;
   }
 
   function sliceColor(name) {
@@ -630,7 +634,7 @@
       body: `<div class="cat-view-toggle"><label>View <select id="catViewMode"><option value="categories">Categories</option><option value="groups">Groups</option></select></label></div><div class="canvas-wrap"><canvas id="chartCategory"></canvas></div>`, render: renderCategory },
     { id: 'merchants', nav: 'Merchants', eyebrow: 'Merchants', title: 'Top merchants',
       export: { canvasId: 'chartMerchant', filename: 'top-merchants.png' },
-      body: `<div class="canvas-wrap"><canvas id="chartMerchant"></canvas></div>`, render: () => charts.merchantBar(analyze.byMerchant(viewTxns)) },
+      body: `<div class="canvas-wrap"><canvas id="chartMerchant"></canvas></div>`, render: renderMerchants },
     { id: 'trend', nav: 'Trend', eyebrow: 'Trend', title: 'Spend over time',
       export: 'trend',
       body: `<div class="trend-controls">
@@ -1114,6 +1118,8 @@
       gridStack.destroy(false);
       gridStack = null;
     }
+    charts.release('chartCategory');
+    charts.release('chartCardmember');
   }
   function gridItemId(el, node) {
     return node?.id || el?.getAttribute('gs-id') || el?.querySelector('[data-widget]')?.dataset?.widget || null;
@@ -1703,10 +1709,10 @@
     const accountTxns = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
     periodTxns = filterTxns(accountTxns, { dateFrom, dateTo });
     datedTxns = filterTxns(accountTxns, { dateFrom, dateTo, amountMin, amountMax, flowFilter });
-    if (activeCategory && !datedTxns.some((t) => txnMatchesSlice(t, activeCategory))) activeCategory = null;
-    if (activeCardmember && !datedTxns.some((t) => t.cardmember === activeCardmember)) activeCardmember = null;
-    if (!isPro() && activeCardmember) activeCardmember = null;
     const anaBase = txnsForAnalysis(datedTxns);
+    if (activeCategory && !anaBase.some((t) => t.isSpend && txnMatchesSlice(t, activeCategory))) activeCategory = null;
+    if (activeCardmember && !anaBase.some((t) => t.isSpend && t.cardmember === activeCardmember)) activeCardmember = null;
+    if (!isPro() && activeCardmember) activeCardmember = null;
     const matchCross = (base) => base.filter((t) =>
       (!activeCategory || txnMatchesSlice(t, activeCategory)) && (!activeCardmember || t.cardmember === activeCardmember));
     catScopeTxns = activeCardmember ? anaBase.filter((t) => t.cardmember === activeCardmember) : anaBase;
@@ -1714,8 +1720,11 @@
     viewTxns = matchCross(anaBase);
     ledgerTxns = matchCross(datedTxns);
 
-    const s = analyze.summary(datedTxns);
+    const subScope = (activeCategory || activeCardmember) ? viewTxns : datedTxns;
+    const s = analyze.summary(subScope);
     const filterBits = [];
+    if (activeCategory) filterBits.push(activeCategory);
+    if (activeCardmember) filterBits.push(activeCardmember);
     if (dateFrom || dateTo) filterBits.push(`${dateFrom || '…'} → ${dateTo || '…'}`);
     if (amountMin || amountMax) filterBits.push(`amount ${amountMin || '…'}–${amountMax || '…'}`);
     if (flowFilter !== 'all') filterBits.push(flowFilterLabel(flowFilter).toLowerCase());
@@ -1732,20 +1741,56 @@
   function refreshDashboardWidgets() {
     if (viewName !== 'dashboard') return;
     visibleOrder().forEach((id) => {
-      const w = WIDGET_MAP[id];
-      if (w && w.render) w.render();
+      try {
+        const w = WIDGET_MAP[id];
+        if (w && w.render) w.render();
+      } catch (e) {
+        console.error('Widget render failed:', id, e);
+      }
     });
-    renderFilterBanner();
+    refreshDataCharts();
+  }
+
+  function categoryChartRows() {
+    return categoryViewMode === 'groups'
+      ? analyze.byCategoryGroup(catScopeTxns, getCategoryGroups())
+      : analyze.byCategory(catScopeTxns);
+  }
+
+  // Single pass to redraw every chart from the current cross-filter scopes.
+  function refreshDataCharts() {
+    if (document.getElementById('chartCategory')) {
+      charts.categoryPie(categoryChartRows(), activeCategory);
+    }
+    if (document.getElementById('chartMerchant')) {
+      charts.merchantBar(analyze.byMerchant(viewTxns));
+    }
+    if (document.getElementById('chartTrend')) {
+      updateTrendChart();
+    }
+    if (document.getElementById('chartDow') || document.getElementById('chartWom')) {
+      charts.spendingPatterns(analyze.byDayOfWeek(viewTxns), analyze.byWeekOfMonth(viewTxns));
+    }
+    if (document.getElementById('chartCardmember')) {
+      charts.cardmemberBar(analyze.byCardmember(cardScopeTxns), activeCardmember);
+    }
   }
 
   function refreshAfterDataChange() {
     if (viewName === 'dashboard') {
+      const catCanvas = document.getElementById('chartCategory');
+      const cmCanvas = document.getElementById('chartCardmember');
+      if (catCanvas) catCanvas.style.pointerEvents = 'none';
+      if (cmCanvas) cmCanvas.style.pointerEvents = 'none';
       allTxns = enriched();
       recomputeViewData();
       syncDateInputs();
       syncFilterInputs();
       syncAccountFilter();
       refreshDashboardWidgets();
+      renderFilterBanner();
+      if (catCanvas) catCanvas.style.pointerEvents = '';
+      if (cmCanvas) cmCanvas.style.pointerEvents = '';
     } else {
       render();
     }
@@ -1947,7 +1992,10 @@
     }).join('');
 
     initGridStack(container, savedGrid);
-    ids.forEach((id) => WIDGET_MAP[id].render());
+    ids.forEach((id) => {
+      try { WIDGET_MAP[id].render(); } catch (e) { console.error('Widget render failed:', id, e); }
+    });
+    refreshDataCharts();
     refreshGridConstraints();
     adjustOverviewHeight();
 
@@ -1999,11 +2047,12 @@
     if (!activeCategory && bal != null) cards.push(card(ICON.balance, 'Statement balance', fmt(bal), bal < 0 ? 'neg' : ''));
     if (s.dateFrom) cards.push(card(ICON.calendar, 'Date range', `${s.dateFrom}<br>→ ${s.dateTo}`, 'small'));
 
-    // Custom KPI cards - Pro only; totals over the active period.
+    // Custom KPI cards - Pro only; respect category/cardmember cross-filters when active.
     if (isPro()) {
       const period = periodLabel();
+      const kpiScope = (activeCategory || activeCardmember) ? viewTxns : periodTxns;
       Store.getCustomCards().forEach((cc) => {
-        const matched = periodTxns.filter((t) => cardMatch(t, cc));
+        const matched = kpiScope.filter((t) => cardMatch(t, cc));
         const total = matched.reduce((a, t) => a + Math.abs(t.amount), 0);
         cards.push(card(ICON.custom, `${esc(cc.name)} · ${period}`, fmt(total), 'small'));
       });
@@ -2362,10 +2411,10 @@
       sel.value = categoryViewMode;
       sel.onchange = () => { categoryViewMode = sel.value; activeCategory = null; refreshAfterDataChange(); };
     }
-    const data = categoryViewMode === 'groups'
-      ? analyze.byCategoryGroup(catScopeTxns, getCategoryGroups())
-      : analyze.byCategory(catScopeTxns);
-    charts.categoryPie(data, activeCategory);
+  }
+
+  function renderMerchants() {
+    // Chart redrawn in refreshDataCharts() so it always uses the latest viewTxns.
   }
 
   function momChartHeight(monthCount) {
@@ -2457,7 +2506,7 @@
   }
 
   function renderPatterns() {
-    charts.spendingPatterns(analyze.byDayOfWeek(viewTxns), analyze.byWeekOfMonth(viewTxns));
+    // Charts redrawn in refreshDataCharts().
   }
 
   function trendWidgetTitle() {
@@ -2497,7 +2546,7 @@
       };
     }
     updateTrendTitle();
-    updateTrendChart();
+    if (document.getElementById('chartTrend')) updateTrendChart();
   }
 
   function renderHeatmap() {
@@ -2698,7 +2747,8 @@
     const table = $('#uncatTable');
     if (!table) return;
     const other = otherCategory();
-    const rows = viewTxns.filter((t) => t.category === other && t.isSpend)
+    // Use catScopeTxns (date/cardmember scoped) so a category-chart drill-down does not empty the review queue.
+    const rows = catScopeTxns.filter((t) => t.category === other && t.isSpend)
       .sort((a, b) => b.spend - a.spend || b.date.localeCompare(a.date));
     const head = document.querySelector('#widget-uncategorized .widget-head h2');
     if (head) head.textContent = rows.length ? `Review uncategorized (${rows.length})` : 'Review uncategorized';
@@ -2991,22 +3041,87 @@
 
   function renderFilterBanner() {
     const b = $('#filterBanner');
+    if (!b) return;
     const hasCross = activeCategory || activeCardmember;
     const hasTxn = hasTxnFilters();
-    if (!hasCross && !hasTxn) { b.hidden = true; b.innerHTML = ''; return; }
+    const show = viewName === 'dashboard' && (hasCross || hasTxn);
+    if (!show) { b.hidden = true; b.innerHTML = ''; return; }
     b.hidden = false;
     const parts = ['<span>Filtering all widgets by</span>'];
-    if (activeCategory) parts.push(`${filterChip(activeCategory)}<button class="clear-filter" id="clearCat">Clear</button>`);
-    if (activeCardmember) parts.push(`${filterChip(activeCardmember)}<button class="clear-filter" id="clearCard">Clear</button>`);
-    if (flowFilter !== 'all') parts.push(`<span class="chip">${flowFilterLabel(flowFilter)}</span><button class="clear-filter" id="clearFlow">Clear</button>`);
+    if (activeCategory) {
+      parts.push(`${filterChip(activeCategory)}<button type="button" class="clear-filter" data-filter-clear="category">Clear</button>`);
+    }
+    if (activeCardmember) {
+      parts.push(`${filterChip(activeCardmember)}<button type="button" class="clear-filter" data-filter-clear="cardmember">Clear</button>`);
+    }
+    if (flowFilter !== 'all') {
+      parts.push(`<span class="chip">${flowFilterLabel(flowFilter)}</span><button type="button" class="clear-filter" data-filter-clear="flow">Clear</button>`);
+    }
     if (amountMin || amountMax) {
-      parts.push(`<span class="chip">${amountMin || '…'} – ${amountMax || '…'}</span><button class="clear-filter" id="clearAmount">Clear</button>`);
+      parts.push(`<span class="chip">${amountMin || '…'} – ${amountMax || '…'}</span><button type="button" class="clear-filter" data-filter-clear="amount">Clear</button>`);
     }
     b.innerHTML = parts.join('');
-    const cc = $('#clearCat'); if (cc) cc.onclick = () => { activeCategory = null; refreshAfterDataChange(); };
-    const cm = $('#clearCard'); if (cm) cm.onclick = () => { activeCardmember = null; refreshAfterDataChange(); };
-    const cf = $('#clearFlow'); if (cf) cf.onclick = () => { flowFilter = 'all'; refreshAfterDataChange(); };
-    const ca = $('#clearAmount'); if (ca) ca.onclick = () => { amountMin = ''; amountMax = ''; refreshAfterDataChange(); };
+  }
+
+  function bindFilterBanner() {
+    const b = $('#filterBanner');
+    if (!b || b.dataset.bound) return;
+    b.dataset.bound = '1';
+    b.addEventListener('pointerdown', (e) => {
+      const btn = e.target.closest('[data-filter-clear]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      charts.suppressCategoryClick(300);
+      charts.suppressCardmemberClick(300);
+      const which = btn.dataset.filterClear;
+      if (which === 'category') clearCategoryCrossFilter();
+      else if (which === 'cardmember') activeCardmember = null;
+      else if (which === 'flow') flowFilter = 'all';
+      else if (which === 'amount') { amountMin = ''; amountMax = ''; }
+      refreshAfterDataChange();
+    }, true);
+  }
+
+  function clearCategoryCrossFilter() {
+    if (activeCategory && txnCatFilter && categoryMatchesSlice(txnCatFilter, activeCategory)) {
+      txnCatFilter = '';
+      txnPage = 0;
+    }
+    activeCategory = null;
+    charts.suppressCategoryClick(150);
+  }
+
+  function onCategoryChartClick(cat) {
+    if (!cat) return;
+    charts.suppressCategoryClick(300);
+    activeCategory = activeCategory === cat ? null : cat;
+    refreshAfterDataChange();
+  }
+
+  function onCardmemberChartClick(cm) {
+    if (!cm) return;
+    charts.suppressCardmemberClick(300);
+    activeCardmember = activeCardmember === cm ? null : cm;
+    refreshAfterDataChange();
+  }
+
+  function clearDashboardFilters() {
+    clearCategoryCrossFilter();
+    activeCardmember = null;
+    dateFrom = '';
+    dateTo = '';
+    dateRangeInit = true;
+    amountMin = '';
+    amountMax = '';
+    flowFilter = 'all';
+    excludeTagged = false;
+    activeAccount = 'all';
+    txnQuery = '';
+    txnCatFilter = '';
+    txnPage = 0;
+    persistDatePeriod();
+    refreshAfterDataChange();
   }
 
   // ============ Preferences ============
@@ -4284,6 +4399,7 @@
       const mode = Store.getCategoryApplyMode();
       if (mode === 'one') {
         applyCategoryOne(opts.tid, opts.txnName, opts.newCat);
+        clearStaleCategoryFilters(opts.previousCat, opts.newCat);
         t.category = opts.newCat;
         toast('Category saved for this transaction', { check: true });
         refreshAfterDataChange();
@@ -4291,6 +4407,7 @@
       }
       if (mode === 'all') {
         applyCategoryAll(opts.merchantKey, opts.newCat);
+        clearStaleCategoryFilters(opts.previousCat, opts.newCat);
         t.category = opts.newCat;
         toast('Category saved for all transactions at this merchant', { check: true });
         refreshAfterDataChange();
@@ -4298,6 +4415,17 @@
       }
       promptCategoryApply(opts);
     };
+  }
+
+  function clearStaleCategoryFilters(previousCat, newCat) {
+    if (!previousCat || previousCat === newCat) return;
+    if (txnCatFilter === previousCat && newCat !== previousCat) {
+      txnCatFilter = '';
+      txnPage = 0;
+    }
+    if (activeCategory && categoryMatchesSlice(previousCat, activeCategory) && !categoryMatchesSlice(newCat, activeCategory)) {
+      clearCategoryCrossFilter();
+    }
   }
 
   function promptCategoryApply(opts) {
@@ -4315,12 +4443,14 @@
     );
     body.querySelector('#catApplyOne').onclick = () => {
       applyCategoryOne(tid, txnName, newCat);
+      clearStaleCategoryFilters(previousCat, newCat);
       closeModal();
       toast('Category saved for this transaction', { check: true });
       refreshAfterDataChange();
     };
     body.querySelector('#catApplyAll').onclick = () => {
       applyCategoryAll(merchantKey, newCat);
+      clearStaleCategoryFilters(previousCat, newCat);
       closeModal();
       toast('Category saved for all transactions at this merchant', { check: true });
       refreshAfterDataChange();
@@ -4554,8 +4684,9 @@
     if ($('#censorLabel')) $('#censorLabel').textContent = censored ? 'Show $' : 'Hide $';
     if ($('#censorBtn')) $('#censorBtn').classList.toggle('active', censored);
     if (window.Chart) charts.setCensor(censored);
-    charts.setCategoryClickHandler((cat) => { activeCategory = activeCategory === cat ? null : cat; refreshAfterDataChange(); });
-    charts.setCardmemberClickHandler((cm) => { activeCardmember = activeCardmember === cm ? null : cm; refreshAfterDataChange(); });
+    bindFilterBanner();
+    charts.setCategoryClickHandler(onCategoryChartClick);
+    charts.setCardmemberClickHandler(onCardmemberChartClick);
     charts.setMerchantClickHandler((mk) => openMerchantDrill(mk));
 
     [$('#fileInput'), $('#fileInput2')].forEach((inp) => inp && inp.addEventListener('change', (e) => handleFiles(e.target.files)));
@@ -4598,7 +4729,7 @@
     $('#flowFilter').addEventListener('change', (e) => { flowFilter = e.target.value; refreshAfterDataChange(); });
     $('#accountFilter').addEventListener('change', (e) => { activeAccount = e.target.value; refreshAfterDataChange(); });
     $('#exclTags').addEventListener('change', (e) => { excludeTagged = e.target.checked; refreshAfterDataChange(); });
-    $('#txnFilterClear').addEventListener('click', () => { amountMin = ''; amountMax = ''; flowFilter = 'all'; refreshAfterDataChange(); });
+    $('#txnFilterClear').addEventListener('click', clearDashboardFilters);
     $('#modalClose').addEventListener('click', closeModal);
     $('#modalBackdrop').addEventListener('click', closeModal);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });

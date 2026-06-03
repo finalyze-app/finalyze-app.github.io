@@ -1015,10 +1015,11 @@ body.is-mobile .pro-lock-overlay { padding: 16px 12px; }
 
 /* ============ Cross-filter banner ============ */
 .filter-banner {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 0;
   background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent);
   border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 600;
 }
+.page-head .filter-banner { width: 100%; }
 .filter-banner .chip { background: transparent; }
 .filter-banner .chip.person .dot { background: currentColor; }
 .filter-banner .clear-filter {
