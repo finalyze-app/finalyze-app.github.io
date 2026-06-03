@@ -778,6 +778,9 @@
     getLayout() { return cache.layout; },
     setLayout(layout) { cache.layout = layout; persist(); },
 
+    getDatePeriod() { return cache.datePeriod || null; },
+    setDatePeriod(period) { cache.datePeriod = period || null; persist(); },
+
     getCsvImportPrefs() { return cache.csvImportPrefs; },
 
     setCsvImportPrefs(prefs) {

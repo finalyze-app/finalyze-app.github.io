@@ -248,11 +248,38 @@
       demoDefaultApplied = true;
       return;
     }
-    // Regular accounts (including free) default to this month (unchanged behavior).
+    // Regular accounts (including free): restore the last-set period if one was
+    // saved, otherwise default to this month. Relative presets (e.g. last month)
+    // are recomputed against today so reopening keeps the *period*, not the dates.
     if (dateRangeInit) return;
     if (dateFrom || dateTo) { dateRangeInit = true; return; }
+    if (applyStoredDatePeriod()) { dateRangeInit = true; return; }
     [dateFrom, dateTo] = datePresetRange('this-month');
     dateRangeInit = true;
+  }
+
+  function applyStoredDatePeriod() {
+    let stored = null;
+    try { stored = Store.getDatePeriod(); } catch (e) {}
+    if (!stored || typeof stored !== 'object') return false;
+    if (stored.preset) {
+      const range = datePresetRange(stored.preset);
+      if (range) { [dateFrom, dateTo] = range; return true; }
+      return false;
+    }
+    if ('from' in stored || 'to' in stored) {
+      dateFrom = stored.from || '';
+      dateTo = stored.to || '';
+      return true;
+    }
+    return false;
+  }
+
+  function persistDatePeriod() {
+    try {
+      const preset = detectDatePreset(dateFrom, dateTo);
+      Store.setDatePeriod(preset ? { preset } : { preset: '', from: dateFrom, to: dateTo });
+    } catch (e) {}
   }
 
   function datePresetRange(preset, refDate) {
@@ -734,7 +761,7 @@
     transactions: 12,
   };
   const GRID_MAX_H = {
-    overview: 12, category: 4, merchants: 6, trend: 5, cardmember: 5,
+    overview: 12, category: 4, merchants: 4, trend: 5, cardmember: 5,
     recurring: 8, anomalies: 6, patterns: 4, heatmap: 12, uncategorized: 8,
     transactions: 12,
   };
@@ -742,7 +769,6 @@
   let gridSaveTimer = null;
   let gridReady = false;
   let gridNormalizing = false;
-  let layoutDragCommitted = false; // true after user starts a drag (layout-saved toast only then)
   let summaryCardCount = 7;
   let summaryCardCols = 4;
   const SUMMARY_CARD_MIN_W = 190;
@@ -868,11 +894,7 @@
   function gridMaxH(id) {
     if (id === 'overview') return overviewHeightForSummary();
     const base = GRID_MAX_H[id] || 8;
-    if (id === 'merchants') {
-      const n = Math.min(12, analyze.byMerchant(viewTxns).length || 1);
-      return Math.max(gridMinH(id), Math.min(base, 2 + Math.ceil(n / 2)));
-    }
-    if (id === 'category') return Math.max(gridMinH(id), Math.min(base, 4));
+    if (id === 'category' || id === 'merchants') return Math.max(gridMinH(id), Math.min(base, gridHeight(id)));
     return base;
   }
   function syncPeopleTrendHeight(grid) {
@@ -1042,59 +1064,112 @@
       gridStack = null;
     }
   }
+  function gridItemId(el, node) {
+    return node?.id || el?.getAttribute('gs-id') || el?.querySelector('[data-widget]')?.dataset?.widget || null;
+  }
+  function gridPosFromEl(id, el, node) {
+    return {
+      x: node?.x ?? (+el?.getAttribute('gs-x') || 0),
+      y: node?.y ?? (+el?.getAttribute('gs-y') || 0),
+      w: node?.w ?? (+el?.getAttribute('gs-w') || defaultWidgetW(id)),
+      h: node?.h ?? (+el?.getAttribute('gs-h') || gridHeight(id)),
+    };
+  }
   function gridFromStack() {
     const grid = {};
     if (!gridStack) return grid;
-    gridStack.save(false).forEach((n) => {
-      const id = n.id || n.el?.getAttribute('gs-id') || n.el?.querySelector('[data-widget]')?.dataset.widget;
+    const ingest = (id, el, node) => {
       if (!id || !WIDGET_MAP[id]) return;
-      grid[id] = clampGridItem(id, { x: n.x, y: n.y, w: n.w, h: n.h });
-    });
+      grid[id] = clampGridItem(id, gridPosFromEl(id, el, node));
+    };
+    if (gridStack.engine?.nodes?.length) {
+      gridStack.engine.nodes.forEach((n) => ingest(gridItemId(n.el, n), n.el, n));
+    }
+    if (!Object.keys(grid).length) {
+      gridStack.save(false).forEach((n) => ingest(gridItemId(n.el, n), n.el, n));
+    }
+    if (!Object.keys(grid).length) {
+      visibleOrder().forEach((id) => {
+        const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+        if (el) ingest(id, el, null);
+      });
+    }
     return grid;
+  }
+  function persistLayoutFromGrid(opts = {}) {
+    const rawGrid = gridFromStack();
+    if (!Object.keys(rawGrid).length) return false;
+    const grid = {};
+    Object.keys(rawGrid).forEach((id) => {
+      if (id && WIDGET_MAP[id]) grid[id] = clampGridItem(id, rawGrid[id]);
+    });
+    const { order: curOrder, hidden } = getLayout();
+    const visibleNow = Object.keys(grid);
+    const hiddenIds = curOrder.filter((id) => hidden.includes(id));
+    const sortedVisible = orderFromGrid(grid, visibleNow);
+    saveLayout({ grid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
+    if (viewName === 'dashboard') { buildNav(true); initScrollSpy(); }
+    if (opts.toast) toast('Layout saved', { check: true });
+    return true;
   }
   function normalizeGridLayout(force) {
     if (!gridStack || gridNormalizing) return;
     if (!force && !gridReady) return;
     gridNormalizing = true;
-    const ids = visibleOrder();
-    const { order, hidden } = getLayout();
-    let grid = gridFromStack();
-    if (!Object.keys(grid).length) {
-      // Early timing: fall back to the (custom, non-repacked) saved positions.
-      ids.forEach((id) => {
-        const saved = getLayout().grid[id];
-        if (saved) grid[id] = clampGridItem(id, saved);
-      });
-    }
-    // Retain exact positions from GridStack (or saved). Do not repack/force-flow here.
-    // Clamp only to enforce mins/maxes/snaps/overview pin. This is what allows custom
-    // layouts to survive refresh and drag operations.
-    const nextGrid = {};
-    ids.forEach((id) => {
-      const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
-      if (!el) return;
-      const from = grid[id] || {
-        x: +el.getAttribute('gs-x') || 0,
-        y: +el.getAttribute('gs-y') || 0,
-        w: +el.getAttribute('gs-w') || defaultWidgetW(id),
-        h: +el.getAttribute('gs-h') || gridHeight(id),
-      };
-      const g = clampGridItem(id, from);
-      const update = {
-        maxW: gridMaxW(id), maxH: gridMaxH(id),
-        minW: gridMinW(id), minH: gridMinH(id),
-      };
-      // Only force x/y/w/h in the update if clamp changed them (e.g. overview always, or snap)
-      if (g.x !== from.x || g.y !== from.y || g.w !== from.w || g.h !== from.h || id === 'overview') {
-        update.x = g.x; update.y = g.y; update.w = g.w; update.h = g.h;
+    // try/finally so a transient throw can never leave gridNormalizing stuck true,
+    // which would silently disable every future drag/resize save.
+    try {
+      const ids = visibleOrder();
+      const { order, hidden } = getLayout();
+      let grid = gridFromStack();
+      if (!Object.keys(grid).length) {
+        // Read live DOM positions (never revert to stale saved layout after a drag).
+        ids.forEach((id) => {
+          const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+          if (el) grid[id] = clampGridItem(id, gridPosFromEl(id, el, null));
+        });
       }
-      gridStack.update(el, update);
-      nextGrid[id] = g;
-    });
-    const hiddenIds = order.filter((id) => hidden.includes(id));
-    const sortedVisible = orderFromGrid(nextGrid, ids);
-    saveLayout({ grid: nextGrid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
-    gridNormalizing = false;
+      // Retain exact positions from GridStack (or saved). Do not repack/force-flow here.
+      // Clamp only to enforce mins/maxes/snaps/overview pin. This is what allows custom
+      // layouts to survive refresh and drag operations.
+      // The update loop runs inside batchUpdate so GridStack resolves any collisions ONCE
+      // at the end instead of cascading per-item — re-asserting clamped positions one at a
+      // time against the locked overview can otherwise send its collision resolver into
+      // infinite recursion (stack overflow).
+      const nextGrid = {};
+      gridStack.batchUpdate();
+      try {
+        ids.forEach((id) => {
+          const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+          if (!el) return;
+          const from = grid[id] || {
+            x: +el.getAttribute('gs-x') || 0,
+            y: +el.getAttribute('gs-y') || 0,
+            w: +el.getAttribute('gs-w') || defaultWidgetW(id),
+            h: +el.getAttribute('gs-h') || gridHeight(id),
+          };
+          const g = clampGridItem(id, from);
+          const update = {
+            maxW: gridMaxW(id), maxH: gridMaxH(id),
+            minW: gridMinW(id), minH: gridMinH(id),
+          };
+          // Only force x/y/w/h when clamp actually changed them (e.g. a snap), so we don't
+          // needlessly re-place already-valid widgets (including the locked overview).
+          if (g.x !== from.x || g.y !== from.y || g.w !== from.w || g.h !== from.h) {
+            update.x = g.x; update.y = g.y; update.w = g.w; update.h = g.h;
+          }
+          gridStack.update(el, update);
+          nextGrid[id] = g;
+        });
+      } finally {
+        gridStack.batchUpdate(false);
+      }
+      const hiddenIds = order.filter((id) => hidden.includes(id));
+      const sortedVisible = orderFromGrid(nextGrid, ids);
+      saveLayout({ grid: nextGrid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
+    } finally {
+      gridNormalizing = false;
+    }
     syncPeopleTrendHeightOnGrid();
     // Keep sidebar in sync with any position-derived order after init or drag-stop.
     if (viewName === 'dashboard') {
@@ -1123,78 +1198,80 @@
   }
   function onGridLayoutChange() {
     if (!gridStack || !gridReady || gridNormalizing) return;
+    // Debounced *silent* save for live `change` events. The user-facing "Layout saved"
+    // toast is fired once, authoritatively, from dragstop/resizestop instead.
     clearTimeout(gridSaveTimer);
-    gridSaveTimer = setTimeout(() => {
-      // Capture the *exact* positions/sizes the user just arranged via GridStack drag/resize.
-      // No repack — this is what makes custom layouts persist across refresh.
-      const rawGrid = gridFromStack();
-      const grid = {};
-      Object.keys(rawGrid).forEach((id) => {
-        if (id && WIDGET_MAP[id]) grid[id] = clampGridItem(id, rawGrid[id]);
-      });
-      const { order: curOrder, hidden } = getLayout();
-      const visibleNow = Object.keys(grid);
-      const hiddenIds = curOrder.filter((id) => hidden.includes(id));
-      const sortedVisible = orderFromGrid(grid, visibleNow);
-      saveLayout({ grid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
-      buildNav(true);
-      if (layoutDragCommitted) toast('Layout saved', { check: true });
-    }, 200);
+    gridSaveTimer = setTimeout(() => persistLayoutFromGrid({ toast: false }), 200);
   }
   function initGridStack(container, savedGrid) {
     if (typeof GridStack === 'undefined') return;
     destroyGridStack();
     gridReady = false;
-    layoutDragCommitted = false;
     gridStack = GridStack.init({
       column: GRID_COLS,
       cellHeight: GRID_CELL_H,
       margin: GRID_GAP,
       animate: true,
       float: false,
-      auto: false, // widgets already in DOM; default auto:true runs _packNodes and wipes saved x/y
       handle: '.drag-handle',
-      draggable: { handle: '.drag-handle' },
+      draggable: { handle: '.drag-handle', appendTo: 'body' },
       disableOneColumnMode: false,
     }, container);
     gridStack.on('change', onGridLayoutChange);
-    gridStack.on('dragstart', () => { layoutDragCommitted = true; });
-    gridStack.on('dragstop', () => { normalizeGridLayout(); });
+    // dragstop/resizestop fire only from a genuine user gesture, so they persist and
+    // toast unconditionally — never gated on gridReady/gridNormalizing. We do NOT re-run
+    // normalizeGridLayout here: GridStack has already placed the widgets validly (it enforces
+    // min/max during the gesture), and re-asserting clamped positions against the locked
+    // overview tips GridStack's collision resolver into infinite recursion (stack overflow),
+    // which previously killed the save+toast. persistLayoutFromGrid clamps for storage only —
+    // it reads positions, it never mutates the live grid — so it can't recurse.
+    gridStack.on('dragstop', () => {
+      clearTimeout(gridSaveTimer);
+      persistLayoutFromGrid({ toast: true });
+    });
     gridStack.on('resizestop', () => {
-      layoutDragCommitted = true;
+      clearTimeout(gridSaveTimer);
       if (typeof Chart !== 'undefined' && Chart.instances) {
         Object.values(Chart.instances).forEach((c) => { if (c && c.resize) c.resize(); });
       }
-      normalizeGridLayout();
+      syncPeopleTrendHeightOnGrid();
       if ($('#txnTable') && refineTxnPageSize()) renderTxnTable(true);
+      persistLayoutFromGrid({ toast: true });
     });
     const ids = visibleOrder();
     const grid = savedGrid || getLayout().grid;
+    const layout = ids.map((id) => {
+      const g = clampGridItem(id, grid[id] || { w: defaultWidgetW(id), h: gridHeight(id) });
+      return { id, x: g.x, y: g.y, w: g.w, h: g.h };
+    });
     gridNormalizing = true;
     try {
-      gridStack.batchUpdate();
+      // Let GridStack auto-register DOM widgets (enables drag/resize), then apply saved
+      // positions. auto:false + makeWidget alone left drag handles inert.
+      gridStack.load(layout);
       ids.forEach((id) => {
         const el = container.querySelector(`.grid-stack-item[gs-id="${id}"]`);
-        if (el) gridStack.makeWidget(el);
+        if (!el) return;
+        if (id === 'overview') {
+          gridStack.update(el, {
+            noMove: true, noResize: true, locked: true,
+            w: 12, x: 0, y: 0, minW: 12, maxW: 12,
+          });
+          gridStack.movable(el, false);
+          gridStack.resizable(el, false);
+        } else {
+          gridStack.movable(el, true);
+          gridStack.resizable(el, true);
+        }
       });
-      ids.forEach((id) => {
-        const el = container.querySelector(`.grid-stack-item[gs-id="${id}"]`);
-        const g = grid[id];
-        if (!el || !g) return;
-        const item = clampGridItem(id, g);
-        gridStack.update(el, {
-          x: item.x, y: item.y, w: item.w, h: item.h,
-          maxW: gridMaxW(id), maxH: gridMaxH(id),
-          minW: gridMinW(id), minH: gridMinH(id),
-        });
-      });
-      gridStack.batchUpdate(false, false);
     } finally {
       gridNormalizing = false;
     }
     requestAnimationFrame(() => {
-      normalizeGridLayout(true);
+      // Set gridReady first: the grid is interactive now regardless of whether the
+      // initial normalize succeeds, and saves must not be permanently gated if it throws.
       gridReady = true;
+      try { normalizeGridLayout(true); } catch (e) { /* non-fatal: drag/resize still persist */ }
       adjustOverviewHeight();
     });
   }
@@ -4431,16 +4508,18 @@
       syncFiltersPanel();
     });
     $('#settingsBtn').addEventListener('click', () => { viewName = viewName === 'prefs' ? 'dashboard' : 'prefs'; render(); });
+    bindSettingsLinks($('#betaBanner'));
     $('#datePreset').addEventListener('change', (e) => {
       const range = datePresetRange(e.target.value);
       if (!range) return;
       [dateFrom, dateTo] = range;
       dateRangeInit = true;
+      persistDatePeriod();
       refreshAfterDataChange();
     });
-    $('#dateFrom').addEventListener('change', (e) => { dateFrom = e.target.value; refreshAfterDataChange(); });
-    $('#dateTo').addEventListener('change', (e) => { dateTo = e.target.value; refreshAfterDataChange(); });
-    $('#dateClear').addEventListener('click', () => { dateFrom = ''; dateTo = ''; dateRangeInit = true; refreshAfterDataChange(); });
+    $('#dateFrom').addEventListener('change', (e) => { dateFrom = e.target.value; persistDatePeriod(); refreshAfterDataChange(); });
+    $('#dateTo').addEventListener('change', (e) => { dateTo = e.target.value; persistDatePeriod(); refreshAfterDataChange(); });
+    $('#dateClear').addEventListener('click', () => { dateFrom = ''; dateTo = ''; dateRangeInit = true; persistDatePeriod(); refreshAfterDataChange(); });
     $('#amountMin').addEventListener('change', (e) => { amountMin = e.target.value; refreshAfterDataChange(); });
     $('#amountMax').addEventListener('change', (e) => { amountMax = e.target.value; refreshAfterDataChange(); });
     $('#flowFilter').addEventListener('change', (e) => { flowFilter = e.target.value; refreshAfterDataChange(); });
