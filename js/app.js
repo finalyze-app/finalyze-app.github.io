@@ -1130,11 +1130,12 @@
     order.filter(isProWidget).forEach((id) => { if (!set.has(id)) { set.add(id); changed = true; } });
     if (changed) saveLayout({ order, hidden: [...set], grid: getLayout().grid });
   }
-  // Some widgets are only meaningful with enough data (e.g. year-in-review needs ≥12 months).
+  // Some analysis pages are only meaningful with enough data (e.g. year-in-review needs ≥12 months of span).
+  // We *always list* Year in review in the nav now; renderYearReview shows a friendly note if data is thin.
   function isAnalysisView(v) { return typeof v === 'string' && v.startsWith('analysis-'); }
   function analysisPageId(v) { return v.slice('analysis-'.length); }
   function analysisPageAvailable(id) {
-    if (id === 'yearReview') return analyze.monthSpan(allTxns) >= 12;
+    if (id === 'yearReview') return true; // always show the link; the page itself explains when it has real value
     if (id === 'budgetActual') return Object.keys(Store.getBudgets()).length > 0;
     return !!ANALYSIS_MAP[id];
   }
@@ -2288,12 +2289,38 @@
 
   // ---- Feature 6: year in review ----
   function renderYearReview() {
-    const years = analyze.yearsPresent(allTxns);
-    if (!years.length) return;
-    if (!years.includes(yrSelected)) yrSelected = years[years.length - 1];
+    const base = activeAccount === 'all' ? allTxns : allTxns.filter((t) => (t.accountId || 'default') === activeAccount);
+    const months = analyze.monthSpan(base);
     const sel = $('#yrSelect');
-    sel.innerHTML = years.map((y) => `<option value="${y}"${y === yrSelected ? ' selected' : ''}>${y}</option>`).join('');
-    sel.onchange = () => { yrSelected = sel.value; drawYearReview(); };
+    const head = document.querySelector('#analysisBody .yr-head');
+    const out = $('#yearReviewOut');
+
+    if (months < 12) {
+      if (head) head.style.display = 'none';
+      if (out) {
+        const plural = months === 1 ? '' : 's';
+        out.innerHTML = `
+          <div style="padding:28px 16px; text-align:center; color:var(--muted);">
+            <p style="font-size:15px; line-height:1.5; margin:0 0 10px;">⏳ Whoa there, time traveler.</p>
+            <p style="margin:0; line-height:1.5;">We only have <strong>${months}</strong> month${plural} of data so far. A proper "Year in Review" needs the full 12-month director's cut before it can deliver the dramatic "what was I thinking" montage and the year-over-year plot twist.</p>
+            <p style="margin:12px 0 0; font-size:13px; opacity:.85;">Import a few more statements and this page goes from "mildly curious" to "I can't believe I spent that much on coffee" territory. Your future self is already cringing. 🫣</p>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    if (head) head.style.display = '';
+    const years = analyze.yearsPresent(base);
+    if (!years.length) {
+      if (out) out.innerHTML = '<p class="muted">No yearly data yet.</p>';
+      return;
+    }
+    if (!years.includes(yrSelected)) yrSelected = years[years.length - 1];
+    if (sel) {
+      sel.innerHTML = years.map((y) => `<option value="${y}"${y === yrSelected ? ' selected' : ''}>${y}</option>`).join('');
+      sel.onchange = () => { yrSelected = sel.value; drawYearReview(); };
+    }
     drawYearReview();
   }
   function drawYearReview() {
