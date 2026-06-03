@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="assets/icon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0a1228" />
-  <meta name="description" content="Analyze your bank and credit-card spending. Your data stays on your device - nothing is uploaded." />
+  <meta name="description" content="Analyze your bank and credit-card spending locally in your browser. No uploads, no accounts needed to explore. Optional private AI for help with categories and questions." />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://esm.run 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://buy.stripe.com https://billing.stripe.com https://cdn.jsdelivr.net https://esm.run https://huggingface.co https://*.huggingface.co https://*.hf.co https://raw.githubusercontent.com; frame-src https://buy.stripe.com https://billing.stripe.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'" />
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -65,7 +65,7 @@
         </div>
         <div id="upgradeSlot" class="upgrade-slot"></div>
         <div id="accountSlot" class="account-slot"></div>
-        <p class="side-note">All data stays on this device. Nothing is uploaded.</p>
+        <p class="side-note">Everything lives in your browser. Close the tab and it's still there when you come back.</p>
       </div>
     </aside>
 
@@ -184,7 +184,7 @@
               Take a tour with sample data
             </button>
           </div>
-          <p class="muted" style="margin-top:12px">New here? The tour loads dummy April–June 2026 transactions so you can explore - no data of your own needed.</p>
+          <p class="muted" style="margin-top:12px">Never used it before? The tour uses made-up April–June 2026 transactions so you can click around without importing anything real.</p>
         </div>
       </section>
 

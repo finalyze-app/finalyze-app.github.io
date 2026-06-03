@@ -1177,3 +1177,7 @@ html[data-theme="light"] .ad-side {
   .ad-navsel { animation: none; }
   .ad-bars span { animation: none; height: var(--h); min-height: 12px; }
 }
+
+/* personal maker note - a little less polished on purpose */
+.maker-note p { max-width: 620px; }
+.maker-note em { font-style: normal; font-weight: 600; color: var(--ink); }
