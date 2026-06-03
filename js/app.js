@@ -857,20 +857,57 @@
         const el = gridStack.el.querySelector('.grid-stack-item[gs-id="overview"]');
         if (!el) return;
         const curH = +el.getAttribute('gs-h');
-        if (curH === h) return;
-        gridNormalizing = true;
-        try {
-          gridStack.update(el, {
-            h, w: 12, x: 0, y: 0,
-            minW: 12, maxW: 12, minH: h, maxH: h,
-            noMove: true, noResize: true,
-          });
-        } finally {
-          gridNormalizing = false;
+        let changed = false;
+        if (curH !== h) {
+          gridNormalizing = true;
+          try {
+            gridStack.update(el, {
+              h, w: 12, x: 0, y: 0,
+              minW: 12, maxW: 12, minH: h, maxH: h,
+              noMove: true, noResize: true,
+            });
+          } finally {
+            gridNormalizing = false;
+          }
+          changed = true;
         }
-        normalizeGridLayout(true);
+        // The overview is full-width and its height is dynamic. A layout saved when the
+        // overview was shorter leaves widgets beneath it overlapping into its rows. Realign
+        // the top content row to the overview's bottom (shifting the rest down uniformly so
+        // the custom arrangement is preserved). Runs even when the height didn't change here,
+        // so a stale saved overlap is corrected on load.
+        const reflowed = reflowBelowOverview(h);
+        if (changed || reflowed) normalizeGridLayout(true);
       });
     });
+  }
+  // Push visible non-overview widgets down so the topmost one sits flush under the overview.
+  // Only ever shifts down (closing an overlap); a plain gap below the overview is left as-is.
+  // Returns true if anything moved. Shifting away from the locked overview can't trigger the
+  // collision-resolver recursion that re-asserting positions toward it would.
+  function reflowBelowOverview(overviewH) {
+    if (!gridStack) return false;
+    const items = visibleOrder()
+      .filter((id) => id !== 'overview')
+      .map((id) => {
+        const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+        if (!el) return null;
+        return { el, y: +el.getAttribute('gs-y') || 0 };
+      })
+      .filter(Boolean);
+    if (!items.length) return false;
+    const minY = Math.min(...items.map((it) => it.y));
+    const delta = overviewH - minY;
+    if (delta <= 0) return false;
+    gridNormalizing = true;
+    gridStack.batchUpdate();
+    try {
+      items.forEach((it) => gridStack.update(it.el, { y: it.y + delta }));
+    } finally {
+      gridStack.batchUpdate(false);
+      gridNormalizing = false;
+    }
+    return true;
   }
 
   function defaultWidgetW(id) { return id === 'overview' ? 12 : (WIDGET_SPAN[id] === 'full' ? 12 : 6); }
@@ -1244,6 +1281,21 @@
       const g = clampGridItem(id, grid[id] || { w: defaultWidgetW(id), h: gridHeight(id) });
       return { id, x: g.x, y: g.y, w: g.w, h: g.h };
     });
+    // The full-width overview's height is dynamic. clampGridItem already gives it the current
+    // height, but non-overview widgets keep their saved y — a layout saved when the overview
+    // was shorter leaves the top row overlapping it. Shift the whole non-overview group down so
+    // the topmost sits flush under the overview (preserves the user's arrangement; only ever
+    // shifts down). Done on the plain layout array before load, so it's deterministic and
+    // independent of render timing / gridReady.
+    const ovItem = layout.find((l) => l.id === 'overview');
+    if (ovItem) {
+      const others = layout.filter((l) => l.id !== 'overview');
+      if (others.length) {
+        const minY = Math.min(...others.map((l) => l.y));
+        const delta = (ovItem.y + ovItem.h) - minY;
+        if (delta > 0) others.forEach((l) => { l.y += delta; });
+      }
+    }
     gridNormalizing = true;
     try {
       // Let GridStack auto-register DOM widgets (enables drag/resize), then apply saved
