@@ -275,10 +275,11 @@
           <p class="muted" id="storageSize" style="margin:0 0 14px"></p>
           <div id="accountManager"></div>
           <div class="backup-row">
-            <div><strong>Backup &amp; restore</strong><div class="muted">Save a JSON copy of all your data, or restore it on another browser/device.</div></div>
+            <div><strong>Backup &amp; restore</strong><div class="muted">Save a JSON copy of all your data, or restore it on another browser/device. “Restore settings only” brings over your categories, rules, layout &amp; preferences without touching your current transactions.</div></div>
             <div class="backup-btns">
               <button class="btn" id="exportBtn" title="Export backup">Backup</button>
-              <label class="btn" title="Import backup">Restore<input type="file" id="importInput" accept=".json" hidden /></label>
+              <label class="btn" title="Restore everything from a backup (replaces current data)">Restore<input type="file" id="importInput" accept=".json" hidden /></label>
+              <label class="btn" title="Restore only settings &amp; layout from a backup, keeping your current transactions">Restore settings only<input type="file" id="importSettingsInput" accept=".json" hidden /></label>
             </div>
           </div>
         </div>
@@ -349,11 +350,11 @@
   <script src="js/parse.js?v=18"></script>
   <script src="js/pdfparse.js?v=6"></script>
   <script src="js/categorize.js?v=41"></script>
-  <script src="js/store.js?v=49"></script>
+  <script src="js/store.js?v=50"></script>
   <script src="js/analyze.js?v=53"></script>
   <script src="js/charts.js?v=54"></script>
   <script src="js/export-pdf.js?v=13"></script>
-  <script src="js/app.js?v=135"></script>
+  <script src="js/app.js?v=139"></script>
   <script src="js/account.js?v=58"></script>
   <script src="js/ai.js?v=24"></script>
   <script src="js/chat.js?v=25"></script>

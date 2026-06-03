@@ -848,36 +848,50 @@
     host.style.gridTemplateColumns = `repeat(${summaryCardCols}, minmax(0, 1fr))`;
   }
 
+  // Synchronously measure the overview's rendered height, set its grid height to match, and
+  // shift any widgets below it down so none overlap. Reading offsetHeight/scrollHeight forces a
+  // synchronous layout, so this is accurate the moment the overview content is in the DOM — no
+  // requestAnimationFrame needed (rAF is throttled/never fires in headless/background tabs, which
+  // previously left this correction dead and let stale saved layouts overlap the taller overview).
+  function syncOverviewLayout() {
+    if (!gridStack) return false;
+    if (!visibleOrder().includes('overview')) return false;
+    const h = overviewHeightForSummary();
+    const el = gridStack.el.querySelector('.grid-stack-item[gs-id="overview"]');
+    if (!el) return false;
+    const curH = +el.getAttribute('gs-h');
+    let changed = false;
+    if (curH !== h) {
+      gridNormalizing = true;
+      try {
+        gridStack.update(el, {
+          h, w: 12, x: 0, y: 0,
+          minW: 12, maxW: 12, minH: h, maxH: h,
+          noMove: true, noResize: true,
+        });
+      } finally {
+        gridNormalizing = false;
+      }
+      changed = true;
+    }
+    // The overview is full-width and its height is dynamic. A layout saved when the overview was
+    // shorter leaves widgets beneath it overlapping into its rows. Realign the top content row to
+    // the overview's bottom (shifting the rest down uniformly so the custom arrangement is
+    // preserved). Runs even when the height didn't change here, so a stale overlap is corrected.
+    const reflowed = reflowBelowOverview(h);
+    if (changed || reflowed) normalizeGridLayout(true);
+    return changed || reflowed;
+  }
   function adjustOverviewHeight() {
     if (!visibleOrder().includes('overview')) return;
+    // Synchronous pass: correct now, independent of rAF firing.
+    syncOverviewLayout();
+    // Deferred pass: re-measure after the browser has fully settled layout/fonts, in case the
+    // synchronous measurement was slightly off. Harmless when rAF doesn't fire.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (!gridStack || !gridReady) return;
-        const h = overviewHeightForSummary();
-        const el = gridStack.el.querySelector('.grid-stack-item[gs-id="overview"]');
-        if (!el) return;
-        const curH = +el.getAttribute('gs-h');
-        let changed = false;
-        if (curH !== h) {
-          gridNormalizing = true;
-          try {
-            gridStack.update(el, {
-              h, w: 12, x: 0, y: 0,
-              minW: 12, maxW: 12, minH: h, maxH: h,
-              noMove: true, noResize: true,
-            });
-          } finally {
-            gridNormalizing = false;
-          }
-          changed = true;
-        }
-        // The overview is full-width and its height is dynamic. A layout saved when the
-        // overview was shorter leaves widgets beneath it overlapping into its rows. Realign
-        // the top content row to the overview's bottom (shifting the rest down uniformly so
-        // the custom arrangement is preserved). Runs even when the height didn't change here,
-        // so a stale saved overlap is corrected on load.
-        const reflowed = reflowBelowOverview(h);
-        if (changed || reflowed) normalizeGridLayout(true);
+        if (!gridStack) return;
+        syncOverviewLayout();
       });
     });
   }
@@ -4235,6 +4249,11 @@
       reader.onload = () => { try { Store.importJSON(reader.result); toast('Backup restored', { check: true }); render(); } catch (e) { toast('Import failed: ' + e.message); } };
     reader.readAsText(file);
   }
+  function importSettings(file) {
+    const reader = new FileReader();
+    reader.onload = () => { try { Store.importSettingsJSON(reader.result); toast('Settings restored', { check: true }); render(); } catch (e) { toast('Import failed: ' + e.message); } };
+    reader.readAsText(file);
+  }
 
   function applyCategoryOne(tid, txnName, newCat) {
     const autoCat = categorize(txnName, Store.getOverrides());
@@ -4540,7 +4559,9 @@
     charts.setMerchantClickHandler((mk) => openMerchantDrill(mk));
 
     [$('#fileInput'), $('#fileInput2')].forEach((inp) => inp && inp.addEventListener('change', (e) => handleFiles(e.target.files)));
-    $('#importInput').addEventListener('change', (e) => { if (e.target.files[0]) importBackup(e.target.files[0]); });
+    $('#importInput').addEventListener('change', (e) => { if (e.target.files[0]) { importBackup(e.target.files[0]); e.target.value = ''; } });
+    const importSettingsInput = $('#importSettingsInput');
+    if (importSettingsInput) importSettingsInput.addEventListener('change', (e) => { if (e.target.files[0]) { importSettings(e.target.files[0]); e.target.value = ''; } });
     $('#exportBtn').addEventListener('click', exportBackup);
     const pdfBtn = $('#exportPdfBtn');
     if (pdfBtn) pdfBtn.addEventListener('click', openPdfExportModal);

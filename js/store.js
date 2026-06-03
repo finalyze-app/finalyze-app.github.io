@@ -825,6 +825,19 @@
       persist();
     },
 
+    // Import only settings/layout from a backup, keeping the current transactions
+    // (and their per-transaction annotations) untouched. The inverse of
+    // clearTransactions: the fields that clearTransactions wipes are exactly the
+    // ones preserved from the live data here.
+    importSettingsJSON(jsonText) {
+      const incoming = validateBackup(JSON.parse(jsonText));
+      const TXN_KEYS = ['transactions', 'txnTags', 'cardmemberOverrides', 'txnCategoryOverrides', 'txnReimburse'];
+      TXN_KEYS.forEach((k) => { incoming[k] = cache[k]; });
+      cache = incoming;
+      migrate(cache);
+      persist();
+    },
+
     // Display currency: the user's chosen preference (from onboarding/profile)
     // wins; otherwise fall back to the statement's CURDEF, then CAD. We do not
     // convert amounts - this is purely the currency label shown in the UI.
