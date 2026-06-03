@@ -348,7 +348,7 @@
     await ensureScope();
     F.Store.clearTransactions();
     F.render && F.render();
-    F.toast && F.toast('Demo transactions cleared - demo settings kept');
+    F.toast && F.toast('Demo transactions cleared - demo settings kept', { check: true });
   }
 
   async function teardownDemo() {
@@ -361,7 +361,7 @@
     endTour();
     await teardownDemo();
     F.render && F.render();
-    F.toast && F.toast('Demo cleared - your own saved data was not affected');
+    F.toast && F.toast('Demo cleared - your own saved data was not affected', { check: true });
   }
 
   async function clearAndImport() {

@@ -309,7 +309,7 @@
       }
 
       pdf.save(`finalyze-dashboard-${new Date().toISOString().slice(0, 10)}.pdf`);
-      F.toast && F.toast('Dashboard PDF downloaded');
+      F.toast && F.toast('Dashboard PDF downloaded', { check: true });
     } catch (e) {
       F.toast && F.toast('Could not export PDF: ' + (e.message || 'unknown error'));
     } finally {

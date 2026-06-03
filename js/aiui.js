@@ -185,7 +185,7 @@
         F.Store.setOverride(key, cat); tr.remove();
       };
       out.querySelectorAll('.ai-apply').forEach((b) => b.onclick = () => { applyRow(b.closest('tr')); F.render && F.render(); });
-      $('#aiApplyAll').onclick = () => { out.querySelectorAll('tbody tr').forEach(applyRow); F.render && F.render(); F.toast && F.toast('Categories applied'); renderCategorize(body); };
+      $('#aiApplyAll').onclick = () => { out.querySelectorAll('tbody tr').forEach(applyRow); F.render && F.render(); F.toast && F.toast('Categories applied', { check: true }); renderCategorize(body); };
     });
   }
 

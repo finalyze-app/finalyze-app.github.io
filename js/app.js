@@ -356,11 +356,22 @@
     };
     return card.match === 'any' ? conds.some(test) : conds.every(test);
   }
-  function toast(msg) {
+  function toast(msg, opts) {
     const t = $('#toast');
-    t.textContent = msg; t.classList.add('show');
+    const check = !!(opts && (opts.check === true || opts === true));
+    if (check) {
+      t.innerHTML = `<span class="toast-check">✓</span>${esc(msg)}`;
+      t.classList.add('with-check');
+    } else {
+      t.textContent = msg;
+      t.classList.remove('with-check');
+    }
+    t.classList.add('show');
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => t.classList.remove('show'), 3600);
+    toast._t = setTimeout(() => {
+      t.classList.remove('show');
+      t.classList.remove('with-check');
+    }, 3600);
   }
   function chip(cat) {
     const c = categoryColor(cat);
@@ -905,7 +916,7 @@
     const h = Math.max(gridMinH(id), Math.min(gridMaxH(id), rawH < gridMinH(id) ? gridHeight(id) : rawH));
     return { x: id === 'overview' ? 0 : (g.x || 0), y: id === 'overview' ? 0 : (g.y || 0), w, h };
   }
-  function repackGrid(grid, visibleIds) {
+  function repackGrid(grid, visibleIds, respectProvidedOrder = false) {
     const next = {};
     let x = 0;
     let y = 0;
@@ -928,16 +939,22 @@
       rowH = 0;
     }
 
-    orderFromGrid(grid, visibleIds.filter((id) => id !== 'overview')).forEach(pack);
+    let sequence = visibleIds.filter((id) => id !== 'overview');
+    if (!respectProvidedOrder) {
+      sequence = orderFromGrid(grid, sequence);
+    }
+    sequence.forEach(pack);
     syncPeopleTrendHeight(next);
     return next;
   }
   function migrateOrderToGrid(order, hidden) {
+    const vis = order.filter((id) => !hidden.includes(id));
     return repackGrid(
       Object.fromEntries(
-        order.filter((id) => !hidden.includes(id)).map((id) => [id, { w: defaultWidgetW(id), h: gridHeight(id), x: 0, y: 0 }])
+        vis.map((id) => [id, { w: defaultWidgetW(id), h: gridHeight(id), x: 0, y: 0 }])
       ),
-      order.filter((id) => !hidden.includes(id))
+      vis,
+      true
     );
   }
   function orderFromGrid(grid, visibleIds) {
@@ -950,9 +967,21 @@
   }
   function ensureGrid(order, hidden, grid) {
     const next = { ...grid };
-    order.filter((id) => !hidden.includes(id)).forEach((id) => {
-      if (!next[id]) next[id] = clampGridItem(id, { w: defaultWidgetW(id), h: gridHeight(id) });
-      else next[id] = clampGridItem(id, next[id]);
+    const visibles = order.filter((id) => !hidden.includes(id));
+    // Compute current max bottom so any newly-visible or new widgets (e.g. after app update)
+    // are appended below the existing custom layout instead of overlapping at (0,0).
+    let maxBottom = 0;
+    Object.keys(next).forEach((k) => {
+      const gg = next[k];
+      if (gg) maxBottom = Math.max(maxBottom, (gg.y || 0) + (gg.h || 0));
+    });
+    visibles.forEach((id) => {
+      if (!next[id]) {
+        next[id] = clampGridItem(id, { x: 0, y: maxBottom, w: defaultWidgetW(id), h: gridHeight(id) });
+        maxBottom += next[id].h || 0;
+      } else {
+        next[id] = clampGridItem(id, next[id]);
+      }
     });
     Object.keys(next).forEach((id) => {
       if (!WIDGET_MAP[id] || hidden.includes(id)) delete next[id];
@@ -971,8 +1000,9 @@
     }
     let grid = (l.grid && typeof l.grid === 'object') ? { ...l.grid } : migrateOrderToGrid(order, hidden);
     grid = ensureGrid(order, hidden, grid);
-    const visible = order.filter((id) => !hidden.includes(id));
-    grid = repackGrid(grid, visible);
+    // Note: no repack here. Saved grid positions (x/y/w/h) are retained exactly for custom
+    // dashboard layouts. repackGrid is only used for structural tidy-ups (initial migrate,
+    // hide/remove to close gaps, or applying a sequence from Settings → Layout).
     return { order, hidden, grid };
   }
   function saveLayout(l) {
@@ -1007,33 +1037,47 @@
     const { order, hidden } = getLayout();
     let grid = gridFromStack();
     if (!Object.keys(grid).length) {
+      // Early timing: fall back to the (custom, non-repacked) saved positions.
       ids.forEach((id) => {
         const saved = getLayout().grid[id];
         if (saved) grid[id] = clampGridItem(id, saved);
       });
     }
-    const packed = repackGrid(grid, ids);
+    // Retain exact positions from GridStack (or saved). Do not repack/force-flow here.
+    // Clamp only to enforce mins/maxes/snaps/overview pin. This is what allows custom
+    // layouts to survive refresh and drag operations.
+    const nextGrid = {};
     ids.forEach((id) => {
       const el = gridStack.el.querySelector(`.grid-stack-item[gs-id="${id}"]`);
-      if (!el || !packed[id]) return;
-      const cur = grid[id] || packed[id];
-      const next = packed[id];
-      const maxW = gridMaxW(id);
-      const maxH = gridMaxH(id);
-      if (cur.x === next.x && cur.y === next.y && cur.w === next.w && cur.h === next.h) {
-        gridStack.update(el, { maxW, maxH, minW: gridMinW(id), minH: gridMinH(id) });
-        return;
+      if (!el) return;
+      const from = grid[id] || {
+        x: +el.getAttribute('gs-x') || 0,
+        y: +el.getAttribute('gs-y') || 0,
+        w: +el.getAttribute('gs-w') || defaultWidgetW(id),
+        h: +el.getAttribute('gs-h') || gridHeight(id),
+      };
+      const g = clampGridItem(id, from);
+      const update = {
+        maxW: gridMaxW(id), maxH: gridMaxH(id),
+        minW: gridMinW(id), minH: gridMinH(id),
+      };
+      // Only force x/y/w/h in the update if clamp changed them (e.g. overview always, or snap)
+      if (g.x !== from.x || g.y !== from.y || g.w !== from.w || g.h !== from.h || id === 'overview') {
+        update.x = g.x; update.y = g.y; update.w = g.w; update.h = g.h;
       }
-      gridStack.update(el, {
-        x: next.x, y: next.y, w: next.w, h: next.h,
-        maxW, maxH, minW: gridMinW(id), minH: gridMinH(id),
-      });
+      gridStack.update(el, update);
+      nextGrid[id] = g;
     });
     const hiddenIds = order.filter((id) => hidden.includes(id));
-    const sortedVisible = orderFromGrid(packed, ids);
-    saveLayout({ grid: packed, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
+    const sortedVisible = orderFromGrid(nextGrid, ids);
+    saveLayout({ grid: nextGrid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
     gridNormalizing = false;
     syncPeopleTrendHeightOnGrid();
+    // Keep sidebar in sync with any position-derived order after init or drag-stop.
+    if (viewName === 'dashboard') {
+      buildNav(allTxns.length > 0);
+      initScrollSpy();
+    }
   }
   function refreshGridConstraints() {
     if (!gridStack || gridNormalizing) return;
@@ -1058,13 +1102,22 @@
     if (!gridStack || !gridReady || gridNormalizing) return;
     clearTimeout(gridSaveTimer);
     gridSaveTimer = setTimeout(() => {
-      const ids = visibleOrder();
-      const grid = repackGrid(gridFromStack(), ids);
-      const { order, hidden } = getLayout();
-      const hiddenIds = order.filter((id) => hidden.includes(id));
-      const sortedVisible = orderFromGrid(grid, ids);
+      // Capture the *exact* positions/sizes the user just arranged via GridStack drag/resize.
+      // No repack — this is what makes custom layouts persist across refresh.
+      const rawGrid = gridFromStack();
+      const grid = {};
+      Object.keys(rawGrid).forEach((id) => {
+        if (id && WIDGET_MAP[id]) grid[id] = clampGridItem(id, rawGrid[id]);
+      });
+      const { order: curOrder, hidden } = getLayout();
+      const visibleNow = Object.keys(grid);
+      const hiddenIds = curOrder.filter((id) => hidden.includes(id));
+      const sortedVisible = orderFromGrid(grid, visibleNow);
       saveLayout({ grid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
       buildNav(true);
+      // Tiny micro-toast confirmation for the layout change (only on actual user drag changes,
+      // not on initial load normalizes).
+      toast('Layout saved', { check: true });
     }, 200);
   }
   function initGridStack(container) {
@@ -1144,8 +1197,13 @@
     return true;
   }
   function visibleOrder() {
-    const { order, hidden } = getLayout();
-    return order.filter((id) => !hidden.includes(id) && widgetAvailable(id));
+    const { order, hidden, grid } = getLayout();
+    let vis = order.filter((id) => !hidden.includes(id) && widgetAvailable(id));
+    // Derive visible list from the *grid positions* (y then x). This makes the left sidebar,
+    // PDF sections, etc. always reflect the actual top-to-bottom widget order on screen.
+    // Works even if master 'order' (for settings list) differs, and ensures order survives
+    // refresh for custom layouts.
+    return orderFromGrid(grid, vis);
   }
 
   function goToSettings(tab) {
@@ -1279,7 +1337,7 @@
     if (r) r.onclick = async () => {
       r.disabled = true; r.textContent = 'Checking…';
       await refreshLicense();
-      if (userLicense === 'pro') { closeModal(); toast('Pro unlocked - full history restored'); }
+      if (userLicense === 'pro') { closeModal(); toast('Pro unlocked - full history restored', { check: true }); }
       else { r.disabled = false; r.textContent = 'I’ve paid - refresh'; toast('No active Pro subscription yet - it can take a moment after paying.'); }
     };
   }
@@ -1671,13 +1729,14 @@
     const container = $('#widgets');
     const ids = visibleOrder();
     const { grid: savedGrid } = getLayout();
-    const grid = repackGrid(savedGrid, ids);
+    // Use the saved grid positions directly (no repack) so custom drag layouts, sizes,
+    // and arrangements are restored exactly on refresh / re-render.
     destroyGridStack();
     unbindTxnResizeObserver();
     container.classList.add('grid-stack');
     container.innerHTML = ids.map((id) => {
       const w = WIDGET_MAP[id];
-      const g = clampGridItem(id, grid[id] || { w: defaultWidgetW(id), h: gridHeight(id) });
+      const g = clampGridItem(id, savedGrid[id] || { w: defaultWidgetW(id), h: gridHeight(id) });
       const pinned = id === 'overview';
       const lockAttrs = pinned ? ' gs-no-move="true" gs-no-resize="true" gs-locked="true"' : '';
       const drag = pinned ? '' : `<span class="drag-handle" title="Drag to move">${svg(GRIP)}</span>`;
@@ -2597,7 +2656,7 @@
     if (!confirm(`Delete ${keys.length} selected transaction${keys.length === 1 ? '' : 's'}? This cannot be undone.`)) return;
     let n = 0;
     keys.forEach((k) => { if (Store.deleteTransaction(k)) n++; });
-    toast(`Deleted ${n} transaction${n === 1 ? '' : 's'}`);
+    toast(`Deleted ${n} transaction${n === 1 ? '' : 's'}`, { check: true });
     refreshAfterDataChange();
   }
   function applyBulkRecategorize() {
@@ -2605,7 +2664,7 @@
     if (!keys.length) return;
     const cat = $('#bulkCat').value;
     keys.forEach((mk) => Store.setOverride(mk, cat));
-    toast(`Recategorized ${keys.length} merchant${keys.length === 1 ? '' : 's'} → ${cat}`);
+    toast(`Recategorized ${keys.length} merchant${keys.length === 1 ? '' : 's'} → ${cat}`, { check: true });
     refreshAfterDataChange();
   }
   function applyBulkCardholder() {
@@ -2613,7 +2672,7 @@
     const name = $('#bulkCardholder').value.trim();
     if (!tids.length || !name) return;
     tids.forEach((tid) => Store.setCardmemberOverride(tid, name));
-    toast(`Set cardholder “${name}” on ${tids.length} transaction${tids.length === 1 ? '' : 's'}`);
+    toast(`Set cardholder “${name}” on ${tids.length} transaction${tids.length === 1 ? '' : 's'}`, { check: true });
     refreshAfterDataChange();
   }
 
@@ -2626,7 +2685,7 @@
       toast('Could not update merchant');
       return;
     }
-    toast('Merchant updated');
+    toast('Merchant updated', { check: true });
     refreshAfterDataChange();
   }
 
@@ -2639,7 +2698,7 @@
       toast('Could not delete transaction');
       return;
     }
-    toast('Transaction deleted');
+    toast('Transaction deleted', { check: true });
     refreshAfterDataChange();
   }
 
@@ -2702,7 +2761,7 @@
     tb.querySelectorAll('input.sub-check').forEach((cb) => {
       cb.onchange = () => {
         Store.setSubscription(decodeURIComponent(cb.dataset.key), cb.checked);
-        toast(cb.checked ? 'Marked as subscription - all matching charges tracked' : 'Removed from subscriptions');
+        toast(cb.checked ? 'Marked as subscription - all matching charges tracked' : 'Removed from subscriptions', { check: true });
         refreshAfterDataChange();
       };
     });
@@ -2795,7 +2854,7 @@
     sel.value = Store.getCategoryApplyMode();
     sel.onchange = () => {
       Store.setCategoryApplyMode(sel.value);
-      toast('Category change preference saved');
+      toast('Category change preference saved', { check: true });
     };
   }
 
@@ -2831,17 +2890,17 @@
       </div>`;
 
     $$('.rule-cat', container).forEach((sel) => sel.onchange = () => {
-      Store.updateRule(sel.dataset.id, { category: sel.value }); render(); toast('Rule updated');
+      Store.updateRule(sel.dataset.id, { category: sel.value }); render(); toast('Rule updated', { check: true });
     });
     $$('.rule-del', container).forEach((btn) => btn.onclick = () => {
-      Store.removeRule(btn.dataset.id); render(); toast('Rule removed');
+      Store.removeRule(btn.dataset.id); render(); toast('Rule removed', { check: true });
     });
     $('#ruleAddBtn').onclick = () => {
       const pattern = $('#rulePattern').value.trim();
       const flags = $('#ruleCase').checked ? '' : 'i';
       if (!pattern) { toast('Enter a regex pattern'); return; }
       if (!isPro()) { requirePro('Custom categorization rules'); return; }
-      if (Store.addRule(pattern, $('#ruleCat').value, flags)) { render(); toast('Rule added'); }
+      if (Store.addRule(pattern, $('#ruleCat').value, flags)) { render(); toast('Rule added', { check: true }); }
       else toast('Invalid regular expression');
     };
     const listEl = container.querySelector('.rule-list');
@@ -2878,14 +2937,14 @@
       </div>`;
 
     $$('.subrule-del', container).forEach((btn) => btn.onclick = () => {
-      Store.removeSubscriptionRule(btn.dataset.id); render(); toast('Rule removed');
+      Store.removeSubscriptionRule(btn.dataset.id); render(); toast('Rule removed', { check: true });
     });
     $('#subRuleAddBtn').onclick = () => {
       const pattern = $('#subRulePattern').value.trim();
       const flags = $('#subRuleCase').checked ? '' : 'i';
       if (!pattern) { toast('Enter a keyword or regex'); return; }
       if (!isPro()) { requirePro('Subscription rules'); return; }
-      if (Store.addSubscriptionRule(pattern, flags)) { render(); toast('Subscription rule added'); }
+      if (Store.addSubscriptionRule(pattern, flags)) { render(); toast('Subscription rule added', { check: true }); }
       else toast('Invalid regular expression');
     };
     applyProLock(container, 'Subscription rules');
@@ -2914,7 +2973,7 @@
       </div>`;
 
     $$('.mergerule-del', container).forEach((btn) => btn.onclick = () => {
-      Store.removeMergeRule(btn.dataset.id); render(); toast('Rule removed');
+      Store.removeMergeRule(btn.dataset.id); render(); toast('Rule removed', { check: true });
     });
     $('#mergeRuleAddBtn').onclick = () => {
       const pattern = $('#mergeRulePattern').value.trim();
@@ -2922,7 +2981,7 @@
       const flags = $('#mergeRuleCase').checked ? '' : 'i';
       if (!pattern || !target) { toast('Enter a pattern and a merge-into name'); return; }
       if (!isPro()) { requirePro('Auto-merge rules'); return; }
-      if (Store.addMergeRule(pattern, target, flags)) { render(); toast('Auto-merge rule added'); }
+      if (Store.addMergeRule(pattern, target, flags)) { render(); toast('Auto-merge rule added', { check: true }); }
       else toast('Invalid regular expression');
     };
     applyProLock(container, 'Auto-merge rules');
@@ -2987,7 +3046,7 @@
         <div class="cc-actions"><button type="button" class="btn sm" id="ccAddCond">+ Add condition</button><button type="button" class="btn primary" id="ccCreate">Create card</button></div>
       </div>`;
 
-    $$('.cc-del', container).forEach((b) => b.onclick = () => { Store.removeCustomCard(b.dataset.id); render(); toast('Card removed'); });
+    $$('.cc-del', container).forEach((b) => b.onclick = () => { Store.removeCustomCard(b.dataset.id); render(); toast('Card removed', { check: true }); });
     container.querySelector('#ccName').oninput = (e) => { cardDraft.name = e.target.value; };
     container.querySelector('#ccMatch').onchange = (e) => { cardDraft.match = e.target.value; };
     container.querySelector('#ccAddCond').onclick = () => { ccReadDraft(container); cardDraft.conditions.push({ field: 'description', op: 'contains', value: '' }); renderCardManager(); };
@@ -3007,7 +3066,7 @@
       if (!valid.length) { toast('Add at least one condition'); return; }
       Store.addCustomCard({ name: cardDraft.name, match: cardDraft.match, conditions: valid });
       cardDraft = null;
-      render(); toast('Custom card created');
+      render(); toast('Custom card created', { check: true });
     };
     applyProLock(container, 'Custom KPI cards');
   }
@@ -3043,7 +3102,7 @@
       const save = () => {
         const cat = decodeURIComponent(inp.dataset.cat);
         Store.setBudget(cat, inp.value);
-        toast(inp.value ? `Budget set for ${cat}` : `Budget cleared for ${cat}`);
+        toast(inp.value ? `Budget set for ${cat}` : `Budget cleared for ${cat}`, { check: true });
         render();
       };
       inp.onchange = save;
@@ -3085,7 +3144,7 @@
       else toast('Could not rename - name empty or taken');
     });
     $$('.group-del', container).forEach((btn) => btn.onclick = () => {
-      Store.removeCategoryGroup(btn.dataset.id); render(); toast('Group removed');
+      Store.removeCategoryGroup(btn.dataset.id); render(); toast('Group removed', { check: true });
     });
     $('#addGroupBtn').onclick = () => {
       const name = $('#newGroupName').value.trim();
@@ -3093,7 +3152,7 @@
       if (!name) { toast('Enter a group name'); return; }
       if (!cats.length) { toast('Select at least one category'); return; }
       if (Store.addCategoryGroup(name, $('#newGroupColor').value, cats)) {
-        render(); toast(`Group “${name}” added`);
+        render(); toast(`Group “${name}” added`, { check: true });
       } else toast('That group name already exists');
     };
   }
@@ -3146,7 +3205,7 @@
       if (Store.renameAccount(id, next.trim())) {
         renderAccountManager();
         syncAccountFilter();
-        toast('Account renamed');
+        toast('Account renamed', { check: true });
       } else toast('Could not rename - name is empty or already in use');
     });
     const addBtn = $('#addAcctBtn');
@@ -3154,7 +3213,7 @@
       const label = $('#newAcctName').value.trim();
       if (!label) { toast('Enter an account label'); return; }
       if (!Store.addAccount(label)) { requirePro('Multiple accounts'); return; }
-      $('#newAcctName').value = ''; renderAccountManager(); toast('Account added');
+      $('#newAcctName').value = ''; renderAccountManager(); toast('Account added', { check: true });
     };
   }
 
@@ -3234,27 +3293,27 @@
       const map = Object.fromEntries(list.map((m) => [m.key, m]));
       const canonical = (map[a]?.spend || 0) >= (map[b]?.spend || 0) ? a : b;
       Store.mergeMerchants([a, b], canonical);
-      render(); toast(`Merged into “${canonical}”`);
+      render(); toast(`Merged into “${canonical}”`, { check: true });
     });
     $$('.merge-dismiss-btn', container).forEach((btn) => btn.onclick = () => {
       Store.dismissMergeSuggestion(decodeURIComponent(btn.dataset.a), decodeURIComponent(btn.dataset.b));
-      renderMergeManager(); toast('Suggestion dismissed');
+      renderMergeManager(); toast('Suggestion dismissed', { check: true });
     });
     $$('.ms-rename', container).forEach((btn) => btn.onclick = () => {
       const old = decodeURIComponent(btn.dataset.canon);
       const next = prompt(`Rename merged merchant “${old}” to:`, old);
       if (next == null || !next.trim() || next.trim() === old) return;
-      Store.mergeMerchants([old], next.trim()); render(); toast('Merged merchant renamed');
+      Store.mergeMerchants([old], next.trim()); render(); toast('Merged merchant renamed', { check: true });
     });
     $('#mergeBtn').onclick = () => {
       const aliases = $$('.merge-check', container).filter((c) => c.checked).map((c) => decodeURIComponent(c.value));
       if (aliases.length < 2) { toast('Tick at least two merchants to merge'); return; }
       const canonical = ($('#mergeName').value.trim()) || aliases[0];
       Store.mergeMerchants(aliases, canonical);
-      render(); toast(`Merged ${aliases.length} merchants into “${canonical}”`);
+      render(); toast(`Merged ${aliases.length} merchants into “${canonical}”`, { check: true });
     };
     $$('.ms-x', container).forEach((btn) => btn.onclick = () => {
-      Store.removeMerge(decodeURIComponent(btn.dataset.alias)); render(); toast('Merge removed');
+      Store.removeMerge(decodeURIComponent(btn.dataset.alias)); render(); toast('Merge removed', { check: true });
     });
   }
 
@@ -3333,27 +3392,27 @@
       const mapByKey = Object.fromEntries(list.map((m) => [m.key, m]));
       const canonical = (mapByKey[a]?.spend || 0) >= (mapByKey[b]?.spend || 0) ? a : b;
       Store.mergeCardmembers([a, b], canonical);
-      render(); toast(`Merged into “${canonical}”`);
+      render(); toast(`Merged into “${canonical}”`, { check: true });
     });
     $$('.merge-dismiss-btn', container).forEach((btn) => btn.onclick = () => {
       Store.dismissCardmemberMergeSuggestion(decodeURIComponent(btn.dataset.a), decodeURIComponent(btn.dataset.b));
-      renderCardmemberMergeManager(); toast('Suggestion dismissed');
+      renderCardmemberMergeManager(); toast('Suggestion dismissed', { check: true });
     });
     $$('.ms-rename', container).forEach((btn) => btn.onclick = () => {
       const old = decodeURIComponent(btn.dataset.canon);
       const next = prompt(`Rename merged cardmember “${old}” to:`, old);
       if (next == null || !next.trim() || next.trim() === old) return;
-      Store.mergeCardmembers([old], next.trim()); render(); toast('Merged cardmember renamed');
+      Store.mergeCardmembers([old], next.trim()); render(); toast('Merged cardmember renamed', { check: true });
     });
     $('#cmMergeBtn').onclick = () => {
       const aliases = $$('.merge-check', container).filter((c) => c.checked).map((c) => decodeURIComponent(c.value));
       if (aliases.length < 2) { toast('Tick at least two cardmembers to merge'); return; }
       const canonical = ($('#cmMergeName').value.trim()) || aliases[0];
       Store.mergeCardmembers(aliases, canonical);
-      render(); toast(`Merged ${aliases.length} cardmembers into “${canonical}”`);
+      render(); toast(`Merged ${aliases.length} cardmembers into “${canonical}”`, { check: true });
     };
     $$('.ms-x', container).forEach((btn) => btn.onclick = () => {
-      Store.removeCardmemberMerge(decodeURIComponent(btn.dataset.alias)); render(); toast('Merge removed');
+      Store.removeCardmemberMerge(decodeURIComponent(btn.dataset.alias)); render(); toast('Merge removed', { check: true });
     });
   }
 
@@ -3384,15 +3443,15 @@
       const old = decodeURIComponent(btn.dataset.cat);
       const next = prompt(`Rename “${old}” to:`, old);
       if (next == null) return;
-      if (Store.renameCategory(old, next.trim())) { renderCatManager(); render(); toast('Category renamed'); }
+      if (Store.renameCategory(old, next.trim())) { renderCatManager(); render(); toast('Category renamed', { check: true }); }
       else toast('Could not rename - name is empty or already in use');
     });
     $$('#catManager .cat-type').forEach((sel) => sel.onchange = () => {
       Store.setCategoryType(decodeURIComponent(sel.dataset.cat), sel.value);
-      toast(sel.value === 'payment' ? 'Now treated as Payment/Refund' : 'Now treated as Spending');
+      toast(sel.value === 'payment' ? 'Now treated as Payment/Refund' : 'Now treated as Spending', { check: true });
     });
     $$('#catManager .cat-remove').forEach((btn) => btn.onclick = () => {
-      Store.removeCategory(decodeURIComponent(btn.dataset.cat)); renderCatManager(); toast('Category removed');
+      Store.removeCategory(decodeURIComponent(btn.dataset.cat)); renderCatManager(); toast('Category removed', { check: true });
     });
   }
 
@@ -3417,7 +3476,15 @@
       </div>`;
     }).join('');
     $$('#widgetManager .wm-vis:not(:disabled)').forEach((cb) => cb.onchange = () => toggleWidgetHidden(cb.dataset.widget, !cb.checked));
-    makeSortable(container, '.wm-row', (ids) => { saveLayout({ order: ids }); });
+    makeSortable(container, '.wm-row', (ids) => {
+      // Reorder in settings applies a new sequence: pack the current visibles in exactly this
+      // order (respect seq) so the dashboard will show them top-to-bottom in the chosen order.
+      // The exact coords are then retained on refresh (no load-time repack).
+      const { hidden, grid } = getLayout();
+      const visSeq = ids.filter((wid) => !hidden.includes(wid) && widgetAvailable(wid));
+      const packed = repackGrid(grid, visSeq, true);
+      saveLayout({ order: ids, grid: packed });
+    });
   }
 
   // ============ Layout mutations ============
@@ -3442,7 +3509,9 @@
     delete currentGrid[id];
 
     const ids = order.filter((wid) => !newHidden.includes(wid) && widgetAvailable(wid));
-    const packed = repackGrid(currentGrid, ids);
+    // Repack the survivors following the provided logical sequence (from master order) to close the gap.
+    // This is a structural change, so repacking is appropriate (and only here + migrate + settings reorder).
+    const packed = repackGrid(currentGrid, ids, true);
     const hiddenIds = order.filter((wid) => newHidden.includes(wid));
     const sortedVisible = orderFromGrid(packed, ids);
     const nextLayout = {
@@ -3495,7 +3564,7 @@
       confirmClass: 'btn danger',
       onConfirm: () => {
         removeWidgetFromDashboard(id);
-        toast(`Hid “${w.title}” - re-enable in Settings`);
+        toast(`Hid “${w.title}” - re-enable in Settings`, { check: true });
       },
     });
   }
@@ -3507,9 +3576,25 @@
     }
     const { order, hidden, grid } = getLayout();
     const set = new Set(hidden);
+    const wasHidden = set.has(id);
     if (hide) set.add(id); else set.delete(id);
-    saveLayout({ order, hidden: [...set], grid });
-    buildNav(allTxns.length > 0);
+    let nextGrid = { ...grid };
+    if (hide) {
+      delete nextGrid[id];
+    } else if (wasHidden) {
+      // Newly unhidden from settings: append below the current max bottom of saved grid
+      // so it doesn't land on top of existing custom layout.
+      let maxBottom = 0;
+      Object.keys(nextGrid).forEach((k) => {
+        const gg = nextGrid[k];
+        if (gg) maxBottom = Math.max(maxBottom, (gg.y || 0) + (gg.h || 0));
+      });
+      nextGrid[id] = clampGridItem(id, { x: 0, y: maxBottom, w: defaultWidgetW(id), h: gridHeight(id) });
+    }
+    saveLayout({ order, hidden: [...set], grid: nextGrid });
+    // Only rebuild the widget nav if we're on the dashboard; calling from Settings would
+    // clobber the settings sidebar with dashboard widget links.
+    if (viewName === 'dashboard') buildNav(allTxns.length > 0);
   }
 
   // ============ Drag-to-sort (handle-gated) ============
@@ -3785,7 +3870,7 @@
         return;
       }
       const fmt = sources.size ? ' · ' + [...sources].join(', ') : '';
-      toast(`Imported ${totalAdded} new · ${totalDup} already in history${fmt}`);
+      toast(`Imported ${totalAdded} new · ${totalDup} already in history${fmt}`, { check: true });
       if (totalAdded > 0) maybeOfferFirstImportTours();
     };
 
@@ -3947,7 +4032,7 @@
       const { added, duplicates } = Store.mergeTransactions({ transactions: txns, source: 'PDF' }, accountId);
       closeModal();
       render();
-      toast(`Imported ${added} new · ${duplicates} already in history · PDF`);
+      toast(`Imported ${added} new · ${duplicates} already in history · PDF`, { check: true });
       if (added > 0) maybeOfferFirstImportTours();
     };
   }
@@ -3963,7 +4048,7 @@
   }
   function importBackup(file) {
     const reader = new FileReader();
-    reader.onload = () => { try { Store.importJSON(reader.result); toast('Backup restored'); render(); } catch (e) { toast('Import failed: ' + e.message); } };
+      reader.onload = () => { try { Store.importJSON(reader.result); toast('Backup restored', { check: true }); render(); } catch (e) { toast('Import failed: ' + e.message); } };
     reader.readAsText(file);
   }
 
@@ -3997,14 +4082,14 @@
       if (mode === 'one') {
         applyCategoryOne(opts.tid, opts.txnName, opts.newCat);
         t.category = opts.newCat;
-        toast('Category saved for this transaction');
+        toast('Category saved for this transaction', { check: true });
         refreshAfterDataChange();
         return;
       }
       if (mode === 'all') {
         applyCategoryAll(opts.merchantKey, opts.newCat);
         t.category = opts.newCat;
-        toast('Category saved for all transactions at this merchant');
+        toast('Category saved for all transactions at this merchant', { check: true });
         refreshAfterDataChange();
         return;
       }
@@ -4028,13 +4113,13 @@
     body.querySelector('#catApplyOne').onclick = () => {
       applyCategoryOne(tid, txnName, newCat);
       closeModal();
-      toast('Category saved for this transaction');
+      toast('Category saved for this transaction', { check: true });
       refreshAfterDataChange();
     };
     body.querySelector('#catApplyAll').onclick = () => {
       applyCategoryAll(merchantKey, newCat);
       closeModal();
-      toast('Category saved for all transactions at this merchant');
+      toast('Category saved for all transactions at this merchant', { check: true });
       refreshAfterDataChange();
     };
     body.querySelector('#catApplyCancel').onclick = () => closeModal();
@@ -4172,7 +4257,7 @@
     body.querySelector('#dmCat').onchange = (e) => {
       Store.setOverride(merchantKey, e.target.value);
       refreshAfterDataChange();
-      toast(`Category set for ${merchantKey}`);
+      toast(`Category set for ${merchantKey}`, { check: true });
       openMerchantDrill(merchantKey);
     };
     body.querySelectorAll('[data-mtag]').forEach((btn) => btn.onclick = () => {
@@ -4198,7 +4283,7 @@
     const exBtn = body.querySelector('[data-mexcl]');
     if (exBtn) exBtn.onclick = () => {
       Store.setMerchantAnomalyExclude(merchantKey, !exBtn.classList.contains('on'));
-      refreshAfterDataChange(); toast(exBtn.classList.contains('on') ? 'Merchant included in anomalies' : 'Merchant excluded from anomalies'); openMerchantDrill(merchantKey);
+      refreshAfterDataChange(); toast(exBtn.classList.contains('on') ? 'Merchant included in anomalies' : 'Merchant excluded from anomalies', { check: true }); openMerchantDrill(merchantKey);
     };
   }
 
@@ -4326,7 +4411,7 @@
         amountMin = ''; amountMax = ''; flowFilter = 'all';
         excludeTagged = false; activeAccount = 'all'; cmpInit = false; yrSelected = '';
         dateFrom = ''; dateTo = ''; dateRangeInit = false; demoDefaultApplied = false;
-        render(); toast('All data cleared');
+        render(); toast('All data cleared', { check: true });
       }
     });
     $('#replayDashTour').addEventListener('click', startDashboardTour);
@@ -4392,13 +4477,13 @@
         dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
         dateRangeInit = false; excludeTagged = false; cmpInit = false; yrSelected = '';
         viewName = 'dashboard';
-        render(); toast('Transactions cleared - settings kept');
+        render(); toast('Transactions cleared - settings kept', { check: true });
       }
     });
     $('#addCatBtn').addEventListener('click', () => {
       const name = $('#newCatName').value.trim();
       if (!name) { toast('Enter a category name'); return; }
-      if (Store.addCategory(name, $('#newCatColor').value, $('#newCatType').value)) { $('#newCatName').value = ''; renderCatManager(); toast('Category added'); }
+      if (Store.addCategory(name, $('#newCatColor').value, $('#newCatType').value)) { $('#newCatName').value = ''; renderCatManager(); toast('Category added', { check: true }); }
       else toast('That category already exists');
     });
 

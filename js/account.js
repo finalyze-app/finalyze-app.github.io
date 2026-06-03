@@ -324,12 +324,12 @@
       copyBtn.onclick = async () => {
         try {
           await navigator.clipboard.writeText(shareLink);
-          if (F.toast) F.toast('Referral link copied');
+          if (F.toast) F.toast('Referral link copied', { check: true });
           else copyBtn.textContent = 'Copied!';
         } catch (e) {
           const inp = panel.querySelector('#acctRefLink');
           if (inp) { inp.select(); document.execCommand('copy'); }
-          if (F.toast) F.toast('Link copied');
+          if (F.toast) F.toast('Link copied', { check: true });
         }
       };
     }
