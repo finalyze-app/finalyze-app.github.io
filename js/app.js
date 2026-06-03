@@ -1148,6 +1148,12 @@
     return order.filter((id) => !hidden.includes(id) && widgetAvailable(id));
   }
 
+  function goToSettings(tab) {
+    viewName = 'prefs';
+    if (tab) settingsTab = tab;
+    render();
+  }
+
   // Accounts gate: when a backend is configured, signed-out users can only run
   // the demo. (No gate when accounts aren't configured - there'd be no way in.)
   function requiresSignIn() {
@@ -1953,14 +1959,16 @@
         table.innerHTML = `
           <tbody><tr><td class="muted-cell" colspan="6">
             <div style="padding:28px 16px; text-align:center; color:var(--muted);">
-              <p style="font-size:15px; line-height:1.5; margin:0 0 10px;">🧾 Budget vs Actual is ready to audit your life choices...</p>
-              <p style="margin:0; line-height:1.5;">You haven't set any budgets yet. Without targets this page is basically a very opinionated receipt viewer that has nothing to be opinionated about.</p>
-              <p style="margin:12px 0 0; font-size:13px; opacity:.85;">Head to <strong>Settings → Budgets</strong>, give a few categories or groups a monthly cap (coffee? takeout? "I definitely needed that gadget"?), and this will transform into glorious green/red bars, over/under drama, and the occasional "you actually stayed under budget" victory lap. Your wallet is already nervous. 📊</p>
+              <div style="max-width:420px; margin:0 auto; text-align:left;">
+                <p style="font-size:15px; line-height:1.5; margin:0 0 10px;">🧾 Budget vs Actual is ready to audit your life choices...</p>
+                <p style="margin:0; line-height:1.5;">You haven't set any budgets yet. Without targets this page is basically a very opinionated receipt viewer that has nothing to be opinionated about.</p>
+                <p style="margin:12px 0 0; font-size:13px; opacity:.85;">Head to <a href="#" onclick="F.goToSettings('budgets'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>, give a few categories or groups a monthly cap (coffee? takeout? "I definitely needed that gadget"?), and this will transform into glorious green/red bars, over/under drama, and the occasional "you actually stayed under budget" victory lap. Your wallet is already nervous. 📊</p>
+              </div>
             </div>
           </td></tr></tbody>
         `;
       }
-      if (hintEl) hintEl.textContent = 'No budgets set — add some in Settings → Budgets';
+      if (hintEl) hintEl.innerHTML = 'No budgets set — add some in <a href="#" onclick="F.goToSettings(\'budgets\'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>';
       return;
     }
 
@@ -2021,7 +2029,7 @@
             `<td class="num ${remClass}">${fmt(r.remaining)}</td>` +
             `<td class="num${over ? ' amt-neg' : ''}">${r.pct.toFixed(0)}%</td><td>${status}</td></tr>`;
         }).join('') + '</tbody>'
-      : '<tbody><tr><td class="muted-cell" colspan="6">No budgets set. Add limits in Settings → Budgets.</td></tr></tbody>';
+      : '<tbody><tr><td class="muted-cell" colspan="6">No budgets set. Add limits in <a href="#" onclick="F.goToSettings(\'budgets\'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>.</td></tr></tbody>';
 
     const hint = document.querySelector('.analysis-page-budget .analysis-tools .hint');
     if (hint) {
@@ -2145,7 +2153,7 @@
           `<td class="num">${r.count}</td><td class="num">${r.months}</td><td>${r.lastDate}</td>` +
           `<td>${r.byRule ? '<span class="tag marked">rule</span>' : r.marked ? '<span class="tag marked">marked</span>' : ''}</td></tr>`
         ).join('') + '</tbody>'
-      : '<tbody><tr><td class="muted-cell">No recurring charges. Tick the “Sub” box on a transaction, or add a keyword rule in Settings → Subscription rules.</td></tr></tbody>';
+      : '<tbody><tr><td class="muted-cell">No recurring charges. Tick the “Sub” box on a transaction, or add a keyword rule in <a href="#" onclick="F.goToSettings(\'rules\'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Subscription rules</a>.</td></tr></tbody>';
   }
 
   function renderAnomalies(txns) {
@@ -2336,9 +2344,10 @@
         const plural = months === 1 ? '' : 's';
         out.innerHTML = `
           <div style="padding:28px 16px; text-align:center; color:var(--muted);">
-            <p style="font-size:15px; line-height:1.5; margin:0 0 10px;">⏳ Whoa there, time traveler.</p>
-            <p style="margin:0; line-height:1.5;">We only have <strong>${months}</strong> month${plural} of data so far. A proper "Year in Review" needs the full 12-month director's cut before it can deliver the dramatic "what was I thinking" montage and the year-over-year plot twist.</p>
-            <p style="margin:12px 0 0; font-size:13px; opacity:.85;">Import a few more statements and this page goes from "mildly curious" to "I can't believe I spent that much on coffee" territory. Your future self is already cringing. 🫣</p>
+            <div style="max-width:420px; margin:0 auto; text-align:left;">
+              <p style="font-size:15px; line-height:1.5; margin:0 0 10px;">⏳ Whoa there, time traveler.</p>
+              <p style="margin:0; line-height:1.5;">We only have <strong>${months}</strong> month${plural} of data so far. A proper "Year in Review" needs the full 12-month director's cut before it can deliver the dramatic "what was I thinking" montage and the year-over-year plot twist.</p>
+            </div>
           </div>
         `;
       }
@@ -4484,6 +4493,7 @@
   F.toast = toast;
   F.enriched = enriched;       // categorized + flow-typed rows for AI context
   F.openMerchantDrill = openMerchantDrill;
+  F.goToSettings = goToSettings;
 
   document.addEventListener('DOMContentLoaded', init);
 })();
