@@ -500,7 +500,7 @@
         const meta = { mode, value };
         if (scope === 'txn') Store.setTxnReimburse(tid, meta);
         else Store.setMerchantReimburse(merchantKey, meta);
-        render();
+        refreshAfterDataChange();
         const drillMerchant = merchantKey || (field.dataset.merchant ? decodeURIComponent(field.dataset.merchant) : null);
         if (drillMerchant && !$('#modal').hidden) openMerchantDrill(drillMerchant);
       };
@@ -1488,10 +1488,17 @@
     renderFilterBanner();
   }
 
-  function refreshAfterCategoryChange() {
-    allTxns = enriched();
-    recomputeViewData();
-    refreshDashboardWidgets();
+  function refreshAfterDataChange() {
+    if (viewName === 'dashboard') {
+      allTxns = enriched();
+      recomputeViewData();
+      syncDateInputs();
+      syncFilterInputs();
+      syncAccountFilter();
+      refreshDashboardWidgets();
+    } else {
+      render();
+    }
   }
 
   const SIZE_WARN = 4 * 1024 * 1024;
@@ -2102,7 +2109,7 @@
     const sel = $('#catViewMode');
     if (sel) {
       sel.value = categoryViewMode;
-      sel.onchange = () => { categoryViewMode = sel.value; activeCategory = null; render(); };
+      sel.onchange = () => { categoryViewMode = sel.value; activeCategory = null; refreshAfterDataChange(); };
     }
     const data = categoryViewMode === 'groups'
       ? analyze.byCategoryGroup(catScopeTxns, getCategoryGroups())
@@ -2294,7 +2301,7 @@
     $('#heatmapGrid').innerHTML = html;
     $$('#heatmapGrid .hm-cell[data-date]').forEach((btn) => btn.onclick = () => {
       dateFrom = dateTo = btn.dataset.date;
-      render();
+      refreshAfterDataChange();
       toast(`Filtered to ${btn.dataset.date}`);
     });
 
@@ -2591,7 +2598,7 @@
     let n = 0;
     keys.forEach((k) => { if (Store.deleteTransaction(k)) n++; });
     toast(`Deleted ${n} transaction${n === 1 ? '' : 's'}`);
-    render();
+    refreshAfterDataChange();
   }
   function applyBulkRecategorize() {
     const keys = selectedMerchantKeys();
@@ -2599,7 +2606,7 @@
     const cat = $('#bulkCat').value;
     keys.forEach((mk) => Store.setOverride(mk, cat));
     toast(`Recategorized ${keys.length} merchant${keys.length === 1 ? '' : 's'} → ${cat}`);
-    refreshAfterCategoryChange();
+    refreshAfterDataChange();
   }
   function applyBulkCardholder() {
     const tids = selectedTids();
@@ -2607,7 +2614,7 @@
     if (!tids.length || !name) return;
     tids.forEach((tid) => Store.setCardmemberOverride(tid, name));
     toast(`Set cardholder “${name}” on ${tids.length} transaction${tids.length === 1 ? '' : 's'}`);
-    render();
+    refreshAfterDataChange();
   }
 
   function editTransactionMerchant(storeKey, currentName) {
@@ -2620,7 +2627,7 @@
       return;
     }
     toast('Merchant updated');
-    render();
+    refreshAfterDataChange();
   }
 
   function deleteTransactionRow(storeKey, label) {
@@ -2633,7 +2640,7 @@
       return;
     }
     toast('Transaction deleted');
-    render();
+    refreshAfterDataChange();
   }
 
   function renderTxnTable(skipRefine) {
@@ -2696,7 +2703,7 @@
       cb.onchange = () => {
         Store.setSubscription(decodeURIComponent(cb.dataset.key), cb.checked);
         toast(cb.checked ? 'Marked as subscription - all matching charges tracked' : 'Removed from subscriptions');
-        render();
+        refreshAfterDataChange();
       };
     });
     tb.querySelectorAll('input.row-check').forEach((cb) => cb.onchange = updateBulkButton);
@@ -2707,7 +2714,7 @@
       if (turningOn && tag === 'reimbursable' && !Store.getTxnReimburse()[tid]) {
         Store.setTxnReimburse(tid, { mode: 'percent', value: 100 });
       }
-      render();
+      refreshAfterDataChange();
     });
     bindReimbFields(tb);
     tb.querySelectorAll('.txn-name').forEach((el) => el.onclick = () => openMerchantDrill(decodeURIComponent(el.dataset.merchant)));
@@ -2745,10 +2752,10 @@
       parts.push(`<span class="chip">${amountMin || '…'} – ${amountMax || '…'}</span><button class="clear-filter" id="clearAmount">Clear</button>`);
     }
     b.innerHTML = parts.join('');
-    const cc = $('#clearCat'); if (cc) cc.onclick = () => { activeCategory = null; render(); };
-    const cm = $('#clearCard'); if (cm) cm.onclick = () => { activeCardmember = null; render(); };
-    const cf = $('#clearFlow'); if (cf) cf.onclick = () => { flowFilter = 'all'; render(); };
-    const ca = $('#clearAmount'); if (ca) ca.onclick = () => { amountMin = ''; amountMax = ''; render(); };
+    const cc = $('#clearCat'); if (cc) cc.onclick = () => { activeCategory = null; refreshAfterDataChange(); };
+    const cm = $('#clearCard'); if (cm) cm.onclick = () => { activeCardmember = null; refreshAfterDataChange(); };
+    const cf = $('#clearFlow'); if (cf) cf.onclick = () => { flowFilter = 'all'; refreshAfterDataChange(); };
+    const ca = $('#clearAmount'); if (ca) ca.onclick = () => { amountMin = ''; amountMax = ''; refreshAfterDataChange(); };
   }
 
   // ============ Preferences ============
@@ -3991,14 +3998,14 @@
         applyCategoryOne(opts.tid, opts.txnName, opts.newCat);
         t.category = opts.newCat;
         toast('Category saved for this transaction');
-        refreshAfterCategoryChange();
+        refreshAfterDataChange();
         return;
       }
       if (mode === 'all') {
         applyCategoryAll(opts.merchantKey, opts.newCat);
         t.category = opts.newCat;
         toast('Category saved for all transactions at this merchant');
-        refreshAfterCategoryChange();
+        refreshAfterDataChange();
         return;
       }
       promptCategoryApply(opts);
@@ -4022,13 +4029,13 @@
       applyCategoryOne(tid, txnName, newCat);
       closeModal();
       toast('Category saved for this transaction');
-      refreshAfterCategoryChange();
+      refreshAfterDataChange();
     };
     body.querySelector('#catApplyAll').onclick = () => {
       applyCategoryAll(merchantKey, newCat);
       closeModal();
       toast('Category saved for all transactions at this merchant');
-      refreshAfterCategoryChange();
+      refreshAfterDataChange();
     };
     body.querySelector('#catApplyCancel').onclick = () => closeModal();
   }
@@ -4164,7 +4171,7 @@
 
     body.querySelector('#dmCat').onchange = (e) => {
       Store.setOverride(merchantKey, e.target.value);
-      refreshAfterCategoryChange();
+      refreshAfterDataChange();
       toast(`Category set for ${merchantKey}`);
       openMerchantDrill(merchantKey);
     };
@@ -4175,7 +4182,7 @@
       if (turningOn && tag === 'reimbursable' && !Store.getMerchantReimburse()[merchantKey]) {
         Store.setMerchantReimburse(merchantKey, { mode: 'percent', value: 100 });
       }
-      render(); openMerchantDrill(merchantKey);
+      refreshAfterDataChange(); openMerchantDrill(merchantKey);
     });
     body.querySelectorAll('.drill-table .tag-btn[data-tid]').forEach((btn) => btn.onclick = () => {
       const tid = decodeURIComponent(btn.dataset.tid), tag = btn.dataset.tag;
@@ -4184,14 +4191,14 @@
       if (turningOn && tag === 'reimbursable' && !Store.getTxnReimburse()[tid]) {
         Store.setTxnReimburse(tid, { mode: 'percent', value: 100 });
       }
-      render();
+      refreshAfterDataChange();
       openMerchantDrill(merchantKey);
     });
     bindReimbFields(body);
     const exBtn = body.querySelector('[data-mexcl]');
     if (exBtn) exBtn.onclick = () => {
       Store.setMerchantAnomalyExclude(merchantKey, !exBtn.classList.contains('on'));
-      render(); toast(exBtn.classList.contains('on') ? 'Merchant included in anomalies' : 'Merchant excluded from anomalies'); openMerchantDrill(merchantKey);
+      refreshAfterDataChange(); toast(exBtn.classList.contains('on') ? 'Merchant included in anomalies' : 'Merchant excluded from anomalies'); openMerchantDrill(merchantKey);
     };
   }
 
@@ -4219,7 +4226,7 @@
     const lbl = $('#censorLabel'); if (lbl) lbl.textContent = censored ? 'Show $' : 'Hide $';
     const btn = $('#censorBtn'); if (btn) btn.classList.toggle('active', censored);
     if (window.Chart) charts.setCensor(censored);
-    render();
+    refreshAfterDataChange();
   }
 
   // ============ Init ============
@@ -4259,8 +4266,8 @@
     if ($('#censorLabel')) $('#censorLabel').textContent = censored ? 'Show $' : 'Hide $';
     if ($('#censorBtn')) $('#censorBtn').classList.toggle('active', censored);
     if (window.Chart) charts.setCensor(censored);
-    charts.setCategoryClickHandler((cat) => { activeCategory = activeCategory === cat ? null : cat; render(); });
-    charts.setCardmemberClickHandler((cm) => { activeCardmember = activeCardmember === cm ? null : cm; render(); });
+    charts.setCategoryClickHandler((cat) => { activeCategory = activeCategory === cat ? null : cat; refreshAfterDataChange(); });
+    charts.setCardmemberClickHandler((cm) => { activeCardmember = activeCardmember === cm ? null : cm; refreshAfterDataChange(); });
     charts.setMerchantClickHandler((mk) => openMerchantDrill(mk));
 
     [$('#fileInput'), $('#fileInput2')].forEach((inp) => inp && inp.addEventListener('change', (e) => handleFiles(e.target.files)));
@@ -4289,17 +4296,17 @@
       if (!range) return;
       [dateFrom, dateTo] = range;
       dateRangeInit = true;
-      render();
+      refreshAfterDataChange();
     });
-    $('#dateFrom').addEventListener('change', (e) => { dateFrom = e.target.value; render(); });
-    $('#dateTo').addEventListener('change', (e) => { dateTo = e.target.value; render(); });
-    $('#dateClear').addEventListener('click', () => { dateFrom = ''; dateTo = ''; dateRangeInit = true; render(); });
-    $('#amountMin').addEventListener('change', (e) => { amountMin = e.target.value; render(); });
-    $('#amountMax').addEventListener('change', (e) => { amountMax = e.target.value; render(); });
-    $('#flowFilter').addEventListener('change', (e) => { flowFilter = e.target.value; render(); });
-    $('#accountFilter').addEventListener('change', (e) => { activeAccount = e.target.value; render(); });
-    $('#exclTags').addEventListener('change', (e) => { excludeTagged = e.target.checked; render(); });
-    $('#txnFilterClear').addEventListener('click', () => { amountMin = ''; amountMax = ''; flowFilter = 'all'; render(); });
+    $('#dateFrom').addEventListener('change', (e) => { dateFrom = e.target.value; refreshAfterDataChange(); });
+    $('#dateTo').addEventListener('change', (e) => { dateTo = e.target.value; refreshAfterDataChange(); });
+    $('#dateClear').addEventListener('click', () => { dateFrom = ''; dateTo = ''; dateRangeInit = true; refreshAfterDataChange(); });
+    $('#amountMin').addEventListener('change', (e) => { amountMin = e.target.value; refreshAfterDataChange(); });
+    $('#amountMax').addEventListener('change', (e) => { amountMax = e.target.value; refreshAfterDataChange(); });
+    $('#flowFilter').addEventListener('change', (e) => { flowFilter = e.target.value; refreshAfterDataChange(); });
+    $('#accountFilter').addEventListener('change', (e) => { activeAccount = e.target.value; refreshAfterDataChange(); });
+    $('#exclTags').addEventListener('change', (e) => { excludeTagged = e.target.checked; refreshAfterDataChange(); });
+    $('#txnFilterClear').addEventListener('click', () => { amountMin = ''; amountMax = ''; flowFilter = 'all'; refreshAfterDataChange(); });
     $('#modalClose').addEventListener('click', closeModal);
     $('#modalBackdrop').addEventListener('click', closeModal);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
