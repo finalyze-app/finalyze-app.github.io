@@ -1136,7 +1136,7 @@
   function analysisPageId(v) { return v.slice('analysis-'.length); }
   function analysisPageAvailable(id) {
     if (id === 'yearReview') return true; // always show the link; the page itself explains when it has real value
-    if (id === 'budgetActual') return Object.keys(Store.getBudgets()).length > 0;
+    if (id === 'budgetActual') return true; // always list in nav; renderBudgetActual shows a humorous note if no budgets are set yet
     return !!ANALYSIS_MAP[id];
   }
   function widgetAvailable(id) {
@@ -1934,6 +1934,41 @@
       budgetActualCustom = { from: from || '', to: to || '' };
       budgetActualCustomInit = true;
     }
+
+    // Always-list behavior (like Year in review): if no budgets defined, show a humorous
+    // discovery note and hide the period/chart UI so it doesn't look broken/empty.
+    const hasAnyBudgets = Object.keys(Store.getBudgets()).length > 0;
+
+    if (!hasAnyBudgets) {
+      const periodRow = document.querySelector('.analysis-page-budget .ba-head-row');
+      const customRow = $('#budgetActualCustomRange');
+      const chartWrap = document.querySelector('.analysis-page-budget .canvas-wrap');
+      const table = $('#budgetActualTable');
+      const hintEl = document.querySelector('.analysis-page-budget .analysis-tools .hint');
+
+      if (periodRow) periodRow.style.display = 'none';
+      if (customRow) customRow.hidden = true;
+      if (chartWrap) chartWrap.style.display = 'none';
+      if (table) {
+        table.innerHTML = `
+          <tbody><tr><td class="muted-cell" colspan="6">
+            <div style="padding:28px 16px; text-align:center; color:var(--muted);">
+              <p style="font-size:15px; line-height:1.5; margin:0 0 10px;">🧾 Budget vs Actual is ready to audit your life choices...</p>
+              <p style="margin:0; line-height:1.5;">You haven't set any budgets yet. Without targets this page is basically a very opinionated receipt viewer that has nothing to be opinionated about.</p>
+              <p style="margin:12px 0 0; font-size:13px; opacity:.85;">Head to <strong>Settings → Budgets</strong>, give a few categories or groups a monthly cap (coffee? takeout? "I definitely needed that gadget"?), and this will transform into glorious green/red bars, over/under drama, and the occasional "you actually stayed under budget" victory lap. Your wallet is already nervous. 📊</p>
+            </div>
+          </td></tr></tbody>
+        `;
+      }
+      if (hintEl) hintEl.textContent = 'No budgets set — add some in Settings → Budgets';
+      return;
+    }
+
+    // Restore UI elements that may have been hidden by a previous no-budgets render in this session
+    const periodRow = document.querySelector('.analysis-page-budget .ba-head-row');
+    if (periodRow) periodRow.style.display = '';
+    const cw = document.querySelector('.analysis-page-budget .canvas-wrap');
+    if (cw) cw.style.display = '';
 
     const periodSel = $('#budgetActualPeriod');
     if (periodSel) {

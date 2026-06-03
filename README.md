@@ -40,6 +40,7 @@ sidebar, the favicon, and the install manifest. Replace those files to rebrand.
 - **Recurring & subscriptions** and **anomalies** (possible duplicates, large outliers).
 - **Spending patterns** (by day of week / week of month), a **spend heatmap** calendar, and a **review-uncategorized** queue.
 - **Compare periods** (Analysis page in sidebar) - pick two arbitrary date ranges and see side-by-side totals, plus per-category and top-merchant deltas.
+- **Budget vs actual** (Analysis page in sidebar) - always listed under Analysis; if you have no budgets configured it shows a humorous note guiding you to Settings → Budgets instead of an empty report. Shows per-category (or group) budget vs actual spend for a chosen period, with % used, remaining, status tags, and a bar chart.
 - **Year in review** (Analysis page in sidebar) - always listed under Analysis; if you have fewer than 12 months of data it shows a humorous note instead of the full retrospective. Pick a year for category totals, biggest merchants, most expensive day, subscriptions, and year-over-year change once you have enough history. (No longer a dashboard widget; moved to full-page Analysis for less clutter on the main view.)
 - **Merchant drill-down** - click a bar in *Top merchants* (or a merchant name in the ledger)
   for a modal with that merchant's monthly trend, average ticket, category history and txns.
