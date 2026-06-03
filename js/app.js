@@ -12,6 +12,7 @@
   let activeCardmember = null;        // cross-filter from the cardmember chart
   let dateFrom = '', dateTo = '';      // manual date-range filter (YYYY-MM-DD)
   let dateRangeInit = false;           // seed default period once per session
+  let demoDefaultApplied = false;      // track that we applied the demo's preferred default (quarter) so user choices are respected after
   let amountMin = '', amountMax = '';  // absolute amount range filter
   let flowFilter = 'all';              // 'all' | 'spend' | 'payment' | 'refund'
   let txnQuery = '', txnCatFilter = '', txnPage = 0;
@@ -229,6 +230,25 @@
   }
 
   function ensureDefaultDateRange() {
+    const isDemo = !!(F.Demo && F.Demo.active && F.Demo.active());
+    if (isDemo) {
+      if (demoDefaultApplied) {
+        // Demo has already received its preferred initial default (this quarter) this time.
+        // From here on, respect whatever the user chose (other preset, manual dates, or clear).
+        dateRangeInit = true;
+        return;
+      }
+      // First ensure while demo is active in this session: force the quarter default.
+      // This gives the full sample data (Apr–Jun 2026) a sensible overview instead of a single month.
+      // Also overrides any range carried from a real account session before entering demo.
+      dateFrom = '';
+      dateTo = '';
+      [dateFrom, dateTo] = datePresetRange('this-quarter');
+      dateRangeInit = true;
+      demoDefaultApplied = true;
+      return;
+    }
+    // Regular accounts (including free) default to this month (unchanged behavior).
     if (dateRangeInit) return;
     if (dateFrom || dateTo) { dateRangeInit = true; return; }
     [dateFrom, dateTo] = datePresetRange('this-month');
@@ -4196,6 +4216,7 @@
         activeCategory = null; activeCardmember = null;
         amountMin = ''; amountMax = ''; flowFilter = 'all';
         excludeTagged = false; activeAccount = 'all'; cmpInit = false; yrSelected = '';
+        dateFrom = ''; dateTo = ''; dateRangeInit = false; demoDefaultApplied = false;
         await F.Demo.clearDemoAll();
         render();
         return;
@@ -4204,6 +4225,7 @@
         Store.clearAll(); activeCategory = null; activeCardmember = null;
         amountMin = ''; amountMax = ''; flowFilter = 'all';
         excludeTagged = false; activeAccount = 'all'; cmpInit = false; yrSelected = '';
+        dateFrom = ''; dateTo = ''; dateRangeInit = false; demoDefaultApplied = false;
         render(); toast('All data cleared');
       }
     });
@@ -4234,6 +4256,7 @@
             activeCategory = null; activeCardmember = null;
             dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
             dateRangeInit = false; cmpInit = false; yrSelected = '';
+            demoDefaultApplied = false;
             render();
           } catch (e) { /* keep prior view on error */ }
         }
@@ -4258,6 +4281,7 @@
         activeCategory = null; activeCardmember = null;
         dateFrom = ''; dateTo = ''; amountMin = ''; amountMax = ''; flowFilter = 'all';
         dateRangeInit = false; excludeTagged = false; cmpInit = false; yrSelected = '';
+        demoDefaultApplied = false;
         viewName = 'dashboard';
         await F.Demo.clearDemoTransactions();
         render();
@@ -4296,8 +4320,11 @@
 
     // Deep link from the landing page: ?demo=1 loads the sample data + tour
     // (only when there's no data yet, so it never clobbers a real import).
-    if (new URLSearchParams(location.search).get('demo') && !allTxns.length && F.Demo) {
-      F.Demo.start();
+    const wantsDemo = new URLSearchParams(location.search).get('demo');
+    if (wantsDemo && !allTxns.length) {
+      // Pre-clear any date filter from a prior real session so the demo can start with its own default (quarter).
+      dateFrom = ''; dateTo = ''; dateRangeInit = false; demoDefaultApplied = false;
+      if (F.Demo && F.Demo.start) F.Demo.start();
     }
     // Local/preview: ?upgrade=1 opens the Pro checkout modal without signing in.
     if (new URLSearchParams(location.search).get('upgrade')) {
@@ -4381,6 +4408,13 @@
 
   F.filterTxns = filterTxns;
   F.render = render;
+  // Helper for demo entry to guarantee a clean slate for date defaulting (so demo can get its quarter default even if the tab had prior real data filters).
+  F._resetDemoDateDefault = function() {
+    dateFrom = '';
+    dateTo = '';
+    dateRangeInit = false;
+    demoDefaultApplied = false;
+  };
   F.openUpgradeModal = openUpgradeModal;
   F.isPro = isPro;
   F.requirePro = requirePro;

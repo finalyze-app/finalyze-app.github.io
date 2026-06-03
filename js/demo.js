@@ -95,6 +95,7 @@
       await F.Store.init();
       if (!active()) await enterDemoScope();
       else await ensureScope();
+      F._resetDemoDateDefault && F._resetDemoDateDefault();
       F.Store.clearAll();
       const res = await fetch(DEMO_CSV, { cache: 'no-store' });
       if (!res.ok) throw new Error('could not load demo data');
@@ -380,6 +381,12 @@
   async function init() {
     const btn = $('#demoStartBtn');
     if (btn) btn.onclick = start;
+    // Support ?demo=1 deep link reliably (the check in app.js may run before this module attaches F.Demo).
+    const wantsDemo = new URLSearchParams(location.search).get('demo');
+    if (wantsDemo && !active()) {
+      start().catch(() => {});
+      return;
+    }
     if (!active()) return;
     await ensureScope();
     if (F.Store.getTransactions().length) {
