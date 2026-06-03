@@ -36,14 +36,11 @@ sidebar, the favicon, and the install manifest. Replace those files to rebrand.
 - **Spend by category** - categories are derived from the merchant name (Amex exports have no
   category field). Rules live in `js/categorize.js` and are easy to extend.
 - **Spend over time**, **top merchants**, and **spend by cardmember**.
-- **Month over month** - per-month totals with deltas and the biggest category movers. This
-  fills in as you import more statements.
+- **Month over month** (Analysis page) - per-month totals with deltas and the biggest category movers. This fills in as you import more statements.
 - **Recurring & subscriptions** and **anomalies** (possible duplicates, large outliers).
 - **Spending patterns** (by day of week / week of month), a **spend heatmap** calendar, and a **review-uncategorized** queue.
-- **Compare periods** - pick two arbitrary date ranges and see side-by-side totals, plus
-  per-category and top-merchant deltas.
-- **Year in review** - appears once you have 12+ months of data; pick a year for category
-  totals, biggest merchants, most expensive day, subscriptions, and year-over-year change.
+- **Compare periods** (Analysis page in sidebar) - pick two arbitrary date ranges and see side-by-side totals, plus per-category and top-merchant deltas.
+- **Year in review** (Analysis page in sidebar) - appears once you have 12+ months of data; pick a year for category totals, biggest merchants, most expensive day, subscriptions, and year-over-year change. (No longer a dashboard widget; moved to full-page Analysis for less clutter on the main view.)
 - **Merchant drill-down** - click a bar in *Top merchants* (or a merchant name in the ledger)
   for a modal with that merchant's monthly trend, average ticket, category history and txns.
 - **Transactions table** - search, filter by category, sort, reassign a merchant's category

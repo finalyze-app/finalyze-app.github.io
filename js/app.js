@@ -713,19 +713,19 @@
   const GRID_GAP = 12;
   const WIDTH_SNAP = [6, 12];
   const DEFAULT_GRID_H = {
-    overview: 3, category: 4, merchants: 4, trend: 4, cardmember: 4, mom: 7,
+    overview: 3, category: 4, merchants: 4, trend: 4, cardmember: 4,
     recurring: 5, anomalies: 4, patterns: 4, heatmap: 5, uncategorized: 5,
-    compare: 6, yearReview: 6, transactions: 7,
+    transactions: 7,
   };
   const GRID_MAX_W = {
-    overview: 12, category: 6, merchants: 6, trend: 6, cardmember: 6, mom: 12,
+    overview: 12, category: 6, merchants: 6, trend: 6, cardmember: 6,
     recurring: 12, anomalies: 6, patterns: 12, heatmap: 12, uncategorized: 12,
-    compare: 12, yearReview: 12, transactions: 12,
+    transactions: 12,
   };
   const GRID_MAX_H = {
-    overview: 12, category: 4, merchants: 6, trend: 5, cardmember: 5, mom: 10,
+    overview: 12, category: 4, merchants: 6, trend: 5, cardmember: 5,
     recurring: 8, anomalies: 6, patterns: 4, heatmap: 12, uncategorized: 8,
-    compare: 10, yearReview: 10, transactions: 12,
+    transactions: 12,
   };
   let gridStack = null;
   let gridSaveTimer = null;
