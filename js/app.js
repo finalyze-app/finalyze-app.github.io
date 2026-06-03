@@ -742,6 +742,7 @@
   let gridSaveTimer = null;
   let gridReady = false;
   let gridNormalizing = false;
+  let layoutDragCommitted = false; // true after user starts a drag (layout-saved toast only then)
   let summaryCardCount = 7;
   let summaryCardCols = 4;
   const SUMMARY_CARD_MIN_W = 190;
@@ -1115,34 +1116,60 @@
       const sortedVisible = orderFromGrid(grid, visibleNow);
       saveLayout({ grid, order: [...sortedVisible, ...hiddenIds.filter((id) => !sortedVisible.includes(id))] });
       buildNav(true);
-      // Tiny micro-toast confirmation for the layout change (only on actual user drag changes,
-      // not on initial load normalizes).
-      toast('Layout saved', { check: true });
+      if (layoutDragCommitted) toast('Layout saved', { check: true });
     }, 200);
   }
-  function initGridStack(container) {
+  function initGridStack(container, savedGrid) {
     if (typeof GridStack === 'undefined') return;
     destroyGridStack();
     gridReady = false;
+    layoutDragCommitted = false;
     gridStack = GridStack.init({
       column: GRID_COLS,
       cellHeight: GRID_CELL_H,
       margin: GRID_GAP,
       animate: true,
       float: false,
+      auto: false, // widgets already in DOM; default auto:true runs _packNodes and wipes saved x/y
       handle: '.drag-handle',
       draggable: { handle: '.drag-handle' },
       disableOneColumnMode: false,
     }, container);
     gridStack.on('change', onGridLayoutChange);
+    gridStack.on('dragstart', () => { layoutDragCommitted = true; });
     gridStack.on('dragstop', () => { normalizeGridLayout(); });
     gridStack.on('resizestop', () => {
+      layoutDragCommitted = true;
       if (typeof Chart !== 'undefined' && Chart.instances) {
         Object.values(Chart.instances).forEach((c) => { if (c && c.resize) c.resize(); });
       }
       normalizeGridLayout();
       if ($('#txnTable') && refineTxnPageSize()) renderTxnTable(true);
     });
+    const ids = visibleOrder();
+    const grid = savedGrid || getLayout().grid;
+    gridNormalizing = true;
+    try {
+      gridStack.batchUpdate();
+      ids.forEach((id) => {
+        const el = container.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+        if (el) gridStack.makeWidget(el);
+      });
+      ids.forEach((id) => {
+        const el = container.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+        const g = grid[id];
+        if (!el || !g) return;
+        const item = clampGridItem(id, g);
+        gridStack.update(el, {
+          x: item.x, y: item.y, w: item.w, h: item.h,
+          maxW: gridMaxW(id), maxH: gridMaxH(id),
+          minW: gridMinW(id), minH: gridMinH(id),
+        });
+      });
+      gridStack.batchUpdate(false, false);
+    } finally {
+      gridNormalizing = false;
+    }
     requestAnimationFrame(() => {
       normalizeGridLayout(true);
       gridReady = true;
@@ -1754,7 +1781,7 @@
       </div>`;
     }).join('');
 
-    initGridStack(container);
+    initGridStack(container, savedGrid);
     ids.forEach((id) => WIDGET_MAP[id].render());
     refreshGridConstraints();
     adjustOverviewHeight();
