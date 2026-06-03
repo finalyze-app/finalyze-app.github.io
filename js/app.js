@@ -1154,6 +1154,18 @@
     render();
   }
 
+  function bindSettingsLinks(root) {
+    if (!root) return;
+    root.querySelectorAll('a[data-settings-tab]').forEach((a) => {
+      const tab = a.dataset.settingsTab;
+      a.href = '#';
+      a.onclick = (e) => {
+        e.preventDefault();
+        goToSettings(tab);
+      };
+    });
+  }
+
   // Accounts gate: when a backend is configured, signed-out users can only run
   // the demo. (No gate when accounts aren't configured - there'd be no way in.)
   function requiresSignIn() {
@@ -1962,13 +1974,17 @@
               <div style="max-width:420px; margin:0 auto; text-align:left;">
                 <p style="font-size:15px; line-height:1.5; margin:0 0 10px;">🧾 Budget vs Actual is ready to audit your life choices...</p>
                 <p style="margin:0; line-height:1.5;">You haven't set any budgets yet. Without targets this page is basically a very opinionated receipt viewer that has nothing to be opinionated about.</p>
-                <p style="margin:12px 0 0; font-size:13px; opacity:.85;">Head to <a href="#" onclick="F.goToSettings('budgets'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>, give a few categories or groups a monthly cap (coffee? takeout? "I definitely needed that gadget"?), and this will transform into glorious green/red bars, over/under drama, and the occasional "you actually stayed under budget" victory lap. Your wallet is already nervous. 📊</p>
+                <p style="margin:12px 0 0; font-size:13px; opacity:.85;">Head to <a href="#" data-settings-tab="budgets" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>, give a few categories or groups a monthly cap (coffee? takeout? "I definitely needed that gadget"?), and this will transform into glorious green/red bars, over/under drama, and the occasional "you actually stayed under budget" victory lap. Your wallet is already nervous. 📊</p>
               </div>
             </div>
           </td></tr></tbody>
         `;
+        bindSettingsLinks(table);
       }
-      if (hintEl) hintEl.innerHTML = 'No budgets set — add some in <a href="#" onclick="F.goToSettings(\'budgets\'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>';
+      if (hintEl) {
+        hintEl.innerHTML = 'No budgets set — add some in <a href="#" data-settings-tab="budgets" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>';
+        bindSettingsLinks(hintEl);
+      }
       return;
     }
 
@@ -2029,7 +2045,10 @@
             `<td class="num ${remClass}">${fmt(r.remaining)}</td>` +
             `<td class="num${over ? ' amt-neg' : ''}">${r.pct.toFixed(0)}%</td><td>${status}</td></tr>`;
         }).join('') + '</tbody>'
-      : '<tbody><tr><td class="muted-cell" colspan="6">No budgets set. Add limits in <a href="#" onclick="F.goToSettings(\'budgets\'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>.</td></tr></tbody>';
+      : '<tbody><tr><td class="muted-cell" colspan="6">No budgets set. Add limits in <a href="#" data-settings-tab="budgets" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>.</td></tr></tbody>';
+
+    const bt = $('#budgetActualTable');
+    if (bt) bindSettingsLinks(bt);
 
     const hint = document.querySelector('.analysis-page-budget .analysis-tools .hint');
     if (hint) {
@@ -2153,7 +2172,10 @@
           `<td class="num">${r.count}</td><td class="num">${r.months}</td><td>${r.lastDate}</td>` +
           `<td>${r.byRule ? '<span class="tag marked">rule</span>' : r.marked ? '<span class="tag marked">marked</span>' : ''}</td></tr>`
         ).join('') + '</tbody>'
-      : '<tbody><tr><td class="muted-cell">No recurring charges. Tick the “Sub” box on a transaction, or add a keyword rule in <a href="#" onclick="F.goToSettings(\'rules\'); return false;" style="color:var(--accent); text-decoration:underline;">Settings → Subscription rules</a>.</td></tr></tbody>';
+      : '<tbody><tr><td class="muted-cell">No recurring charges. Tick the “Sub” box on a transaction, or add a keyword rule in <a href="#" data-settings-tab="rules" style="color:var(--accent); text-decoration:underline;">Settings → Subscription rules</a>.</td></tr></tbody>';
+
+    const rt = $('#recurringTable');
+    if (rt) bindSettingsLinks(rt);
   }
 
   function renderAnomalies(txns) {
