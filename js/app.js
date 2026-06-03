@@ -1014,6 +1014,28 @@
       grid: l.grid || cur.grid,
     });
   }
+  function defaultLayout() {
+    let order = [...DEFAULT_ORDER];
+    const hidden = isPro() ? [] : order.filter(isProWidget);
+    if (!hidden.includes('overview') && order.includes('overview')) {
+      order = ['overview', ...order.filter((id) => id !== 'overview')];
+    }
+    const grid = migrateOrderToGrid(order, hidden);
+    return { order, hidden, grid };
+  }
+  function resetLayoutToDefault() {
+    confirmModal({
+      title: 'Reset dashboard layout?',
+      message: 'Widget order, visibility, sizes, and positions go back to the defaults. Any custom arrangement from dragging on the dashboard is cleared.',
+      confirmLabel: 'Reset layout',
+      confirmClass: 'btn danger',
+      onConfirm: () => {
+        saveLayout(defaultLayout());
+        renderWidgetManager();
+        toast('Dashboard layout reset to default', { check: true });
+      },
+    });
+  }
   function destroyGridStack() {
     if (gridStack) {
       gridStack.destroy(false);
@@ -3501,7 +3523,11 @@
         <span class="wm-name">${svg(NAV_ICON[id] || '')}${w.title}${proBadge}</span>
         ${visCtrl}
       </div>`;
-    }).join('');
+    }).join('') +
+      `<div class="wm-reset-row">
+        <button type="button" class="btn" id="resetLayoutBtn">Reset to default layout</button>
+        <p class="muted wm-reset-hint">Restores default widget order, visibility, and positions. Clears any custom arrangement from the dashboard.</p>
+      </div>`;
     $$('#widgetManager .wm-vis:not(:disabled)').forEach((cb) => cb.onchange = () => toggleWidgetHidden(cb.dataset.widget, !cb.checked));
     makeSortable(container, '.wm-row', (ids) => {
       // Reorder in settings applies a new sequence: pack the current visibles in exactly this
@@ -3512,6 +3538,8 @@
       const packed = repackGrid(grid, visSeq, true);
       saveLayout({ order: ids, grid: packed });
     });
+    const resetBtn = $('#resetLayoutBtn');
+    if (resetBtn) resetBtn.onclick = resetLayoutToDefault;
   }
 
   // ============ Layout mutations ============
