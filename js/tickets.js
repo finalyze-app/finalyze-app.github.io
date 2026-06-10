@@ -119,6 +119,11 @@
   }
 
   let bannerResizeObs = null;
+  const BANNER_DISMISS_KEY = 'finalyze.betaBannerDismissed';
+
+  function bannerDismissed() {
+    try { return sessionStorage.getItem(BANNER_DISMISS_KEY) === '1'; } catch (e) { return false; }
+  }
 
   function syncBetaBannerHeight() {
     const banner = $('#betaBanner');
@@ -129,10 +134,24 @@
     document.documentElement.style.setProperty('--beta-banner-h', banner.offsetHeight + 'px');
   }
 
+  function dismissBanner() {
+    try { sessionStorage.setItem(BANNER_DISMISS_KEY, '1'); } catch (e) { /* ignore */ }
+    const banner = $('#betaBanner');
+    if (banner) banner.hidden = true;
+    document.body.classList.remove('has-beta-banner');
+    syncBetaBannerHeight();
+  }
+
   function refresh() {
     const banner = $('#betaBanner');
     const btn = $('#betaTicketBtn');
     if (!banner) return;
+    if (bannerDismissed()) {
+      banner.hidden = true;
+      document.body.classList.remove('has-beta-banner');
+      syncBetaBannerHeight();
+      return;
+    }
     banner.hidden = false;
     document.body.classList.add('has-beta-banner');
     if (btn) {
@@ -146,7 +165,16 @@
   function init() {
     const btn = $('#betaTicketBtn');
     const banner = $('#betaBanner');
+    const dismiss = $('#betaDismiss');
+    const text = $('#betaText');
     if (btn) btn.onclick = openTicketForm;
+    if (dismiss) dismiss.onclick = dismissBanner;
+    // Tap/click the (truncated) text to reveal the full message.
+    if (text) text.onclick = (e) => {
+      if (e.target.closest('a')) return; // let the Settings link work
+      banner && banner.classList.toggle('expanded');
+      syncBetaBannerHeight();
+    };
     if (Auth && Auth.onChange) Auth.onChange(() => refresh());
     refresh();
     if (banner && typeof ResizeObserver !== 'undefined') {

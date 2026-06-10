@@ -77,7 +77,7 @@ body {
 .beta-banner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 250;
   display: flex; align-items: center; justify-content: center; gap: 10px 14px;
-  flex-wrap: wrap; padding: 9px 16px;
+  flex-wrap: nowrap; padding: 9px 16px;
   background: linear-gradient(90deg, var(--accent-soft), rgba(91, 91, 240, .1));
   border-bottom: 1px solid var(--line);
   font-size: 13px; color: var(--ink);
@@ -87,8 +87,21 @@ body {
   font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
   padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; flex-shrink: 0;
 }
-.beta-text { text-align: center; line-height: 1.4; }
+/* Single compact line by default; tap/click expands to the full message. */
+.beta-text {
+  text-align: center; line-height: 1.4; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.beta-banner.expanded { flex-wrap: wrap; }
+.beta-banner.expanded .beta-text { white-space: normal; overflow: visible; }
 .beta-hint { color: var(--ink-2); font-weight: 500; }
+.beta-dismiss {
+  flex-shrink: 0; margin-left: auto; width: 26px; height: 26px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 8px; background: transparent; color: var(--ink-2);
+  font-size: 20px; cursor: pointer;
+}
+.beta-dismiss:hover { background: rgba(0, 0, 0, .06); color: var(--ink); }
 body.has-beta-banner { padding-top: var(--beta-banner-h, 46px); }
 body.has-beta-banner .sidebar {
   top: var(--beta-banner-h, 46px);

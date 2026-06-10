@@ -2773,6 +2773,10 @@
   }
 
   function measureTxnPageSize() {
+    // On mobile the ledger renders as stacked cards; deriving the page size from
+    // the (tall) card height yields ~1 row/page. Page in fixed 25-row batches
+    // instead, decoupled from layout (desktop keeps fit-to-height behaviour).
+    if (document.body.classList.contains('is-mobile')) return TXN_PAGE_FALLBACK;
     const widget = document.getElementById('widget-transactions');
     if (!widget) return txnPageSize || TXN_PAGE_FALLBACK;
     const wrap = widget.querySelector('.table-wrap');
