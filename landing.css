@@ -222,13 +222,6 @@ body.nav-open .nav-drawer { display: block; }
   border: 1px solid var(--line);
   background: var(--surface);
 }
-.hero-account-note {
-  margin: 14px 0 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--muted);
-  max-width: 34rem;
-}
 .pro-trial-copy { margin: 4px 0 0; font-weight: 600; color: var(--ink-2, var(--muted)); }
 .pro-checkout-note { margin: 8px 0 0; }
 
