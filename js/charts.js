@@ -48,6 +48,35 @@
       : {};
   }
 
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function shortDate(iso) {
+    const p = ('' + iso).split('-');
+    return p.length < 3 ? '' + iso : `${MON[(+p[1]) - 1]} ${+p[2]}`;
+  }
+  function longDate(iso) {
+    const p = ('' + iso).split('-');
+    return p.length < 3 ? '' + iso : `${MON[(+p[1]) - 1]} ${+p[2]}, ${p[0]}`;
+  }
+  // X scale for daily time series: cap visible ticks (~6-10) and format as
+  // "Apr 8" instead of one rotated ISO label per day.
+  function timeXScale() {
+    const s = gridScale();
+    s.ticks = Object.assign({}, s.ticks, {
+      maxTicksLimit: 8,
+      autoSkip: true,
+      maxRotation: 0,
+      minRotation: 0,
+      callback(value) { return shortDate(this.getLabelForValue(value)); },
+    });
+    return s;
+  }
+  // Tooltip that shows the full date as the title; preserves value-masking in censor mode.
+  function timeTooltip() {
+    const cb = { title: (items) => (items && items.length ? longDate(items[0].label) : '') };
+    if (censored) cb.label = (ctx) => (ctx.dataset && ctx.dataset.label ? ctx.dataset.label + ': ' : '') + '•••';
+    return { callbacks: cb };
+  }
+
   function gridScale(beginZero) {
     const t = theme();
     const ticks = { color: t.muted, padding: 8 };
@@ -194,7 +223,7 @@
           fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 5, pointBackgroundColor: t.accent,
         }],
       },
-      options: { plugins: { legend: { display: false } }, scales: { x: gridScale(), y: gridScale(true) }, interaction: { mode: 'index', intersect: false } },
+      options: { plugins: { legend: { display: false }, tooltip: timeTooltip() }, scales: { x: timeXScale(), y: gridScale(true) }, interaction: { mode: 'index', intersect: false } },
     });
     last.trendMerchants = null;
     last.trendCategories = null;
@@ -218,8 +247,8 @@
       type: 'line',
       data: { labels: data.labels, datasets },
       options: {
-        plugins: { legend: { display: !censored, position: 'bottom' } },
-        scales: { x: gridScale(), y: gridScale(true) },
+        plugins: { legend: { display: !censored, position: 'bottom' }, tooltip: timeTooltip() },
+        scales: { x: timeXScale(), y: gridScale(true) },
         interaction: { mode: 'index', intersect: false },
       },
     });
@@ -242,8 +271,8 @@
       type: 'line',
       data: { labels: data.labels, datasets },
       options: {
-        plugins: { legend: { display: !censored, position: 'bottom' } },
-        scales: { x: gridScale(), y: gridScale(true) },
+        plugins: { legend: { display: !censored, position: 'bottom' }, tooltip: timeTooltip() },
+        scales: { x: timeXScale(), y: gridScale(true) },
         interaction: { mode: 'index', intersect: false },
       },
     });
@@ -453,6 +482,17 @@
 
   function setTheme() {
     applyDefaults();
+    // Force a full rebuild of every chart. categoryPie/cardmemberBar have a
+    // data-only update fast-path (used during cross-filtering) that does NOT
+    // re-read theme colors for axes/grid/border, so on a theme toggle they'd
+    // otherwise keep light-mode axes in dark mode (and vice-versa). Destroying
+    // the instances first makes each take the full draw() path with fresh theme.
+    // The canvas click listeners persist (they look up the live chart at click
+    // time), so we don't clear the *ClickBound flags here.
+    Object.keys(registry).forEach((id) => {
+      try { registry[id].destroy(); } catch (e) { /* ignore */ }
+      delete registry[id];
+    });
     if (last.categoryPie) categoryPie(last.categoryPie, last.categoryActive);
     if (last.spendLine) spendLine(last.spendLine);
     if (last.trendMerchants) trendMerchants(last.trendMerchants);
