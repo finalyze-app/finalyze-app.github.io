@@ -25,7 +25,7 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css?v=19" />
+  <link rel="stylesheet" href="landing.css?v=20" />
   <link rel="stylesheet" href="hero-mockup.css?v=19" />
   <!-- hero v7: side-by-side demo with interactive easter-egg chat -->
   <style>
@@ -843,7 +843,7 @@
             <span class="chip">No bank login</span>
             <span class="chip">Works offline</span>
           </div>
-          <p class="hero-account-note">A free account (email + license only) lets you import — your statements and analysis never leave your browser.</p>
+          <p class="hero-account-note">A free account (email + license only) lets you import. Your statements and analysis never leave your browser.</p>
         </div>
 
         <div class="appdemo fzdm-ready" id="how" aria-label="Finalyze dashboard preview">
@@ -1024,8 +1024,8 @@
                   </div>
                   <ul class="fzdm-ai-insights" id="fzdmAiInsightsView" hidden>
                     <li>You spent <b>$69 less</b> in June than May (<b>−4%</b>).</li>
-                    <li>Groceries is your top category at <b>$1,880</b> — Costco leads at <b>$641</b>.</li>
-                    <li>Found <b>5 subscriptions</b> (~<b>$67/mo</b>) — Spotify, Netflix, ChatGPT, Apple, Google.</li>
+                    <li>Groceries is your top category at <b>$1,880</b>; Costco leads at <b>$641</b>.</li>
+                    <li>Found <b>5 subscriptions</b> (~<b>$67/mo</b>): Spotify, Netflix, ChatGPT, Apple, Google.</li>
                     <li>Top merchant: <b>The Keg</b> at <b>$721</b> across 4 visits.</li>
                   </ul>
                   <p class="fzdm-ai-models" id="fzdmAiModelsView" hidden>These run locally in the real app (WebAssembly). Nothing is sent anywhere. You can enable the models from Settings once you're in the full demo.</p>
@@ -1044,7 +1044,7 @@
         <img src="assets/mounir.png" alt="Mounir" class="maker-photo" width="72" height="72" loading="lazy" />
         <div class="maker-copy">
           <p>Finalyze is something I built for myself after Mint died and every replacement wanted my statements in their cloud. I wanted fast, private analysis with nice charts and the ability to ask questions later without anything leaving the machine. If the site or the app feels a bit less “startup” and a bit more personal, that’s why.</p>
-          <p class="maker-sign">— Mounir</p>
+          <p class="maker-sign">- Mounir</p>
         </div>
       </div>
     </div>
@@ -1235,7 +1235,7 @@
             <li>Referrals - give a month, get a month</li>
           </ul>
           <a class="btn primary pro-checkout" id="proCheckout" href="/app?signup=1&amp;plan=pro-annual" style="width:100%;justify-content:center;">Start free trial</a>
-          <p class="micro pro-checkout-note">You'll create your free account first — your Pro license attaches to that email.</p>
+          <p class="micro pro-checkout-note">You'll create your free account first. Your Pro license attaches to that email.</p>
         </div>
       </div>
       <p class="price-foot price-foot-centered"><a href="/docs/#plans">Compare plans in docs</a></p>
@@ -1606,10 +1606,10 @@
 
       function replyFor(q) {
         var t = q.toLowerCase();
-        if (/coffee|cafe|latte|starbucks|tim/.test(t)) return 'You spent <b>$138</b> on coffee (Starbucks &amp; Tim Hortons) across Apr–Jun — about <b>$46/mo</b>.';
-        if (/subscription|recurring|netflix|spotify/.test(t)) return 'You have <b>5 subscriptions</b> (~<b>$67/mo</b>) — Spotify, Netflix, ChatGPT, Apple, and Google.';
+        if (/coffee|cafe|latte|starbucks|tim/.test(t)) return 'You spent <b>$138</b> on coffee (Starbucks &amp; Tim Hortons) across Apr–Jun, about <b>$46/mo</b>.';
+        if (/subscription|recurring|netflix|spotify/.test(t)) return 'You have <b>5 subscriptions</b> (~<b>$67/mo</b>): Spotify, Netflix, ChatGPT, Apple, and Google.';
         if (/transit|presto|bus|train|subway/.test(t)) return 'Transit (Presto &amp; Uber rides) is <b>$125</b> this quarter.';
-        if (/grocer|supermarket|costco|whole foods|trader/.test(t)) return 'Groceries total <b>$1,880</b> this quarter — Costco is your largest at <b>$641</b>.';
+        if (/grocer|supermarket|costco|whole foods|trader/.test(t)) return 'Groceries total <b>$1,880</b> this quarter; Costco is your largest at <b>$641</b>.';
         if (/dining|restaurant|eat out|uber eats|doordash/.test(t)) return 'Restaurants total <b>$980</b> this quarter, led by The Keg at <b>$721</b>.';
         if (/costco|keg|amazon|merchant|top shop/.test(t)) return 'Your top merchant is <b>The Keg</b> at <b>$721</b> across 4 visits.';
         if (/change|last month|compare|delta|more|less/.test(t)) return 'You spent <b>$69 less</b> in June than May (<b>−4%</b>). May was your biggest month.';

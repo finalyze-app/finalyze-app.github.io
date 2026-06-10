@@ -1222,7 +1222,7 @@ html[data-theme="light"] .fzdm-side {
   .fzdm-bars span { animation: none; transform: none; }
 }
 
-/* personal maker note — human element right after the hero to make the site feel like a person built it for real reasons (counters the polished/AI-generated impression) */
+/* personal maker note: human element right after the hero to make the site feel like a person built it for real reasons (counters the polished/AI-generated impression) */
 .maker-note {
   padding: 20px 0 32px;
 }

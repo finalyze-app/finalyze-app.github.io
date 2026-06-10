@@ -1972,7 +1972,7 @@
           <section class="panel widget${pinned ? ' widget-pinned' : ''}" id="widget-${id}" data-widget="${id}">
         <div class="widget-head">
               ${drag}
-          <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}${(w.pro && F.Demo && F.Demo.active && F.Demo.active()) ? ' <span class="pro-chip" title="Pro feature — unlocked in this demo">Pro</span>' : ''}</h2></div>
+          <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}${(w.pro && F.Demo && F.Demo.active && F.Demo.active()) ? ' <span class="pro-chip" title="Pro feature (unlocked in this demo)">Pro</span>' : ''}</h2></div>
               <div class="widget-tools">${w.hint ? `<span class="hint">${w.hint}</span>` : ''}${widgetExportButtons(w)}<button class="icon-btn widget-hide" title="Hide widget">${svg(EYE_OFF)}</button></div>
         </div>
         <div class="widget-body">${w.body}</div>
@@ -2041,7 +2041,7 @@
     if (isPro()) {
       const period = periodLabel();
       const kpiScope = (activeCategory || activeCardmember) ? viewTxns : periodTxns;
-      const ccBadge = (F.Demo && F.Demo.active && F.Demo.active()) ? '<span class="pro-chip" title="Pro feature — unlocked in this demo">Pro</span>' : '';
+      const ccBadge = (F.Demo && F.Demo.active && F.Demo.active()) ? '<span class="pro-chip" title="Pro feature (unlocked in this demo)">Pro</span>' : '';
       Store.getCustomCards().forEach((cc) => {
         const matched = kpiScope.filter((t) => cardMatch(t, cc));
         const total = matched.reduce((a, t) => a + Math.abs(t.amount), 0);
@@ -2280,7 +2280,7 @@
         bindSettingsLinks(table);
       }
       if (hintEl) {
-        hintEl.innerHTML = 'No budgets set — add some in <a href="#" data-settings-tab="budgets" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>';
+        hintEl.innerHTML = 'No budgets set. Add some in <a href="#" data-settings-tab="budgets" style="color:var(--accent); text-decoration:underline;">Settings → Budgets</a>';
         bindSettingsLinks(hintEl);
       }
       return;

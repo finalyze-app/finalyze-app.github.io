@@ -413,7 +413,7 @@
 
   function localAnswer(question) {
     const r = rows();
-    if (!r.length) return 'No transactions in the current view yet — import a statement or widen your filters.';
+    if (!r.length) return 'No transactions in the current view yet. Import a statement or widen your filters.';
     const q = (question || '').toLowerCase().trim();
     if (!q) return null;
     const A = F.analyze;
