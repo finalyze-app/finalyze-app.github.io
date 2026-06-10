@@ -775,6 +775,7 @@
   let gridNormalizing = false;
   let summaryCardCount = 7;
   let summaryCardCols = 4;
+  let overviewResizeObs = null;
   const SUMMARY_CARD_MIN_W = 190;
   const SUMMARY_CARD_ROW_PX = 112;
   const SUMMARY_WIDGET_HEAD_PX = 72;
@@ -789,6 +790,7 @@
     const cards = widget?.querySelector('#summaryCards');
     if (!widget || !cards || !cards.children.length) return null;
     const head = widget.querySelector('.widget-head');
+    const body = widget.querySelector('.widget-body');
     const widgetStyle = getComputedStyle(widget);
     const padY = parseFloat(widgetStyle.paddingTop) + parseFloat(widgetStyle.paddingBottom);
     let headBlock = SUMMARY_WIDGET_HEAD_PX;
@@ -796,7 +798,12 @@
       const headStyle = getComputedStyle(head);
       headBlock = head.offsetHeight + (parseFloat(headStyle.marginBottom) || 0);
     }
-    return headBlock + cards.offsetHeight + padY + 8;
+    let bodyPad = 0;
+    if (body) {
+      const bs = getComputedStyle(body);
+      bodyPad = parseFloat(bs.paddingTop) + parseFloat(bs.paddingBottom);
+    }
+    return headBlock + bodyPad + cards.scrollHeight + padY + 4;
   }
 
   function maxSummaryCols() {
@@ -886,6 +893,21 @@
     if (changed || reflowed) normalizeGridLayout(true);
     return changed || reflowed;
   }
+  function unbindOverviewResizeObserver() {
+    if (overviewResizeObs) { overviewResizeObs.disconnect(); overviewResizeObs = null; }
+  }
+
+  function bindOverviewResizeObserver() {
+    const cards = document.getElementById('summaryCards');
+    if (!cards || typeof ResizeObserver === 'undefined') return;
+    unbindOverviewResizeObserver();
+    overviewResizeObs = new ResizeObserver(() => {
+      if (!gridStack || !visibleOrder().includes('overview')) return;
+      syncOverviewLayout();
+    });
+    overviewResizeObs.observe(cards);
+  }
+
   function adjustOverviewHeight() {
     if (!visibleOrder().includes('overview')) return;
     // Synchronous pass: correct now, independent of rAF firing.
@@ -988,6 +1010,9 @@
     return best;
   }
   function clampGridItem(id, g) {
+    if (id === 'overview') {
+      return { x: 0, y: 0, w: 12, h: overviewHeightForSummary() };
+    }
     const rawW = normalizeLegacyW(g.w || defaultWidgetW(id));
     const w = id === 'overview' ? 12 : snapWidth(id, rawW);
     const rawH = g.h || gridHeight(id);
@@ -1114,6 +1139,7 @@
     });
   }
   function destroyGridStack() {
+    unbindOverviewResizeObserver();
     if (gridStack) {
       gridStack.destroy(false);
       gridStack = null;
@@ -2035,7 +2061,6 @@
     if (bizTotal > 0) cards.push(card(ICON.balance, 'Business expenses', fmt(bizTotal), 'small'));
     if (reimbTotal > 0) cards.push(card(ICON.refund, 'Reimbursable', fmt(reimbTotal), 'small'));
     if (!activeCategory && bal != null) cards.push(card(ICON.balance, 'Statement balance', fmt(bal), bal < 0 ? 'neg' : ''));
-    if (s.dateFrom) cards.push(card(ICON.calendar, 'Date range', `${s.dateFrom}<br>→ ${s.dateTo}`, 'small'));
 
     // Custom KPI cards - Pro only; respect category/cardmember cross-filters when active.
     if (isPro()) {
@@ -2052,6 +2077,7 @@
     $('#summaryCards').innerHTML = cards.join('');
     summaryCardCount = cards.length;
     applySummaryLayout();
+    bindOverviewResizeObserver();
     adjustOverviewHeight();
   }
 

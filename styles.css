@@ -513,13 +513,15 @@ code { background: var(--accent-soft); color: var(--accent); padding: 1px 7px; b
 #widgets .widget-body > .budget-alerts {
   flex-shrink: 0;
 }
+#widget-overview .widget-body { overflow: visible; min-height: 0; }
 #widget-overview .widget-body > .cards {
   flex: 0 0 auto;
   align-content: start;
   margin-bottom: 0;
   width: 100%;
+  height: auto;
 }
-#widget-overview .widget-body { overflow: visible; }
+.grid-stack-item.overview-pinned > .grid-stack-item-content { overflow: visible; }
 .grid-stack-item.overview-pinned .drag-handle { display: none; }
 .grid-stack-item.overview-pinned .widget-head { gap: 0; }
 #widgets .widget-body > .canvas-wrap,
