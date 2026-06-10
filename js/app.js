@@ -1684,7 +1684,7 @@
       syncFilterInputs();
       syncAccountFilter();
       recomputeViewData();
-      buildAnalysisNav();
+      buildNav(true); // keep the full sidebar; the active analysis item is highlighted
       renderAnalysisPage(pageId);
       const page = ANALYSIS_MAP[pageId];
       const sub = $('#rangeSub');
@@ -1857,13 +1857,17 @@
     const nav = $('#nav');
     if (!hasData) { nav.innerHTML = ''; return; }
     const ids = visibleOrder();
-    let html = ids.map((id) =>
-      `<a href="#widget-${id}" data-widget="${id}">${svg(NAV_ICON[id] || '')} ${WIDGET_MAP[id].nav}</a>`).join('');
+    // The active analysis page (if any) is highlighted within the always-present
+    // full sidebar so the nav item set never changes between dashboard and analysis.
+    const curAnalysis = isAnalysisView(viewName) ? analysisPageId(viewName) : null;
+    let html = `<div class="nav-section-label">Dashboard <span class="nav-section-hint">sections</span></div>` +
+      ids.map((id) =>
+        `<a href="#widget-${id}" data-widget="${id}">${svg(NAV_ICON[id] || '')} ${WIDGET_MAP[id].nav}</a>`).join('');
     const analysisIds = ANALYSIS_PAGES.filter((p) => analysisPageAvailable(p.id)).map((p) => p.id);
     if (analysisIds.length) {
-      html += `<div class="nav-section-label">Analysis</div>` +
+      html += `<div class="nav-section-label">Analysis <span class="nav-section-hint">pages</span></div>` +
         analysisIds.map((id) =>
-          `<a href="#" data-analysis="${id}">${svg(NAV_ICON[id] || '')} ${ANALYSIS_MAP[id].nav}</a>`).join('');
+          `<a href="#" data-analysis="${id}"${id === curAnalysis ? ' class="active"' : ''}>${svg(NAV_ICON[id] || '')} ${ANALYSIS_MAP[id].nav}</a>`).join('');
     }
     nav.innerHTML = html;
     $$('#nav a[data-widget]').forEach((a) => a.addEventListener('click', (e) => {
@@ -1879,23 +1883,6 @@
       render();
       document.body.classList.remove('nav-open');
     }));
-  }
-
-  function buildAnalysisNav() {
-    const nav = $('#nav');
-    const cur = analysisPageId(viewName);
-    nav.innerHTML =
-      `<button class="nav-back" id="navBack">${svg(BACK)} Back to dashboard</button>` +
-      `<div class="nav-section-label">Analysis</div>` +
-      ANALYSIS_PAGES.filter((p) => analysisPageAvailable(p.id)).map((p) =>
-        `<a href="#" data-analysis="${p.id}"${p.id === cur ? ' class="active"' : ''}>${p.nav}</a>`).join('');
-    $('#navBack').onclick = () => { viewName = 'dashboard'; render(); };
-    $$('#nav a[data-analysis]').forEach((a) => a.onclick = (e) => {
-      e.preventDefault();
-      viewName = 'analysis-' + a.dataset.analysis;
-      render();
-      document.body.classList.remove('nav-open');
-    });
   }
 
   function renderAnalysisPage(id) {
