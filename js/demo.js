@@ -40,6 +40,15 @@
 
   function active() { return localStorage.getItem(DEMO_KEY) === '1'; }
 
+  // Seed a couple of custom KPI cards so the demo showcases this Pro feature
+  // (badged with a "Pro" chip in demo mode). Idempotent.
+  function seedDemoCustomCards() {
+    if (!F.Store || !F.Store.getCustomCards || !F.Store.addCustomCard) return;
+    if (F.Store.getCustomCards().length) return;
+    F.Store.addCustomCard({ name: 'Coffee runs', match: 'all', conditions: [{ field: 'category', op: 'is', value: 'Coffee' }] });
+    F.Store.addCustomCard({ name: 'Eating out', match: 'all', conditions: [{ field: 'category', op: 'is', value: 'Restaurants' }] });
+  }
+
   function demoScopeKey() { return 'data:' + DEMO_SCOPE; }
 
   function isOnDemoScope() {
@@ -105,6 +114,7 @@
       F.Store.setBudget('Groceries', 900);
       F.Store.setBudget('Restaurants', 550);
       F.Store.setBudget('Coffee', 50);
+      seedDemoCustomCards();
       localStorage.setItem(DEMO_KEY, '1');
       F.render && F.render();
       updateBanner();
@@ -396,6 +406,7 @@
         F.Store.setBudget('Groceries', 900);
         F.Store.setBudget('Restaurants', 550);
         F.Store.setBudget('Coffee', 50);
+        seedDemoCustomCards();
         F.render && F.render();
       }
       updateBanner();

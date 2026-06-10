@@ -1972,7 +1972,7 @@
           <section class="panel widget${pinned ? ' widget-pinned' : ''}" id="widget-${id}" data-widget="${id}">
         <div class="widget-head">
               ${drag}
-          <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}</h2></div>
+          <div class="titles"><div class="eyebrow">${w.eyebrow}</div><h2>${w.title}${(w.pro && F.Demo && F.Demo.active && F.Demo.active()) ? ' <span class="pro-chip" title="Pro feature — unlocked in this demo">Pro</span>' : ''}</h2></div>
               <div class="widget-tools">${w.hint ? `<span class="hint">${w.hint}</span>` : ''}${widgetExportButtons(w)}<button class="icon-btn widget-hide" title="Hide widget">${svg(EYE_OFF)}</button></div>
         </div>
         <div class="widget-body">${w.body}</div>
@@ -1997,9 +1997,9 @@
   }
 
   // ============ Widget renderers ============
-  function card(icon, label, value, cls, deltaHtml) {
+  function card(icon, label, value, cls, deltaHtml, badge) {
     return `<div class="card">
-      <div class="top"><span class="ic">${svg(icon)}</span>${deltaHtml || ''}</div>
+      <div class="top"><span class="ic">${svg(icon)}</span>${badge || ''}${deltaHtml || ''}</div>
       <div class="value ${cls || ''}">${value}</div>
       <div class="label">${esc(label)}</div>
     </div>`;
@@ -2041,10 +2041,11 @@
     if (isPro()) {
       const period = periodLabel();
       const kpiScope = (activeCategory || activeCardmember) ? viewTxns : periodTxns;
+      const ccBadge = (F.Demo && F.Demo.active && F.Demo.active()) ? '<span class="pro-chip" title="Pro feature — unlocked in this demo">Pro</span>' : '';
       Store.getCustomCards().forEach((cc) => {
         const matched = kpiScope.filter((t) => cardMatch(t, cc));
         const total = matched.reduce((a, t) => a + Math.abs(t.amount), 0);
-        cards.push(card(ICON.custom, `${esc(cc.name)} · ${period}`, fmt(total), 'small'));
+        cards.push(card(ICON.custom, `${esc(cc.name)} · ${period}`, fmt(total), 'small', '', ccBadge));
       });
     }
 
