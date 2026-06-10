@@ -1630,7 +1630,9 @@ body.is-mobile.settings-mode #prefs {
 .ai-modal { position: fixed; inset: 0; z-index: 1100; display: none; align-items: center; justify-content: center; padding: 20px; }
 .ai-modal.open { display: flex; }
 .ai-backdrop { position: absolute; inset: 0; background: rgba(8,11,22,.55); backdrop-filter: blur(2px); }
-.ai-panel { position: relative; width: 100%; max-width: 936px; height: min(80vh, 680px); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.34); display: flex; flex-direction: column; overflow: hidden; }
+/* Size to content with sensible bounds so short panes (e.g. 6 insight bullets)
+   don't float in a sea of whitespace; chat grows up to the max and scrolls. */
+.ai-panel { position: relative; width: 100%; max-width: 936px; height: auto; min-height: 320px; max-height: min(70vh, 680px); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.34); display: flex; flex-direction: column; overflow: hidden; }
 .ai-tabs { display: flex; align-items: center; gap: 4px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .ai-tabs .ai-brand { font-weight: 700; font-size: 14px; margin-right: 8px; }
 .ai-tabs button[data-tab] { font: inherit; font-size: 13px; padding: 7px 11px; border: none; background: none; color: var(--muted); border-radius: 9px; cursor: pointer; }

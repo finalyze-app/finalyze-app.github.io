@@ -154,6 +154,8 @@
           if (el) el.textContent = full;
           scrollChatToBottom();
         });
+        renderChat(body); // re-render to apply light formatting to the final answer
+        scrollChatToBottom();
         focusChatInput();
       } catch (err) {
         chatLog[aId].content = 'Error: ' + err.message;
@@ -162,8 +164,18 @@
       }
     };
   }
+  // Light structure for assistant answers: bold currency amounts and break a
+  // numbered list (e.g. top merchants "1. … ; 2. …") onto separate lines.
+  function formatMsg(content, role) {
+    let html = esc(content);
+    if (role !== 'user') {
+      html = html.replace(/(-?\b[A-Z]{2,3}\s?\$?\d[\d,]*(?:\.\d+)?|-?\$\d[\d,]*(?:\.\d+)?)/g, '<b>$1</b>');
+      html = html.replace(/;\s*(?=\d+\.\s)/g, '<br>');
+    }
+    return html;
+  }
   function msgHtml(m, i) {
-    return `<div class="ai-msg ${m.role}" data-msg-idx="${i}"><span class="ai-msg-text">${esc(m.content)}</span></div>`;
+    return `<div class="ai-msg ${m.role}" data-msg-idx="${i}"><span class="ai-msg-text">${formatMsg(m.content, m.role)}</span></div>`;
   }
 
   // ---- Auto-categorize ----
