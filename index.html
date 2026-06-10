@@ -25,7 +25,7 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css?v=15" />
+  <link rel="stylesheet" href="landing.css?v=16" />
   <!-- hero v7: side-by-side demo with interactive easter-egg chat -->
   <style>
     .appdemo .ad-window {
@@ -842,6 +842,7 @@
             <span class="chip">No bank login</span>
             <span class="chip">Works offline</span>
           </div>
+          <p class="hero-account-note">A free account (email + license only) lets you import — your statements and analysis never leave your browser.</p>
         </div>
 
         <div class="appdemo" id="how">
@@ -1207,13 +1208,13 @@
           <span class="price-badge">Most popular</span>
           <div class="tag">Pro</div>
           <div class="pro-plans" role="group" aria-label="Choose Pro billing">
-            <button type="button" class="pro-plan pro-plan-pick" data-plan="monthly" data-href="https://buy.stripe.com/7sY4gyaww7Yl7RI0NI3Nm00" aria-pressed="false">
+            <button type="button" class="pro-plan pro-plan-pick" data-plan="monthly" data-href="/app?signup=1&amp;plan=pro-monthly" aria-pressed="false">
               <div class="pro-plan-head">
                 <span class="pro-plan-name">Monthly</span>
               </div>
               <div class="pro-plan-price"><strong>$7</strong><span>/mo</span></div>
             </button>
-            <button type="button" class="pro-plan pro-plan-pick is-selected" data-plan="annual" data-href="https://buy.stripe.com/eVq14m4880vTdc2dAu3Nm01" aria-pressed="true">
+            <button type="button" class="pro-plan pro-plan-pick is-selected" data-plan="annual" data-href="/app?signup=1&amp;plan=pro-annual" aria-pressed="true">
               <div class="pro-plan-head">
                 <span class="pro-plan-name">Annual</span>
                 <span class="pro-plan-pill">3-day free trial</span>
@@ -1224,6 +1225,7 @@
               </div>
             </button>
           </div>
+          <p class="micro pro-trial-copy">Monthly bills today · Annual starts with a 3-day free trial</p>
           <ul>
             <li>Unlimited history</li>
             <li>AI chat &amp; narrative insights</li>
@@ -1231,7 +1233,8 @@
             <li>Unlimited accounts &amp; cardmember breakdown</li>
             <li>Referrals - give a month, get a month</li>
           </ul>
-          <a class="btn primary pro-checkout" id="proCheckout" href="https://buy.stripe.com/eVq14m4880vTdc2dAu3Nm01" target="_blank" rel="noopener" style="width:100%;justify-content:center;">Start free trial</a>
+          <a class="btn primary pro-checkout" id="proCheckout" href="/app?signup=1&amp;plan=pro-annual" style="width:100%;justify-content:center;">Start free trial</a>
+          <p class="micro pro-checkout-note">You'll create your free account first — your Pro license attaches to that email.</p>
         </div>
       </div>
       <p class="price-foot price-foot-centered"><a href="/docs/#plans">Compare plans in docs</a></p>
@@ -1438,10 +1441,12 @@
         });
         btn.classList.add('is-selected');
         btn.setAttribute('aria-pressed', 'true');
+        // Route through signup in the same tab; the app launches Stripe checkout
+        // post-auth with the account email bound (license attaches to that email).
         checkout.href = btn.dataset.href;
         checkout.textContent = labels[btn.dataset.plan] || 'Continue';
-        checkout.target = '_blank';
-        checkout.rel = 'noopener';
+        checkout.removeAttribute('target');
+        checkout.removeAttribute('rel');
         checkout.classList.remove('is-disabled');
         checkout.removeAttribute('aria-disabled');
         checkout.removeAttribute('tabindex');

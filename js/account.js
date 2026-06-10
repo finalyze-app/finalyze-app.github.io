@@ -186,8 +186,22 @@
   }
 
   // After a successful sign-in: refresh the chip and run onboarding if needed.
+  // Plan requested via the landing-page Pro CTA (/app?signup=1&plan=pro-annual).
+  // After auth we launch the in-app upgrade flow, which binds the Stripe checkout
+  // to the account email (license attaches to that email) - rather than sending
+  // the visitor to a raw Payment Link before any account exists.
+  let pendingPlan = null;
+
+  function maybeLaunchPendingUpgrade() {
+    if (!pendingPlan || !F.openUpgradeModal) return false;
+    const p = pendingPlan; pendingPlan = null;
+    F.openUpgradeModal(p);
+    return true;
+  }
+
   async function afterSignIn() {
     renderChip();
+    if (maybeLaunchPendingUpgrade()) return;
     if (onboardedLocally()) return;
     let profile = null;
     try { profile = await Auth.getProfile(); } catch (e) {}
@@ -375,9 +389,13 @@
     if (F.AIUI?.autoRestoreModels) F.AIUI.autoRestoreModels();
     // Deep link from the landing page: ?signin=1 / ?signup=1 opens the form.
     const params = new URLSearchParams(location.search);
-    if (!u && (params.get('signin') || params.get('signup'))) {
-      openSignIn(params.get('signup') ? 'signup' : 'signin');
+    const plan = params.get('plan');
+    if (plan) pendingPlan = plan;
+    if (!u && (params.get('signin') || params.get('signup') || plan)) {
+      openSignIn(params.get('signin') && !params.get('signup') ? 'signin' : 'signup');
     }
+    // Already signed in and arriving with a plan → go straight to checkout (email bound).
+    if (u && maybeLaunchPendingUpgrade()) return;
     // First-time sign-in → run onboarding once.
     if (u && !onboardedLocally()) {
       let profile = null;

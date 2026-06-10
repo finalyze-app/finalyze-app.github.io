@@ -1479,7 +1479,10 @@
     const [y, m] = (anchorYmd || fmtYMD(new Date())).split('-').map(Number);
     return fmtYMD(new Date(y, (m - 1) - (FREE_MONTHS - 1), 1));
   }
-  function openUpgradeModal() {
+  function openUpgradeModal(plan) {
+    // `plan` may be 'monthly'/'annual' (or 'pro-monthly'/'pro-annual' from a
+    // landing-page deep link) to preselect a billing cycle.
+    const wantMonthly = /month/i.test(typeof plan === 'string' ? plan : '');
     const email = (F.Auth && F.Auth.user && F.Auth.user() && F.Auth.user().email) || '';
     const q = email ? '?prefilled_email=' + encodeURIComponent(email) : '';
     openModal(
@@ -1528,7 +1531,7 @@
       if (billNote) billNote.hidden = btn.dataset.plan !== 'monthly';
     }
     picks.forEach((btn) => { btn.onclick = () => selectPlan(btn); });
-    const pre = body && body.querySelector('.pro-plan-pick[data-plan="annual"]');
+    const pre = body && body.querySelector(`.pro-plan-pick[data-plan="${wantMonthly ? 'monthly' : 'annual'}"]`);
     if (pre) selectPlan(pre);
     const c = $('#upgClose'); if (c) c.onclick = closeModal;
     const r = $('#upgRefresh');
