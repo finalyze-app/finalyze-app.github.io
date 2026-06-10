@@ -106,15 +106,17 @@
       F.applyProLock && F.applyProLock(body, 'AI chat');
       return;
     }
-    const enabled = AIChat && AIChat.ready();
+    const ready = AIChat && AIChat.ready();
+    const hasData = !!(F.enriched && F.enriched().length);
+    const canType = ready || hasData; // deterministic answers work without a model
     body.innerHTML = `
       <div class="ai-head"><h3>Chat</h3>
         <button class="btn sm" id="aiClear" ${chatLog.length ? '' : 'disabled'}>Clear chat</button>
       </div>
-      <div class="ai-chat-log" id="aiChatLog">${chatLog.map((m, i) => msgHtml(m, i)).join('') || '<div class="ai-empty">Ask about your recorded spending - e.g. “how much did I spend on coffee?”, “what changed from last month?”, “which subscriptions cost the most?”, “what are my top merchants?”</div>'}</div>
+      <div class="ai-chat-log" id="aiChatLog">${chatLog.map((m, i) => msgHtml(m, i)).join('') || '<div class="ai-empty">Ask about your recorded spending - e.g. “how much did I spend on coffee?”, “what changed from last month?”, “which subscriptions cost the most?”, “what are my top merchants?”' + (ready ? '' : '<br><span class="muted">Common questions answer instantly; enable a model under Models for free-form chat.</span>') + '</div>'}</div>
       <form class="ai-chat-form" id="aiChatForm">
-        <input id="aiChatInput" placeholder="${enabled ? 'Ask your data…' : 'Enable the chat model in Models →'}" ${enabled ? '' : 'disabled'} autocomplete="off" />
-        <button class="btn primary" ${enabled ? '' : 'disabled'}>Send</button>
+        <input id="aiChatInput" placeholder="${canType ? 'Ask your data…' : 'Import data or enable a model →'}" ${canType ? '' : 'disabled'} autocomplete="off" />
+        <button class="btn primary" ${canType ? '' : 'disabled'}>Send</button>
       </form>`;
     const clr = $('#aiClear');
     if (clr) clr.onclick = () => { chatLog.length = 0; renderChat(body); };
@@ -126,6 +128,24 @@
       const aId = chatLog.push({ role: 'assistant', content: '…' }) - 1;
       renderChat(body);
       scrollChatToBottom();
+
+      // Deterministic query layer answers the common questions instantly and
+      // reliably (no refusal), with or without a model loaded.
+      let local = null;
+      try { local = AIChat.localAnswer ? AIChat.localAnswer(q) : null; } catch (e) { /* fall through */ }
+      if (local) {
+        chatLog[aId].content = local;
+        renderChat(body);
+        scrollChatToBottom();
+        focusChatInput();
+        return;
+      }
+      if (!AIChat.ready()) {
+        chatLog[aId].content = 'I can answer about a specific category or merchant, your subscriptions, top merchants, cardmember split, or what changed month-to-month. For open-ended questions, enable a chat model under Models.';
+        renderChat(body);
+        focusChatInput();
+        return;
+      }
       try {
         await AIChat.ask(q, (tok, full) => {
           chatLog[aId].content = full;

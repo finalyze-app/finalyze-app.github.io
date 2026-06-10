@@ -337,8 +337,147 @@
     return chatStream(messages, onToken);
   }
 
+  // ---- deterministic query layer (no model needed) ----
+  // Answers the common, high-value questions directly from local aggregates so
+  // the flagship prompts ("how much on coffee?", "what changed?", "top
+  // merchants", "which subscriptions cost the most?") always return a specific
+  // numeric answer - even when no LLM is loaded, and without the model ever
+  // refusing a valid merchant/category lookup. Returns a string, or null when
+  // the question isn't a recognised intent (so the LLM can take over).
+  const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function dateLabel(iso) {
+    if (!iso) return '';
+    const p = iso.split('-').map(Number);
+    return `${MONTHS_SHORT[p[1] - 1]} ${p[2]}, ${p[0]}`;
+  }
+  function rangeLabel(from, to) {
+    if (!from) return '';
+    return from === to ? dateLabel(from) : `${dateLabel(from)} – ${dateLabel(to)}`;
+  }
+  function monthName(ym) {
+    const p = (ym || '').split('-').map(Number);
+    return p.length === 2 ? `${MONTHS_LONG[p[1] - 1]} ${p[0]}` : ym;
+  }
+
+  // Category-style words that aren't categories -> merchant-name patterns.
+  const SYNONYMS = {
+    gym: /GOODLIFE|FITNESS|GYM|YOGA|PELOTON|CRUNCH|PLANET FIT/i,
+    fitness: /GOODLIFE|FITNESS|GYM|YOGA|PELOTON/i,
+    phone: /ROGERS|BELL|TELUS|FIDO|FREEDOM|KOODO|WIRELESS|\bPHONE\b/i,
+    rent: /\bRENT\b|LANDLORD|PROPERTY/i,
+    internet: /ROGERS|BELL|TELUS|TEKSAVVY|INTERNET/i,
+  };
+  // Filler words stripped from an extracted "on X" term.
+  const STOP = /\b(last|this|past|previous|recent|the|a|my|in|on|total|overall|so far|month|months|week|year|quarter|please|all|spending|spend)\b/g;
+
+  function spendSummary(label, txns, breakdown) {
+    if (!txns.length) return null;
+    const total = txns.reduce((a, t) => a + t.spend, 0);
+    const dates = txns.map((t) => t.date).sort();
+    const n = txns.length;
+    let s = `You spent ${money(total)} on ${label} (${n} transaction${n > 1 ? 's' : ''}) between ${rangeLabel(dates[0], dates[n - 1])}.`;
+    if (breakdown) {
+      const m = {};
+      txns.forEach((t) => { m[t.merchantKey] = (m[t.merchantKey] || 0) + t.spend; });
+      const list = Object.entries(m).sort((a, b) => b[1] - a[1]);
+      if (list.length > 1) s += ' Breakdown: ' + list.slice(0, 5).map(([k, v]) => `${k} ${money(v)}`).join(', ') + '.';
+    }
+    return s;
+  }
+
+  function answerSpendOn(r, rawTerm) {
+    const term = (rawTerm || '').trim().toLowerCase();
+    if (term.length < 2) return null;
+    // 1. category match (exact, then token/substring)
+    const cats = F.analyze.byCategory(r);
+    let cat = cats.find((c) => c.category.toLowerCase() === term)
+      || cats.find((c) => {
+        const cl = c.category.toLowerCase();
+        return cl.split(/[\/ &]/).includes(term) || cl.includes(term);
+      });
+    if (cat) {
+      return spendSummary(cat.category, r.filter((t) => t.isSpend && t.category === cat.category));
+    }
+    // 2. merchant name / description substring
+    const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    let matched = r.filter((t) => t.isSpend && (re.test(t.name || '') || re.test(t.merchantKey || '')));
+    // 3. synonym -> merchant pattern
+    if (!matched.length && SYNONYMS[term]) {
+      const syn = SYNONYMS[term];
+      matched = r.filter((t) => t.isSpend && (syn.test(t.name || '') || syn.test(t.merchantKey || '')));
+    }
+    if (matched.length) return spendSummary(`“${rawTerm.trim()}”`, matched, true);
+    return null;
+  }
+
+  function localAnswer(question) {
+    const r = rows();
+    if (!r.length) return 'No transactions in the current view yet — import a statement or widen your filters.';
+    const q = (question || '').toLowerCase().trim();
+    if (!q) return null;
+    const A = F.analyze;
+
+    // Top merchants
+    if (/\btop (merchant|store|vendor|shop|place)/.test(q) || /(biggest|most expensive).*(merchant|store|vendor)/.test(q) || /who (do|did) i.*pay/.test(q) || /where.*spend.*most/.test(q)) {
+      const m = A.byMerchant(r, 5);
+      if (m.length) return 'Your top merchants: ' + m.map((x, i) => `${i + 1}. ${x.merchant} ${money(x.spend)} (${x.count})`).join('; ') + '.';
+    }
+    // Subscriptions / recurring
+    if (/subscription|recurring|membership/.test(q)) {
+      const all = A.recurring(r, (F.Store && F.Store.getSubscriptions()) || {}, F.Store && F.Store.getSubscriptionRules());
+      // Prefer genuine subscriptions (Subscriptions category / rule / user-marked)
+      // over coincidental same-amount repeats (e.g. a duplicate grocery run).
+      let subs = all.filter((x) => x.category === 'Subscriptions' || x.byRule || x.marked);
+      let label = 'subscription';
+      if (!subs.length) { subs = all; label = 'recurring charge'; }
+      if (subs.length) {
+        const sorted = [...subs].sort((a, b) => b.amount - a.amount);
+        const total = subs.reduce((a, x) => a + x.amount, 0);
+        return `You have ${subs.length} ${label}${subs.length > 1 ? 's' : ''} (~${money(total)} per cycle). Largest: ` + sorted.slice(0, 5).map((x) => `${x.merchant} ${money(x.amount)}`).join(', ') + '.';
+      }
+      return 'No recurring charges detected in the current view.';
+    }
+    // What changed (month over month)
+    if (/what changed|changed.*month|month over month|vs last month|compared to last|than last month|spend (more|less)/.test(q)) {
+      const mom = A.monthOverMonth(r);
+      if (mom.length >= 2) {
+        const last = mom[mom.length - 1], prev = mom[mom.length - 2];
+        const dir = last.deltaSpend >= 0 ? 'more' : 'less';
+        const movers = A.categoryMovers(mom).slice(0, 3);
+        let s = `You spent ${money(Math.abs(last.deltaSpend))} ${dir} in ${monthName(last.month)} than ${monthName(prev.month)} (${last.pctSpend == null ? 'n/a' : last.pctSpend.toFixed(0) + '%'}).`;
+        if (movers.length) s += ' Biggest movers: ' + movers.map((mv) => `${mv.category} ${mv.delta >= 0 ? '+' : '−'}${money(Math.abs(mv.delta))}`).join(', ') + '.';
+        return s;
+      }
+      return 'There’s only one month in the current view, so there’s nothing to compare yet.';
+    }
+    // Cardmember split
+    if (/cardmember|card member|by person|who spent more/.test(q)) {
+      const cm = A.byCardmember(r.filter((t) => t.isSpend));
+      if (cm.length > 1) return 'By cardmember: ' + cm.map((c) => `${c.cardmember} ${money(c.spend)} (${c.count})`).join(', ') + '.';
+    }
+    // Total / net / overview (only when it's not an "on X" lookup)
+    if (/\b(total|net|overall|altogether|summary|overview)\b/.test(q) && !/\b(on|at|for)\s+\S/.test(q)) {
+      const s = A.summary(r);
+      return `Across ${rangeLabel(s.dateFrom, s.dateTo)} you spent ${money(s.totalSpend)} over ${s.debitCount} purchases (net ${money(s.net)} after ${money(s.totalRefunds)} in refunds).`;
+    }
+    // "How much did I spend on/at/for X?"
+    const m = q.match(/(?:how much.*?|spen[dt]|pay|paid|cost).*?\b(?:on|at|for|with)\s+([a-z0-9 '&.\-]+?)\s*\??$/);
+    if (m) {
+      const term = m[1].replace(STOP, ' ').replace(/\s+/g, ' ').trim();
+      const ans = answerSpendOn(r, term);
+      if (ans) return ans;
+    }
+    // Bare term (e.g. the hero-style "coffee", "subscriptions")
+    if (/^[a-z0-9 '&.\-]{2,30}\??$/.test(q)) {
+      const ans = answerSpendOn(r, q.replace(/\?$/, '').replace(STOP, ' ').replace(/\s+/g, ' ').trim());
+      if (ans) return ans;
+    }
+    return null;
+  }
+
   F.AIChat = {
-    webgpu, ready, enable, unload, ask, insights, localInsights, contextText,
+    webgpu, ready, enable, unload, ask, insights, localInsights, localAnswer, contextText,
     models, selectedModelKey, setSelectedModelKey, activeModelKey, wantsAutoEnable,
   };
 })(window);
