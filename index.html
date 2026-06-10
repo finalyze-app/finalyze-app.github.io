@@ -25,10 +25,11 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
-  <link rel="stylesheet" href="landing.css?v=16" />
+  <link rel="stylesheet" href="landing.css?v=19" />
+  <link rel="stylesheet" href="hero-mockup.css?v=19" />
   <!-- hero v7: side-by-side demo with interactive easter-egg chat -->
   <style>
-    .appdemo .ad-window {
+    .appdemo .fzdm-window {
       display: grid !important;
       grid-template-columns: 156px minmax(0, 1fr) !important;
       align-items: stretch !important;
@@ -38,7 +39,7 @@
       overflow: hidden !important;
       background: #eef1f8 !important;
     }
-    .appdemo .ad-side {
+    .appdemo .fzdm-side {
       display: flex !important;
       flex-direction: column !important;
       gap: 4px !important;
@@ -49,7 +50,7 @@
       box-sizing: border-box !important;
       min-height: 100% !important;
     }
-    .appdemo .ad-brand {
+    .appdemo .fzdm-brand {
       display: flex !important;
       align-items: center !important;
       gap: 7px !important;
@@ -59,14 +60,14 @@
       font-size: 12px !important;
       line-height: 1.1 !important;
     }
-    .appdemo .ad-brand img {
+    .appdemo .fzdm-brand img {
       width: 26px !important;
       height: 26px !important;
       border-radius: 8px !important;
       flex-shrink: 0 !important;
       box-shadow: 0 4px 12px -4px #3b82f6 !important;
     }
-    .appdemo .ad-brand small {
+    .appdemo .fzdm-brand small {
       display: block !important;
       font-weight: 500 !important;
       font-size: 8.5px !important;
@@ -74,13 +75,13 @@
       margin-top: 2px !important;
       letter-spacing: .02em !important;
     }
-    .appdemo .ad-nav-wrap {
+    .appdemo .fzdm-nav-wrap {
       display: flex !important;
       flex-direction: column !important;
       gap: 1px !important;
       margin-top: 2px !important;
     }
-    .appdemo .ad-nav {
+    .appdemo .fzdm-nav {
       display: flex !important;
       align-items: center !important;
       gap: 7px !important;
@@ -93,27 +94,27 @@
       overflow: hidden !important;
       text-overflow: ellipsis !important;
     }
-    .appdemo .ad-nav svg {
+    .appdemo .fzdm-nav svg {
       width: 13px !important;
       height: 13px !important;
       flex-shrink: 0 !important;
       opacity: .85 !important;
     }
-    .appdemo .ad-nav-on {
+    .appdemo .fzdm-nav-on {
       color: #fff !important;
       background: #1b2040 !important;
     }
-    .appdemo .ad-nav-on svg { color: #3b82f6 !important; opacity: 1 !important; }
-    .appdemo .ad-side-spacer { flex: 1 1 auto !important; min-height: 6px !important; }
-    .appdemo .ad-side-foot {
+    .appdemo .fzdm-nav-on svg { color: #3b82f6 !important; opacity: 1 !important; }
+    .appdemo .fzdm-side-spacer { flex: 1 1 auto !important; min-height: 6px !important; }
+    .appdemo .fzdm-side-foot {
       border-top: 1px solid rgba(255, 255, 255, .07) !important;
       padding-top: 8px !important;
       display: flex !important;
       flex-direction: column !important;
       gap: 6px !important;
     }
-    .appdemo .ad-side-actions { display: flex !important; gap: 5px !important; }
-    .appdemo .ad-btn {
+    .appdemo .fzdm-side-actions { display: flex !important; gap: 5px !important; }
+    .appdemo .fzdm-btn {
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -127,24 +128,24 @@
       flex: 1 1 auto !important;
       min-width: 0 !important;
     }
-    .appdemo .ad-btn svg { width: 11px !important; height: 11px !important; flex-shrink: 0 !important; }
-    .appdemo .ad-btn-primary {
+    .appdemo .fzdm-btn svg { width: 11px !important; height: 11px !important; flex-shrink: 0 !important; }
+    .appdemo .fzdm-btn-primary {
       background: linear-gradient(135deg, #3b82f6, #7c4dff) !important;
       color: #fff !important;
       border-color: transparent !important;
     }
-    .appdemo .ad-btn-ghost {
+    .appdemo .fzdm-btn-ghost {
       background: rgba(255, 255, 255, .04) !important;
       color: #c7cbe0 !important;
     }
-    .appdemo .ad-side-note {
+    .appdemo .fzdm-side-note {
       font-size: 8px !important;
       line-height: 1.4 !important;
       color: #7e84a3 !important;
       margin: 0 !important;
       padding: 0 2px !important;
     }
-    .appdemo .ad-main {
+    .appdemo .fzdm-main {
       display: flex !important;
       flex-direction: column !important;
       min-width: 0 !important;
@@ -155,28 +156,28 @@
       position: relative !important;
       overflow: hidden !important;
     }
-    .appdemo .ad-window { position: relative !important; }
-    .appdemo .ad-page-head { margin-bottom: 6px !important; flex-shrink: 0 !important; }
-    .appdemo .ad-page-head h2 {
+    .appdemo .fzdm-window { position: relative !important; }
+    .appdemo .fzdm-page-head { margin-bottom: 6px !important; flex-shrink: 0 !important; }
+    .appdemo .fzdm-page-head h2 {
       margin: 0 !important;
       font-size: 13px !important;
       font-weight: 750 !important;
       letter-spacing: -.02em !important;
       color: #0b1020 !important;
     }
-    .appdemo .ad-head-sub {
+    .appdemo .fzdm-head-sub {
       margin-top: 3px !important;
       font-size: 9.5px !important;
       color: #5c6680 !important;
     }
-    .appdemo .ad-filters {
+    .appdemo .fzdm-filters {
       display: flex !important;
       flex-wrap: wrap !important;
       align-items: center !important;
       gap: 5px !important;
       margin-top: 6px !important;
     }
-    .appdemo .ad-filter-select {
+    .appdemo .fzdm-filter-select {
       font: inherit !important;
       font-size: 9px !important;
       font-weight: 600 !important;
@@ -193,7 +194,7 @@
       background-position: right 4px center !important;
       background-size: 8px !important;
     }
-    .appdemo .ad-filter-input {
+    .appdemo .fzdm-filter-input {
       font: inherit !important;
       font-size: 9px !important;
       font-weight: 600 !important;
@@ -204,22 +205,22 @@
       color: #0b1020 !important;
       min-height: 0 !important;
     }
-    .appdemo .ad-filter-preset { min-width: 88px !important; }
-    .appdemo .ad-filter-flow { min-width: 76px !important; }
-    .appdemo .ad-filter-dates {
+    .appdemo .fzdm-filter-preset { min-width: 88px !important; }
+    .appdemo .fzdm-filter-flow { min-width: 76px !important; }
+    .appdemo .fzdm-filter-dates {
       display: flex !important;
       align-items: center !important;
       gap: 4px !important;
       flex-wrap: wrap !important;
     }
-    .appdemo .ad-filter-label {
+    .appdemo .fzdm-filter-label {
       font-size: 8.5px !important;
       font-weight: 700 !important;
       color: #5c6680 !important;
     }
-    .appdemo .ad-filter-sep { color: #5c6680 !important; font-size: 9px !important; }
-    .appdemo .ad-filter-input { width: 72px !important; }
-    .appdemo .ad-filter-btn {
+    .appdemo .fzdm-filter-sep { color: #5c6680 !important; font-size: 9px !important; }
+    .appdemo .fzdm-filter-input { width: 72px !important; }
+    .appdemo .fzdm-filter-btn {
       font: inherit !important;
       font-size: 8.5px !important;
       font-weight: 600 !important;
@@ -229,7 +230,7 @@
       background: #fff !important;
       color: #0b1020 !important;
     }
-    .appdemo .ad-ai-popup {
+    .appdemo .fzdm-ai-popup {
       position: absolute !important;
       right: 10px !important;
       bottom: 10px !important;
@@ -241,7 +242,7 @@
       pointer-events: none !important;
       transition: opacity .2s ease, visibility .2s ease !important;
     }
-    .appdemo .ad-ai-panel {
+    .appdemo .fzdm-ai-panel {
       width: min(72%, 320px) !important;
       background: #fff !important;
       border: 1px solid #c7cfe6 !important;
@@ -252,7 +253,7 @@
       overflow: hidden !important;
       pointer-events: auto !important;
     }
-    .appdemo .ad-ai-tabs {
+    .appdemo .fzdm-ai-tabs {
       display: flex !important;
       align-items: center !important;
       gap: 3px !important;
@@ -261,19 +262,19 @@
       background: #f8f9fd !important;
       flex-shrink: 0 !important;
     }
-    .appdemo .ad-ai-brand {
+    .appdemo .fzdm-ai-brand {
       font-size: 9.5px !important;
       font-weight: 700 !important;
       color: #0b1020 !important;
       margin-right: 4px !important;
       white-space: nowrap !important;
     }
-    .appdemo .ad-ai-tab,
-    .appdemo .ad-ai-close,
-    .appdemo .ad-ai-form button,
-    .appdemo .ad-ai-open,
-    .appdemo .ad-demo-theme { cursor: pointer !important; }
-    .appdemo .ad-ai-tab {
+    .appdemo .fzdm-ai-tab,
+    .appdemo .fzdm-ai-close,
+    .appdemo .fzdm-ai-form button,
+    .appdemo .fzdm-ai-open,
+    .appdemo .fzdm-demo-theme { cursor: pointer !important; }
+    .appdemo .fzdm-ai-tab {
       font: inherit !important;
       border: none !important;
       background: none !important;
@@ -283,11 +284,11 @@
       color: #5c6680 !important;
       white-space: nowrap !important;
     }
-    .appdemo .ad-ai-tab-on {
+    .appdemo .fzdm-ai-tab-on {
       background: #3b82f6 !important;
       color: #fff !important;
     }
-    .appdemo .ad-ai-close {
+    .appdemo .fzdm-ai-close {
       margin-left: auto !important;
       font: inherit !important;
       border: none !important;
@@ -297,7 +298,7 @@
       color: #5c6680 !important;
       padding: 0 2px !important;
     }
-    .appdemo .ad-ai-body {
+    .appdemo .fzdm-ai-body {
       flex: 1 1 auto !important;
       min-height: 0 !important;
       padding: 8px !important;
@@ -306,7 +307,7 @@
       gap: 6px !important;
       overflow: hidden !important;
     }
-    .appdemo .ad-ai-log {
+    .appdemo .fzdm-ai-log {
       flex: 1 1 auto !important;
       min-height: 0 !important;
       overflow-y: auto !important;
@@ -315,19 +316,19 @@
       flex-direction: column !important;
       gap: 6px !important;
     }
-    .appdemo .ad-ai-msg {
+    .appdemo .fzdm-ai-msg {
       max-width: 88% !important;
       padding: 5px 8px !important;
       border-radius: 10px !important;
       font-size: 9px !important;
       line-height: 1.45 !important;
     }
-    .appdemo .ad-ai-msg.typing {
+    .appdemo .fzdm-ai-msg.typing {
       color: #5c6680 !important;
       font-style: italic !important;
     }
-    .appdemo .ad-ai-popup.is-hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
-    .appdemo .ad-ai-popup:not(.is-hidden) {
+    .appdemo .fzdm-ai-popup.is-hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+    .appdemo .fzdm-ai-popup:not(.is-hidden) {
       left: 162px !important;
       right: 4px !important;
       top: 4px !important;
@@ -337,57 +338,57 @@
       background: rgba(11, 16, 32, .08) !important;
       pointer-events: auto !important;
     }
-    .appdemo .ad-ai-popup.is-hidden .ad-ai-panel { transform: translateY(6px) scale(.98) !important; }
-    .appdemo .ad-ai-popup:not(.is-hidden) .ad-ai-panel {
+    .appdemo .fzdm-ai-popup.is-hidden .fzdm-ai-panel { transform: translateY(6px) scale(.98) !important; }
+    .appdemo .fzdm-ai-popup:not(.is-hidden) .fzdm-ai-panel {
       width: 100% !important;
       height: 100% !important;
       max-width: none !important;
       border-radius: 10px !important;
       box-shadow: 0 12px 32px -8px rgba(11, 16, 32, .35) !important;
     }
-    .appdemo .ad-ai-panel { transition: transform .2s ease !important; }
-    .appdemo .ad-ai-insights {
+    .appdemo .fzdm-ai-panel { transition: transform .2s ease !important; }
+    .appdemo .fzdm-ai-insights {
       margin: 0 !important;
       padding-left: 14px !important;
       font-size: 9px !important;
       line-height: 1.5 !important;
       color: #0b1020 !important;
     }
-    .appdemo .ad-ai-insights li { margin-bottom: 4px !important; }
-    .appdemo .ad-ai-models {
+    .appdemo .fzdm-ai-insights li { margin-bottom: 4px !important; }
+    .appdemo .fzdm-ai-models {
       font-size: 9px !important;
       line-height: 1.5 !important;
       color: #5c6680 !important;
       margin: 0 !important;
     }
-    .appdemo .ad-ai-models a { color: #3b82f6 !important; font-weight: 600 !important; }
-    #adAiChatView {
+    .appdemo .fzdm-ai-models a { color: #3b82f6 !important; font-weight: 600 !important; }
+    #fzdmAiChatView {
       display: flex !important;
       flex-direction: column !important;
       gap: 6px !important;
       flex: 1 1 auto !important;
       min-height: 0 !important;
     }
-    .appdemo .ad-ai-msg.user {
+    .appdemo .fzdm-ai-msg.user {
       align-self: flex-end !important;
       background: #3b82f6 !important;
       color: #fff !important;
       border-bottom-right-radius: 3px !important;
     }
-    .appdemo .ad-ai-msg.bot {
+    .appdemo .fzdm-ai-msg.bot {
       align-self: flex-start !important;
       background: #eef1f8 !important;
       color: #0b1020 !important;
       border-bottom-left-radius: 3px !important;
     }
-    .appdemo .ad-ai-msg.bot a { color: #3b82f6 !important; font-weight: 600 !important; }
-    .appdemo .ad-ai-msg b { font-weight: 700 !important; }
-    .appdemo .ad-ai-form {
+    .appdemo .fzdm-ai-msg.bot a { color: #3b82f6 !important; font-weight: 600 !important; }
+    .appdemo .fzdm-ai-msg b { font-weight: 700 !important; }
+    .appdemo .fzdm-ai-form {
       display: flex !important;
       gap: 5px !important;
       flex-shrink: 0 !important;
     }
-    .appdemo .ad-ai-form input {
+    .appdemo .fzdm-ai-form input {
       flex: 1 1 auto !important;
       min-width: 0 !important;
       font: inherit !important;
@@ -398,7 +399,7 @@
       background: #fff !important;
       color: #0b1020 !important;
     }
-    .appdemo .ad-ai-form button {
+    .appdemo .fzdm-ai-form button {
       font: inherit !important;
       font-size: 8.5px !important;
       font-weight: 700 !important;
@@ -409,15 +410,15 @@
       color: #fff !important;
       white-space: nowrap !important;
     }
-    .appdemo .ad-kpis {
+    .appdemo .fzdm-kpis {
       display: grid !important;
       grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
       gap: 6px !important;
       width: 100% !important;
       flex-shrink: 0 !important;
     }
-    .appdemo .ad-kpi,
-    .appdemo .ad-panel {
+    .appdemo .fzdm-kpi,
+    .appdemo .fzdm-panel {
       display: block !important;
       opacity: 1 !important;
       visibility: visible !important;
@@ -426,11 +427,11 @@
       border-radius: 10px !important;
       min-height: 0 !important;
     }
-    .appdemo .ad-kpi { padding: 6px 8px !important; }
-    .appdemo .ad-v { color: #0b1020 !important; font-size: 15px !important; font-weight: 800 !important; }
-    .appdemo .ad-l { color: #5c6680 !important; font-size: 9.5px !important; margin-top: 1px !important; }
-    .appdemo .ad-ph { color: #3b82f6 !important; font-size: 9.5px !important; font-weight: 700 !important; margin-bottom: 6px !important; }
-    .appdemo .ad-row {
+    .appdemo .fzdm-kpi { padding: 6px 8px !important; }
+    .appdemo .fzdm-v { color: #0b1020 !important; font-size: 15px !important; font-weight: 800 !important; }
+    .appdemo .fzdm-l { color: #5c6680 !important; font-size: 9.5px !important; margin-top: 1px !important; }
+    .appdemo .fzdm-ph { color: #3b82f6 !important; font-size: 9.5px !important; font-weight: 700 !important; margin-bottom: 6px !important; }
+    .appdemo .fzdm-row {
       display: grid !important;
       grid-template-columns: 1.12fr 0.88fr !important;
       gap: 6px !important;
@@ -438,19 +439,19 @@
       flex: 1 1 auto !important;
       min-height: 0 !important;
     }
-    .appdemo .ad-charts-col {
+    .appdemo .fzdm-charts-col {
       display: flex !important;
       flex-direction: column !important;
       gap: 6px !important;
       min-height: 0 !important;
     }
-    .appdemo .ad-charts-col .ad-panel {
+    .appdemo .fzdm-charts-col .fzdm-panel {
       flex: 1 1 0 !important;
       display: flex !important;
       flex-direction: column !important;
     }
-    .appdemo .ad-panel { padding: 8px !important; min-height: 0 !important; overflow: hidden !important; }
-    .appdemo .ad-bars {
+    .appdemo .fzdm-panel { padding: 8px !important; min-height: 0 !important; overflow: hidden !important; }
+    .appdemo .fzdm-bars {
       display: flex !important;
       flex: 1 1 auto !important;
       height: auto !important;
@@ -460,20 +461,20 @@
       position: relative !important;
       z-index: 1 !important;
     }
-    .appdemo .ad-bars span {
+    .appdemo .fzdm-bars span {
       display: block !important;
       flex: 1 !important;
       border-radius: 5px 5px 2px 2px !important;
       background: var(--bar, linear-gradient(180deg, #7c4dff, #3b82f6)) !important;
     }
-    .appdemo .ad-chart-plot {
+    .appdemo .fzdm-chart-plot {
       display: grid !important;
       grid-template-columns: 24px 1fr !important;
       gap: 4px !important;
       flex: 1 1 auto !important;
       min-height: 0 !important;
     }
-    .appdemo .ad-y-axis {
+    .appdemo .fzdm-y-axis {
       display: flex !important;
       flex-direction: column !important;
       justify-content: space-between !important;
@@ -484,14 +485,14 @@
       color: #5c6680 !important;
       font-variant-numeric: tabular-nums !important;
     }
-    .appdemo .ad-bar-plot {
+    .appdemo .fzdm-bar-plot {
       display: flex !important;
       flex-direction: column !important;
       min-width: 0 !important;
       min-height: 0 !important;
       position: relative !important;
     }
-    .appdemo .ad-bar-grid {
+    .appdemo .fzdm-bar-grid {
       position: absolute !important;
       left: 0 !important;
       right: 0 !important;
@@ -502,17 +503,17 @@
       justify-content: space-between !important;
       pointer-events: none !important;
     }
-    .appdemo .ad-bar-grid span {
+    .appdemo .fzdm-bar-grid span {
       border-top: 1px solid #eef1f8 !important;
       height: 0 !important;
     }
-    .appdemo .ad-x-axis {
+    .appdemo .fzdm-x-axis {
       display: flex !important;
       gap: 4px !important;
       margin-top: 3px !important;
       flex-shrink: 0 !important;
     }
-    .appdemo .ad-x-axis span {
+    .appdemo .fzdm-x-axis span {
       flex: 1 !important;
       font-size: 6px !important;
       line-height: 1.1 !important;
@@ -522,7 +523,7 @@
       text-overflow: ellipsis !important;
       white-space: nowrap !important;
     }
-    .appdemo .ad-chart-legend {
+    .appdemo .fzdm-chart-legend {
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -534,70 +535,70 @@
       color: #5c6680 !important;
       flex-shrink: 0 !important;
     }
-    .appdemo .ad-chart-legend-cats {
+    .appdemo .fzdm-chart-legend-cats {
       flex-wrap: wrap !important;
       justify-content: center !important;
       gap: 3px 7px !important;
       row-gap: 3px !important;
     }
-    .appdemo .ad-chart-legend-cats > span {
+    .appdemo .fzdm-chart-legend-cats > span {
       display: inline-flex !important;
       align-items: center !important;
       gap: 3px !important;
       white-space: nowrap !important;
     }
-    .appdemo .ad-legend-swatch {
+    .appdemo .fzdm-legend-swatch {
       display: inline-block !important;
       flex-shrink: 0 !important;
       width: 6px !important;
       height: 6px !important;
       border-radius: 1px !important;
     }
-    .appdemo .ad-legend-swatch.ad-legend-line {
+    .appdemo .fzdm-legend-swatch.fzdm-legend-line {
       width: 12px !important;
       height: 0 !important;
       border-top: 2px solid #3b82f6 !important;
       border-radius: 1px !important;
     }
-    .appdemo[data-theme="dark"] .ad-y-axis,
-    .appdemo[data-theme="dark"] .ad-x-axis span,
-    .appdemo[data-theme="dark"] .ad-chart-legend { color: #94a0c0 !important; }
-    .appdemo[data-theme="dark"] .ad-bar-grid span { border-color: #1f2845 !important; }
-    .appdemo[data-theme="dark"] .ad-legend-swatch.ad-legend-line { border-color: #7cc0ff !important; }
-    .appdemo .ad-line-chart {
+    .appdemo[data-theme="dark"] .fzdm-y-axis,
+    .appdemo[data-theme="dark"] .fzdm-x-axis span,
+    .appdemo[data-theme="dark"] .fzdm-chart-legend { color: #94a0c0 !important; }
+    .appdemo[data-theme="dark"] .fzdm-bar-grid span { border-color: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .fzdm-legend-swatch.fzdm-legend-line { border-color: #7cc0ff !important; }
+    .appdemo .fzdm-line-chart {
       display: block !important;
       width: 100% !important;
       flex: 1 1 auto !important;
       height: auto !important;
       min-height: 52px !important;
     }
-    .appdemo .ad-line-chart .ad-axis-grid line {
+    .appdemo .fzdm-line-chart .fzdm-axis-grid line {
       stroke: #eef1f8 !important;
       stroke-width: 1 !important;
       vector-effect: non-scaling-stroke !important;
     }
-    .appdemo .ad-line-chart .ad-axis-line {
+    .appdemo .fzdm-line-chart .fzdm-axis-line {
       stroke: #c7cfe6 !important;
       stroke-width: 1 !important;
       vector-effect: non-scaling-stroke !important;
     }
-    .appdemo .ad-line-chart .ad-axis-y,
-    .appdemo .ad-line-chart .ad-axis-x {
+    .appdemo .fzdm-line-chart .fzdm-axis-y,
+    .appdemo .fzdm-line-chart .fzdm-axis-x {
       fill: #5c6680 !important;
       font-size: 6px !important;
       font-family: system-ui, -apple-system, sans-serif !important;
     }
-    .appdemo .ad-line-chart .ad-axis-y { text-anchor: end !important; }
-    .appdemo .ad-line-chart .ad-axis-x { text-anchor: middle !important; }
-    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-grid line { stroke: #1f2845 !important; }
-    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-line { stroke: #2a3558 !important; }
-    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-y,
-    .appdemo[data-theme="dark"] .ad-line-chart .ad-axis-x { fill: #94a0c0 !important; }
-    .appdemo .ad-line-chart .ad-line-fill {
-      fill: url(#adLineFill) !important;
+    .appdemo .fzdm-line-chart .fzdm-axis-y { text-anchor: end !important; }
+    .appdemo .fzdm-line-chart .fzdm-axis-x { text-anchor: middle !important; }
+    .appdemo[data-theme="dark"] .fzdm-line-chart .fzdm-axis-grid line { stroke: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .fzdm-line-chart .fzdm-axis-line { stroke: #2a3558 !important; }
+    .appdemo[data-theme="dark"] .fzdm-line-chart .fzdm-axis-y,
+    .appdemo[data-theme="dark"] .fzdm-line-chart .fzdm-axis-x { fill: #94a0c0 !important; }
+    .appdemo .fzdm-line-chart .fzdm-line-fill {
+      fill: url(#fzdmLineFill) !important;
       opacity: 1 !important;
     }
-    .appdemo .ad-line-chart .ad-line-stroke {
+    .appdemo .fzdm-line-chart .fzdm-line-stroke {
       fill: none !important;
       stroke: #3b82f6 !important;
       stroke-width: 2 !important;
@@ -605,42 +606,42 @@
       stroke-linejoin: round !important;
     }
     @media (prefers-reduced-motion: reduce) {
-      .appdemo .ad-line-chart .ad-line-stroke { transition: none !important; }
-      .appdemo .ad-line-chart .ad-line-fill { transition: none !important; }
+      .appdemo .fzdm-line-chart .fzdm-line-stroke { transition: none !important; }
+      .appdemo .fzdm-line-chart .fzdm-line-fill { transition: none !important; }
     }
-    .appdemo[data-theme="dark"] .ad-line-chart .ad-line-stroke { stroke: #7cc0ff !important; }
-    .appdemo .ad-mom {
+    .appdemo[data-theme="dark"] .fzdm-line-chart .fzdm-line-stroke { stroke: #7cc0ff !important; }
+    .appdemo .fzdm-mom {
       display: flex !important;
       flex-direction: column !important;
     }
-    .appdemo .ad-mom-table-wrap { flex: 0 0 auto !important; overflow: hidden !important; }
-    .appdemo .ad-mom-table {
+    .appdemo .fzdm-mom-table-wrap { flex: 0 0 auto !important; overflow: hidden !important; }
+    .appdemo .fzdm-mom-table {
       width: 100% !important;
       border-collapse: collapse !important;
       font-size: 8.5px !important;
     }
-    .appdemo .ad-mom-table th {
+    .appdemo .fzdm-mom-table th {
       text-align: left !important;
       font-weight: 700 !important;
       color: #5c6680 !important;
       padding: 3px 4px !important;
       border-bottom: 1px solid #c7cfe6 !important;
     }
-    .appdemo .ad-mom-table th.num,
-    .appdemo .ad-mom-table td.num { text-align: right !important; font-variant-numeric: tabular-nums !important; }
-    .appdemo .ad-mom-table td {
+    .appdemo .fzdm-mom-table th.num,
+    .appdemo .fzdm-mom-table td.num { text-align: right !important; font-variant-numeric: tabular-nums !important; }
+    .appdemo .fzdm-mom-table td {
       padding: 5px 4px !important;
       color: #0b1020 !important;
       border-bottom: 1px solid #eef1f8 !important;
     }
-    .appdemo .ad-mom-table tr:last-child td { border-bottom: none !important; }
-    .appdemo .ad-mom-table tr:last-child { background: rgba(59, 130, 246, .06) !important; }
-    .appdemo .ad-mom-table .up { color: #ff6b81 !important; font-weight: 700 !important; }
-    .appdemo .ad-mom-table .down { color: #22c55e !important; font-weight: 700 !important; }
-    .appdemo[data-theme="dark"] .ad-mom-table th { color: #94a0c0 !important; border-color: #1f2845 !important; }
-    .appdemo[data-theme="dark"] .ad-mom-table td { color: #eef1fb !important; border-color: #1f2845 !important; }
-    .appdemo[data-theme="dark"] .ad-mom-table tr:last-child { background: rgba(59, 130, 246, .12) !important; }
-    .appdemo .ad-cm-wrap {
+    .appdemo .fzdm-mom-table tr:last-child td { border-bottom: none !important; }
+    .appdemo .fzdm-mom-table tr:last-child { background: rgba(59, 130, 246, .06) !important; }
+    .appdemo .fzdm-mom-table .up { color: #ff6b81 !important; font-weight: 700 !important; }
+    .appdemo .fzdm-mom-table .down { color: #22c55e !important; font-weight: 700 !important; }
+    .appdemo[data-theme="dark"] .fzdm-mom-table th { color: #94a0c0 !important; border-color: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .fzdm-mom-table td { color: #eef1fb !important; border-color: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .fzdm-mom-table tr:last-child { background: rgba(59, 130, 246, .12) !important; }
+    .appdemo .fzdm-cm-wrap {
       flex: 1 1 auto !important;
       min-height: 0 !important;
       display: flex !important;
@@ -649,8 +650,8 @@
       padding-top: 6px !important;
       border-top: 1px solid #eef1f8 !important;
     }
-    .appdemo .ad-ph-sm { margin-bottom: 4px !important; font-size: 8.5px !important; }
-    .appdemo .ad-cm-bars {
+    .appdemo .fzdm-ph-sm { margin-bottom: 4px !important; font-size: 8.5px !important; }
+    .appdemo .fzdm-cm-bars {
       display: flex !important;
       align-items: flex-end !important;
       justify-content: space-around !important;
@@ -659,7 +660,7 @@
       min-height: 52px !important;
       padding: 0 2px !important;
     }
-    .appdemo .ad-cm-bar {
+    .appdemo .fzdm-cm-bar {
       flex: 1 1 0 !important;
       display: flex !important;
       flex-direction: column !important;
@@ -668,7 +669,7 @@
       min-height: 0 !important;
       height: 100% !important;
     }
-    .appdemo .ad-cm-track {
+    .appdemo .fzdm-cm-track {
       flex: 1 1 auto !important;
       width: 100% !important;
       max-width: 22px !important;
@@ -676,13 +677,13 @@
       display: flex !important;
       align-items: flex-end !important;
     }
-    .appdemo .ad-cm-fill {
+    .appdemo .fzdm-cm-fill {
       display: block !important;
       width: 100% !important;
       border-radius: 5px 5px 2px 2px !important;
       min-height: 4px !important;
     }
-    .appdemo .ad-cm-label {
+    .appdemo .fzdm-cm-label {
       font-size: 7px !important;
       font-weight: 600 !important;
       color: #5c6680 !important;
@@ -693,47 +694,47 @@
       white-space: nowrap !important;
       width: 100% !important;
     }
-    .appdemo[data-theme="dark"] .ad-cm-wrap { border-color: #1f2845 !important; }
-    .appdemo[data-theme="dark"] .ad-cm-label { color: #94a0c0 !important; }
-    .appdemo[data-theme="dark"] .ad-window { background: #0b1124 !important; }
-    .appdemo[data-theme="dark"] .ad-kpi,
-    .appdemo[data-theme="dark"] .ad-panel {
+    .appdemo[data-theme="dark"] .fzdm-cm-wrap { border-color: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .fzdm-cm-label { color: #94a0c0 !important; }
+    .appdemo[data-theme="dark"] .fzdm-window { background: #0b1124 !important; }
+    .appdemo[data-theme="dark"] .fzdm-kpi,
+    .appdemo[data-theme="dark"] .fzdm-panel {
       background: #111831 !important;
       border-color: #1f2845 !important;
     }
-    .appdemo[data-theme="dark"] .ad-v { color: #eef1fb !important; }
-    .appdemo[data-theme="dark"] .ad-l { color: #94a0c0 !important; }
-    .appdemo[data-theme="dark"] .ad-page-head h2 { color: #eef1fb !important; }
-    .appdemo[data-theme="dark"] .ad-head-sub,
-    .appdemo[data-theme="dark"] .ad-filter-label,
-    .appdemo[data-theme="dark"] .ad-filter-sep { color: #94a0c0 !important; }
-    .appdemo[data-theme="dark"] .ad-filter-select {
+    .appdemo[data-theme="dark"] .fzdm-v { color: #eef1fb !important; }
+    .appdemo[data-theme="dark"] .fzdm-l { color: #94a0c0 !important; }
+    .appdemo[data-theme="dark"] .fzdm-page-head h2 { color: #eef1fb !important; }
+    .appdemo[data-theme="dark"] .fzdm-head-sub,
+    .appdemo[data-theme="dark"] .fzdm-filter-label,
+    .appdemo[data-theme="dark"] .fzdm-filter-sep { color: #94a0c0 !important; }
+    .appdemo[data-theme="dark"] .fzdm-filter-select {
       background-color: #111831 !important;
       border-color: #1f2845 !important;
       color: #eef1fb !important;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23eef1fb' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
     }
-    .appdemo[data-theme="dark"] .ad-filter-select option {
+    .appdemo[data-theme="dark"] .fzdm-filter-select option {
       background: #111831 !important;
       color: #eef1fb !important;
     }
-    .appdemo[data-theme="dark"] .ad-filter-input,
-    .appdemo[data-theme="dark"] .ad-filter-btn {
+    .appdemo[data-theme="dark"] .fzdm-filter-input,
+    .appdemo[data-theme="dark"] .fzdm-filter-btn {
       background: #111831 !important;
       border-color: #1f2845 !important;
       color: #eef1fb !important;
     }
-    .appdemo[data-theme="dark"] .ad-ai-panel {
+    .appdemo[data-theme="dark"] .fzdm-ai-panel {
       background: #111831 !important;
       border-color: #1f2845 !important;
     }
-    .appdemo[data-theme="dark"] .ad-ai-tabs { background: #0b1124 !important; border-color: #1f2845 !important; }
-    .appdemo[data-theme="dark"] .ad-ai-brand { color: #eef1fb !important; }
-    .appdemo[data-theme="dark"] .ad-ai-tab { color: #94a0c0 !important; }
-    .appdemo[data-theme="dark"] .ad-ai-msg.bot { background: #1b2040 !important; color: #eef1fb !important; }
-    .appdemo[data-theme="dark"] .ad-ai-insights { color: #eef1fb !important; }
-    .appdemo[data-theme="dark"] .ad-ai-models { color: #94a0c0 !important; }
-    .appdemo[data-theme="dark"] .ad-ai-form input {
+    .appdemo[data-theme="dark"] .fzdm-ai-tabs { background: #0b1124 !important; border-color: #1f2845 !important; }
+    .appdemo[data-theme="dark"] .fzdm-ai-brand { color: #eef1fb !important; }
+    .appdemo[data-theme="dark"] .fzdm-ai-tab { color: #94a0c0 !important; }
+    .appdemo[data-theme="dark"] .fzdm-ai-msg.bot { background: #1b2040 !important; color: #eef1fb !important; }
+    .appdemo[data-theme="dark"] .fzdm-ai-insights { color: #eef1fb !important; }
+    .appdemo[data-theme="dark"] .fzdm-ai-models { color: #94a0c0 !important; }
+    .appdemo[data-theme="dark"] .fzdm-ai-form input {
       background: #0b1124 !important;
       border-color: #1f2845 !important;
       color: #eef1fb !important;
@@ -760,18 +761,18 @@
       box-shadow: 0 32px 80px -36px rgba(0, 0, 0, .75);
       overflow: hidden;
     }
-    .hero-split .ad-v { font-size: 13px !important; }
-    .hero-split .appdemo .ad-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
-    .hero-split .appdemo .ad-row { grid-template-columns: 1.12fr 0.88fr !important; }
+    .hero-split .fzdm-v { font-size: 13px !important; }
+    .hero-split .appdemo .fzdm-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    .hero-split .appdemo .fzdm-row { grid-template-columns: 1.12fr 0.88fr !important; }
     @media (max-width: 900px) {
       .hero.hero-split { text-align: center; }
       .hero-split-grid { grid-template-columns: 1fr; gap: 36px; }
       .hero-copy .cta, .hero-copy .trust-chips { justify-content: center; }
       .hero-copy .lead { margin-left: auto; margin-right: auto; }
       .hero-split .appdemo { max-width: 784px; margin: 0 auto; }
-      .hero-split .appdemo .ad-window { grid-template-columns: 1fr !important; }
-      .hero-split .appdemo .ad-side { display: none !important; }
-      .hero-split .appdemo .ad-ai-popup:not(.is-hidden) { left: 4px !important; }
+      .hero-split .appdemo .fzdm-window { grid-template-columns: 1fr !important; }
+      .hero-split .appdemo .fzdm-side { display: none !important; }
+      .hero-split .appdemo .fzdm-ai-popup:not(.is-hidden) { left: 4px !important; }
     }
 
     /* Compact how-it-works section */
@@ -845,137 +846,137 @@
           <p class="hero-account-note">A free account (email + license only) lets you import — your statements and analysis never leave your browser.</p>
         </div>
 
-        <div class="appdemo" id="how">
+        <div class="appdemo fzdm-ready" id="how" aria-label="Finalyze dashboard preview">
           <script>(function(){var el=document.currentScript.parentElement;el.dataset.theme=document.documentElement.dataset.theme||'light';})();</script>
-          <div class="ad-chrome"><span class="ad-dots"><i></i><i></i><i></i></span><span class="ad-url">finalyze.cc</span></div>
-          <div class="ad-window">
-            <aside class="ad-side" aria-hidden="true">
-              <div class="ad-brand">
+          <div class="fzdm-chrome"><span class="fzdm-dots"><i></i><i></i><i></i></span><span class="fzdm-url">finalyze.cc</span></div>
+          <div class="fzdm-window" style="display:grid;grid-template-columns:156px minmax(0,1fr);height:420px;min-height:420px;max-height:420px;overflow:hidden;background:#eef1f8">
+            <aside class="fzdm-side" style="display:flex;flex-direction:column;min-height:0">
+              <div class="fzdm-brand">
                 <img src="assets/icon.svg" alt="" width="26" height="26" />
                 <span>Finalyze<small>Spending analyzer</small></span>
               </div>
-              <div class="ad-nav-wrap">
-                <div class="ad-nav ad-nav-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Overview</div>
-                <div class="ad-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15.9A9 9 0 1 1 8.1 3"/><path d="M21 8.1A9 9 0 0 0 15.9 3V8.1z"/></svg>By category</div>
-                <div class="ad-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Merchants</div>
-                <div class="ad-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Trend</div>
-                <div class="ad-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="14" y="6" width="3" height="12"/></svg>Month over month</div>
-                <div class="ad-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Recurring</div>
-                <div class="ad-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Transactions</div>
+              <div class="fzdm-nav-wrap">
+                <div class="fzdm-nav fzdm-nav-on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Overview</div>
+                <div class="fzdm-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15.9A9 9 0 1 1 8.1 3"/><path d="M21 8.1A9 9 0 0 0 15.9 3V8.1z"/></svg>By category</div>
+                <div class="fzdm-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Merchants</div>
+                <div class="fzdm-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>Trend</div>
+                <div class="fzdm-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="14" y="6" width="3" height="12"/></svg>Month over month</div>
+                <div class="fzdm-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Recurring</div>
+                <div class="fzdm-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Transactions</div>
               </div>
-              <div class="ad-side-spacer"></div>
-              <div class="ad-side-foot">
-                <div class="ad-btn ad-btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import</div>
-                <div class="ad-btn ad-btn-ghost ad-ai-open" id="adAiOpen" role="button" tabindex="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4L12 3z"/><path d="M19 14l.7 1.8L21.5 16l-1.8.7L19 18l-.7-1.3L16.5 16l1.8-.2L19 14z"/></svg>Finalyze AI</div>
-                <div class="ad-side-actions">
-                  <div class="ad-btn ad-btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</div>
-                  <div class="ad-btn ad-btn-ghost ad-demo-theme" id="adDemoTheme" role="button" tabindex="0" title="Toggle light / dark">
-                    <svg id="adDemoThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-                    <span id="adDemoThemeLabel">Dark</span>
+              <div class="fzdm-side-spacer"></div>
+              <div class="fzdm-side-foot">
+                <div class="fzdm-btn fzdm-btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import</div>
+                <div class="fzdm-btn fzdm-btn-ghost fzdm-ai-open" id="fzdmAiOpen" role="button" tabindex="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4L12 3z"/><path d="M19 14l.7 1.8L21.5 16l-1.8.7L19 18l-.7-1.3L16.5 16l1.8-.2L19 14z"/></svg>Finalyze AI</div>
+                <div class="fzdm-side-actions">
+                  <div class="fzdm-btn fzdm-btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</div>
+                  <div class="fzdm-btn fzdm-btn-ghost fzdm-demo-theme" id="fzdmDemoTheme" role="button" tabindex="0" title="Toggle light / dark">
+                    <svg id="fzdmDemoThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+                    <span id="fzdmDemoThemeLabel">Dark</span>
                   </div>
                 </div>
-                <p class="ad-side-note">Everything lives in your browser.</p>
+                <p class="fzdm-side-note">Everything lives in your browser.</p>
               </div>
             </aside>
-            <div class="ad-main">
-              <div class="ad-page-head">
+            <div class="fzdm-main" style="display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden">
+              <div class="fzdm-page-head">
                 <h2>Spending overview</h2>
-                <div class="ad-head-sub">Apr 1 – Jun 29, 2026 · 115 transactions</div>
-                <div class="ad-filters">
-                  <select class="ad-filter-select ad-filter-preset" id="adFilterPreset" aria-label="Quick date range">
+                <div class="fzdm-head-sub">Apr 1 – Jun 29, 2026 · 115 transactions</div>
+                <div class="fzdm-filters">
+                  <select class="fzdm-filter-select fzdm-filter-preset" id="fzdmFilterPreset" aria-label="Quick date range">
                     <option value="quarter" selected>This Quarter</option>
                     <option value="this-month">This Month</option>
                     <option value="last-month">Last Month</option>
                     <option value="all">All Time</option>
                   </select>
-                  <div class="ad-filter-dates">
-                    <span class="ad-filter-label">Date range</span>
-                    <input class="ad-filter-input" id="adFilterFrom" type="text" value="2026-04-01" readonly aria-label="From date" />
-                    <span class="ad-filter-sep">→</span>
-                    <input class="ad-filter-input" id="adFilterTo" type="text" value="2026-06-29" readonly aria-label="To date" />
+                  <div class="fzdm-filter-dates">
+                    <span class="fzdm-filter-label">Date range</span>
+                    <input class="fzdm-filter-input" id="fzdmFilterFrom" type="text" value="2026-04-01" readonly aria-label="From date" />
+                    <span class="fzdm-filter-sep">→</span>
+                    <input class="fzdm-filter-input" id="fzdmFilterTo" type="text" value="2026-06-29" readonly aria-label="To date" />
                   </div>
-                  <select class="ad-filter-select ad-filter-flow" id="adFilterFlow" aria-label="Transaction type">
+                  <select class="fzdm-filter-select fzdm-filter-flow" id="fzdmFilterFlow" aria-label="Transaction type">
                     <option value="all" selected>All types</option>
                     <option value="spend">Spend only</option>
                     <option value="payment">Payments</option>
                     <option value="refund">Refunds</option>
                   </select>
-                  <button class="ad-filter-btn" id="adFilterClear" type="button">Clear</button>
+                  <button class="fzdm-filter-btn" id="fzdmFilterClear" type="button">Clear</button>
                 </div>
               </div>
-              <div class="ad-kpis">
-                <div class="ad-kpi"><div class="ad-v" data-to="5370" data-prefix="$">$5,370</div><div class="ad-l">Net spend <em>Apr–Jun</em></div></div>
-                <div class="ad-kpi"><div class="ad-v" data-to="1880" data-prefix="$">$1,880</div><div class="ad-l">Groceries</div></div>
-                <div class="ad-kpi"><div class="ad-v" data-to="980" data-prefix="$">$980</div><div class="ad-l">Restaurants</div></div>
-                <div class="ad-kpi"><div class="ad-v" data-to="200" data-prefix="$">$200</div><div class="ad-l">Subscriptions</div></div>
+              <div class="fzdm-kpis">
+                <div class="fzdm-kpi"><div class="fzdm-v" data-to="5370" data-prefix="$">$5,370</div><div class="fzdm-l">Net spend <em>Apr–Jun</em></div></div>
+                <div class="fzdm-kpi"><div class="fzdm-v" data-to="1880" data-prefix="$">$1,880</div><div class="fzdm-l">Groceries</div></div>
+                <div class="fzdm-kpi"><div class="fzdm-v" data-to="980" data-prefix="$">$980</div><div class="fzdm-l">Restaurants</div></div>
+                <div class="fzdm-kpi"><div class="fzdm-v" data-to="200" data-prefix="$">$200</div><div class="fzdm-l">Subscriptions</div></div>
               </div>
-              <div class="ad-row">
-                <div class="ad-charts-col">
-                  <div class="ad-panel ad-chart">
-                    <div class="ad-ph">Spend by category</div>
-                    <div class="ad-chart-plot">
-                      <div class="ad-y-axis" aria-hidden="true">
+              <div class="fzdm-row">
+                <div class="fzdm-charts-col">
+                  <div class="fzdm-panel fzdm-chart">
+                    <div class="fzdm-ph">Spend by category</div>
+                    <div class="fzdm-chart-plot">
+                      <div class="fzdm-y-axis" aria-hidden="true">
                         <span>$2k</span><span>$1.3k</span><span>$0.7k</span><span>$0</span>
                       </div>
-                      <div class="ad-bar-plot">
-                        <div class="ad-bar-grid" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-                        <div class="ad-bars">
-                          <span style="--h:94%;--d:0s;--bar:#0fae6f"></span>
-                          <span style="--h:49%;--d:.08s;--bar:#ef4655"></span>
-                          <span style="--h:30%;--d:.16s;--bar:#7c4dff"></span>
-                          <span style="--h:23%;--d:.24s;--bar:#14b8a6"></span>
-                          <span style="--h:16%;--d:.32s;--bar:#ff9900"></span>
-                          <span style="--h:10%;--d:.4s;--bar:#5b5bf0"></span>
-                          <span style="--h:7%;--d:.48s;--bar:#a16207"></span>
+                      <div class="fzdm-bar-plot">
+                        <div class="fzdm-bar-grid" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                        <div class="fzdm-bars">
+                          <span style="--h:94%;--d:0s;--bar:#0fae6f;height:94%;min-height:4px"></span>
+                          <span style="--h:49%;--d:.08s;--bar:#ef4655;height:49%;min-height:4px"></span>
+                          <span style="--h:30%;--d:.16s;--bar:#7c4dff;height:30%;min-height:4px"></span>
+                          <span style="--h:23%;--d:.24s;--bar:#14b8a6;height:23%;min-height:4px"></span>
+                          <span style="--h:16%;--d:.32s;--bar:#ff9900;height:16%;min-height:4px"></span>
+                          <span style="--h:10%;--d:.4s;--bar:#5b5bf0;height:10%;min-height:4px"></span>
+                          <span style="--h:7%;--d:.48s;--bar:#a16207;height:7%;min-height:4px"></span>
                         </div>
-                        <div class="ad-x-axis" aria-hidden="true">
+                        <div class="fzdm-x-axis" aria-hidden="true">
                           <span>Groc</span><span>Rest</span><span>Shop</span><span>Health</span><span>Amzn</span><span>Subs</span><span>Coffee</span>
                         </div>
                       </div>
                     </div>
-                    <div class="ad-chart-legend ad-chart-legend-cats" aria-hidden="true">
-                      <span><i class="ad-legend-swatch" style="background:#0fae6f"></i> Groceries</span>
-                      <span><i class="ad-legend-swatch" style="background:#ef4655"></i> Restaurants</span>
-                      <span><i class="ad-legend-swatch" style="background:#7c4dff"></i> Shopping</span>
-                      <span><i class="ad-legend-swatch" style="background:#14b8a6"></i> Health</span>
-                      <span><i class="ad-legend-swatch" style="background:#ff9900"></i> Online/Amazon</span>
-                      <span><i class="ad-legend-swatch" style="background:#5b5bf0"></i> Subscriptions</span>
-                      <span><i class="ad-legend-swatch" style="background:#a16207"></i> Coffee</span>
+                    <div class="fzdm-chart-legend fzdm-chart-legend-cats" aria-hidden="true">
+                      <span><i class="fzdm-legend-swatch" style="background:#0fae6f"></i> Groceries</span>
+                      <span><i class="fzdm-legend-swatch" style="background:#ef4655"></i> Restaurants</span>
+                      <span><i class="fzdm-legend-swatch" style="background:#7c4dff"></i> Shopping</span>
+                      <span><i class="fzdm-legend-swatch" style="background:#14b8a6"></i> Health</span>
+                      <span><i class="fzdm-legend-swatch" style="background:#ff9900"></i> Online/Amazon</span>
+                      <span><i class="fzdm-legend-swatch" style="background:#5b5bf0"></i> Subscriptions</span>
+                      <span><i class="fzdm-legend-swatch" style="background:#a16207"></i> Coffee</span>
                     </div>
                   </div>
-                  <div class="ad-panel ad-line">
-                    <div class="ad-ph">Spend over time</div>
-                    <svg class="ad-line-chart" viewBox="0 0 260 72" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                  <div class="fzdm-panel fzdm-line">
+                    <div class="fzdm-ph">Spend over time</div>
+                    <svg class="fzdm-line-chart" viewBox="0 0 260 72" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
                       <defs>
-                        <linearGradient id="adLineFill" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="fzdmLineFill" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stop-color="#3b82f6" stop-opacity=".22"/>
                           <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
                         </linearGradient>
                       </defs>
-                      <g class="ad-axis-grid">
+                      <g class="fzdm-axis-grid">
                         <line x1="28" y1="12" x2="252" y2="12"/>
                         <line x1="28" y1="28" x2="252" y2="28"/>
                         <line x1="28" y1="44" x2="252" y2="44"/>
                       </g>
-                      <line class="ad-axis-line" x1="28" y1="8" x2="28" y2="56"/>
-                      <line class="ad-axis-line" x1="28" y1="56" x2="252" y2="56"/>
-                      <text class="ad-axis-y" x="25" y="12">$1.2k</text>
-                      <text class="ad-axis-y" x="25" y="28">$800</text>
-                      <text class="ad-axis-y" x="25" y="44">$400</text>
-                      <text class="ad-axis-y" x="25" y="57">$0</text>
-                      <text class="ad-axis-x" x="28" y="68">Apr</text>
-                      <text class="ad-axis-x" x="140" y="68">May</text>
-                      <text class="ad-axis-x" x="252" y="68">Jun</text>
-                      <path class="ad-line-fill" d="M28,46 C31.36,45.28 49.28,38.8 56,40 C62.72,41.2 77.28,57.92 84,56 C90.72,54.08 105.28,26.64 112,24 C118.72,21.36 133.28,35.2 140,34 C146.72,32.8 161.28,14.84 168,14 C174.72,13.16 189.28,27.72 196,27 C202.72,26.28 217.28,8.72 224,8 C230.72,7.28 248.64,19.44 252,21 L252,56 L28,56 Z"/>
-                      <path class="ad-line-stroke" d="M28,46 C31.36,45.28 49.28,38.8 56,40 C62.72,41.2 77.28,57.92 84,56 C90.72,54.08 105.28,26.64 112,24 C118.72,21.36 133.28,35.2 140,34 C146.72,32.8 161.28,14.84 168,14 C174.72,13.16 189.28,27.72 196,27 C202.72,26.28 217.28,8.72 224,8 C230.72,7.28 248.64,19.44 252,21"/>
+                      <line class="fzdm-axis-line" x1="28" y1="8" x2="28" y2="56"/>
+                      <line class="fzdm-axis-line" x1="28" y1="56" x2="252" y2="56"/>
+                      <text class="fzdm-axis-y" x="25" y="12">$1.2k</text>
+                      <text class="fzdm-axis-y" x="25" y="28">$800</text>
+                      <text class="fzdm-axis-y" x="25" y="44">$400</text>
+                      <text class="fzdm-axis-y" x="25" y="57">$0</text>
+                      <text class="fzdm-axis-x" x="28" y="68">Apr</text>
+                      <text class="fzdm-axis-x" x="140" y="68">May</text>
+                      <text class="fzdm-axis-x" x="252" y="68">Jun</text>
+                      <path class="fzdm-line-fill" d="M28,46 C31.36,45.28 49.28,38.8 56,40 C62.72,41.2 77.28,57.92 84,56 C90.72,54.08 105.28,26.64 112,24 C118.72,21.36 133.28,35.2 140,34 C146.72,32.8 161.28,14.84 168,14 C174.72,13.16 189.28,27.72 196,27 C202.72,26.28 217.28,8.72 224,8 C230.72,7.28 248.64,19.44 252,21 L252,56 L28,56 Z"/>
+                      <path class="fzdm-line-stroke" d="M28,46 C31.36,45.28 49.28,38.8 56,40 C62.72,41.2 77.28,57.92 84,56 C90.72,54.08 105.28,26.64 112,24 C118.72,21.36 133.28,35.2 140,34 C146.72,32.8 161.28,14.84 168,14 C174.72,13.16 189.28,27.72 196,27 C202.72,26.28 217.28,8.72 224,8 C230.72,7.28 248.64,19.44 252,21"/>
                     </svg>
-                    <div class="ad-chart-legend" aria-hidden="true"><span class="ad-legend-swatch ad-legend-line"></span> Net spend over time</div>
+                    <div class="fzdm-chart-legend" aria-hidden="true"><span class="fzdm-legend-swatch fzdm-legend-line"></span> Net spend over time</div>
                   </div>
                 </div>
-                <div class="ad-panel ad-mom">
-                  <div class="ad-ph">Month over month</div>
-                  <div class="ad-mom-table-wrap">
-                    <table class="ad-mom-table">
+                <div class="fzdm-panel fzdm-mom">
+                  <div class="fzdm-ph">Month over month</div>
+                  <div class="fzdm-mom-table-wrap">
+                    <table class="fzdm-mom-table">
                       <thead>
                         <tr><th>Month</th><th class="num">Net</th><th class="num">Δ</th><th class="num">%</th></tr>
                       </thead>
@@ -986,48 +987,48 @@
                       </tbody>
                     </table>
                   </div>
-                  <div class="ad-cm-wrap">
-                    <div class="ad-ph ad-ph-sm">By cardmember</div>
-                    <div class="ad-cm-bars" aria-hidden="true">
-                      <div class="ad-cm-bar">
-                        <div class="ad-cm-track"><span class="ad-cm-fill" style="height:90%;background:#5b5bf0"></span></div>
-                        <span class="ad-cm-label">Sam · $3,125</span>
+                  <div class="fzdm-cm-wrap">
+                    <div class="fzdm-ph fzdm-ph-sm">By cardmember</div>
+                    <div class="fzdm-cm-bars" aria-hidden="true">
+                      <div class="fzdm-cm-bar">
+                        <div class="fzdm-cm-track"><span class="fzdm-cm-fill" style="height:90%;background:#5b5bf0"></span></div>
+                        <span class="fzdm-cm-label">Sam · $3,125</span>
                       </div>
-                      <div class="ad-cm-bar">
-                        <div class="ad-cm-track"><span class="ad-cm-fill" style="height:65%;background:#0fae6f"></span></div>
-                        <span class="ad-cm-label">Alex · $2,244</span>
+                      <div class="fzdm-cm-bar">
+                        <div class="fzdm-cm-track"><span class="fzdm-cm-fill" style="height:65%;background:#0fae6f"></span></div>
+                        <span class="fzdm-cm-label">Alex · $2,244</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="ad-ai-popup is-hidden" id="adAiPopup">
-              <div class="ad-ai-panel">
-                <div class="ad-ai-tabs">
-                  <span class="ad-ai-brand">Finalyze AI</span>
-                  <button type="button" class="ad-ai-tab" data-ad-ai-tab="insights">Insights</button>
-                  <button type="button" class="ad-ai-tab ad-ai-tab-on" data-ad-ai-tab="chat">Chat</button>
-                  <button type="button" class="ad-ai-tab" data-ad-ai-tab="models">Models</button>
-                  <button type="button" class="ad-ai-close" id="adAiClose" title="Close">×</button>
+            <div class="fzdm-ai-popup is-hidden" id="fzdmAiPopup">
+              <div class="fzdm-ai-panel">
+                <div class="fzdm-ai-tabs">
+                  <span class="fzdm-ai-brand">Finalyze AI</span>
+                  <button type="button" class="fzdm-ai-tab" data-fzdm-ai-tab="insights">Insights</button>
+                  <button type="button" class="fzdm-ai-tab fzdm-ai-tab-on" data-fzdm-ai-tab="chat">Chat</button>
+                  <button type="button" class="fzdm-ai-tab" data-fzdm-ai-tab="models">Models</button>
+                  <button type="button" class="fzdm-ai-close" id="fzdmAiClose" title="Close">×</button>
                 </div>
-                <div class="ad-ai-body" id="adAiBody">
-                  <div id="adAiChatView">
-                    <div class="ad-ai-log" id="adAiLog">
-                      <div class="ad-ai-msg bot">Ask about this demo data - try “coffee”, “subscriptions”, or “what changed?”</div>
+                <div class="fzdm-ai-body" id="fzdmAiBody">
+                  <div id="fzdmAiChatView">
+                    <div class="fzdm-ai-log" id="fzdmAiLog">
+                      <div class="fzdm-ai-msg bot">Ask about this demo data - try “coffee”, “subscriptions”, or “what changed?”</div>
                     </div>
-                    <form class="ad-ai-form" id="adAiForm">
-                      <input type="text" id="adAiInput" placeholder="Ask your data…" autocomplete="off" />
+                    <form class="fzdm-ai-form" id="fzdmAiForm">
+                      <input type="text" id="fzdmAiInput" placeholder="Ask your data…" autocomplete="off" />
                       <button type="submit">Send</button>
                     </form>
                   </div>
-                  <ul class="ad-ai-insights" id="adAiInsightsView" hidden>
+                  <ul class="fzdm-ai-insights" id="fzdmAiInsightsView" hidden>
                     <li>You spent <b>$69 less</b> in June than May (<b>−4%</b>).</li>
                     <li>Groceries is your top category at <b>$1,880</b> — Costco leads at <b>$641</b>.</li>
                     <li>Found <b>5 subscriptions</b> (~<b>$67/mo</b>) — Spotify, Netflix, ChatGPT, Apple, Google.</li>
                     <li>Top merchant: <b>The Keg</b> at <b>$721</b> across 4 visits.</li>
                   </ul>
-                  <p class="ad-ai-models" id="adAiModelsView" hidden>These run locally in the real app (WebAssembly). Nothing is sent anywhere. You can enable the models from Settings once you're in the full demo.</p>
+                  <p class="fzdm-ai-models" id="fzdmAiModelsView" hidden>These run locally in the real app (WebAssembly). Nothing is sent anywhere. You can enable the models from Settings once you're in the full demo.</p>
                 </div>
               </div>
             </div>
@@ -1332,8 +1333,8 @@
       var MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
       var btn = document.getElementById('themeToggle');
       var demo = document.getElementById('how');
-      var demoBtn = document.getElementById('adDemoTheme');
-      var demoLabel = document.getElementById('adDemoThemeLabel');
+      var demoBtn = document.getElementById('fzdmDemoTheme');
+      var demoLabel = document.getElementById('fzdmDemoThemeLabel');
       function syncPageTheme() {
         var dark = document.documentElement.dataset.theme === 'dark';
         if (btn) btn.innerHTML = dark ? SUN : MOON;
@@ -1342,12 +1343,12 @@
         if (!demo) return;
         var dark = demo.dataset.theme === 'dark';
         if (demoLabel) demoLabel.textContent = dark ? 'Light' : 'Dark';
-        var icon = document.getElementById('adDemoThemeIcon');
+        var icon = document.getElementById('fzdmDemoThemeIcon');
         if (icon) {
           var wrap = document.createElement('div');
           wrap.innerHTML = dark ? MOON : SUN;
           var next = wrap.firstChild;
-          next.id = 'adDemoThemeIcon';
+          next.id = 'fzdmDemoThemeIcon';
           icon.replaceWith(next);
         }
       }
@@ -1470,7 +1471,7 @@
 
     (function () {
       var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var kpis = [].slice.call(document.querySelectorAll('.ad-v'));
+      var kpis = [].slice.call(document.querySelectorAll('.fzdm-v'));
       function countUp() {
         kpis.forEach(function (el) {
           var to = +el.dataset.to, pre = el.dataset.prefix || '', start = Date.now(), dur = 1100;
@@ -1486,10 +1487,10 @@
     })();
 
     (function () {
-      var svg = document.querySelector('.ad-line-chart');
+      var svg = document.querySelector('.fzdm-line-chart');
       if (!svg) return;
-      var stroke = svg.querySelector('.ad-line-stroke');
-      var fill = svg.querySelector('.ad-line-fill');
+      var stroke = svg.querySelector('.fzdm-line-stroke');
+      var fill = svg.querySelector('.fzdm-line-fill');
       if (!stroke || !fill) return;
 
       var pts = [[28, 46], [56, 40], [84, 56], [112, 24], [140, 34], [168, 14], [196, 27], [224, 8], [252, 21]];
@@ -1518,6 +1519,9 @@
       var last = pts[pts.length - 1];
       stroke.setAttribute('d', lineD);
       fill.setAttribute('d', lineD + ' L' + last[0] + ',' + bottom + ' L' + left + ',' + bottom + ' Z');
+      stroke.style.strokeDasharray = 'none';
+      stroke.style.strokeDashoffset = '0';
+      fill.style.opacity = '1';
 
       var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduce) return;
@@ -1528,7 +1532,7 @@
       function drawLine() {
         stroke.style.transition = 'none';
         fill.style.transition = 'none';
-        stroke.style.strokeDasharray = len;
+        stroke.style.strokeDasharray = len + ' ' + len;
         stroke.style.strokeDashoffset = len;
         fill.style.opacity = '0';
         stroke.getBoundingClientRect();
@@ -1538,25 +1542,24 @@
         fill.style.opacity = '1';
       }
 
-      drawLine();
       setInterval(drawLine, 9000);
     })();
 
     (function () {
-      var popup = document.getElementById('adAiPopup');
-      var openBtn = document.getElementById('adAiOpen');
-      var closeBtn = document.getElementById('adAiClose');
-      var form = document.getElementById('adAiForm');
-      var input = document.getElementById('adAiInput');
-      var log = document.getElementById('adAiLog');
-      var chatView = document.getElementById('adAiChatView');
-      var insightsView = document.getElementById('adAiInsightsView');
-      var modelsView = document.getElementById('adAiModelsView');
-      var preset = document.getElementById('adFilterPreset');
-      var fromEl = document.getElementById('adFilterFrom');
-      var toEl = document.getElementById('adFilterTo');
-      var flowEl = document.getElementById('adFilterFlow');
-      var clearBtn = document.getElementById('adFilterClear');
+      var popup = document.getElementById('fzdmAiPopup');
+      var openBtn = document.getElementById('fzdmAiOpen');
+      var closeBtn = document.getElementById('fzdmAiClose');
+      var form = document.getElementById('fzdmAiForm');
+      var input = document.getElementById('fzdmAiInput');
+      var log = document.getElementById('fzdmAiLog');
+      var chatView = document.getElementById('fzdmAiChatView');
+      var insightsView = document.getElementById('fzdmAiInsightsView');
+      var modelsView = document.getElementById('fzdmAiModelsView');
+      var preset = document.getElementById('fzdmFilterPreset');
+      var fromEl = document.getElementById('fzdmFilterFrom');
+      var toEl = document.getElementById('fzdmFilterTo');
+      var flowEl = document.getElementById('fzdmFilterFlow');
+      var clearBtn = document.getElementById('fzdmFilterClear');
       if (!popup || !form || !log) return;
 
       var tab = 'chat';
@@ -1572,8 +1575,8 @@
 
       function setTab(next) {
         tab = next;
-        popup.querySelectorAll('[data-ad-ai-tab]').forEach(function (b) {
-          b.classList.toggle('ad-ai-tab-on', b.dataset.adAiTab === tab);
+        popup.querySelectorAll('[data-fzdm-ai-tab]').forEach(function (b) {
+          b.classList.toggle('fzdm-ai-tab-on', b.dataset.fzdmAiTab === tab);
         });
         if (chatView) chatView.hidden = tab !== 'chat';
         if (insightsView) insightsView.hidden = tab !== 'insights';
@@ -1581,8 +1584,8 @@
         if (tab === 'chat' && input) input.focus();
       }
 
-      popup.querySelectorAll('[data-ad-ai-tab]').forEach(function (b) {
-        b.addEventListener('click', function () { setTab(b.dataset.adAiTab); });
+      popup.querySelectorAll('[data-fzdm-ai-tab]').forEach(function (b) {
+        b.addEventListener('click', function () { setTab(b.dataset.fzdmAiTab); });
       });
       if (closeBtn) closeBtn.addEventListener('click', hidePopup);
       if (openBtn) {
@@ -1594,7 +1597,7 @@
 
       function appendMsg(role, html) {
         var el = document.createElement('div');
-        el.className = 'ad-ai-msg ' + (role === 'user' ? 'user' : 'bot');
+        el.className = 'fzdm-ai-msg ' + (role === 'user' ? 'user' : 'bot');
         el.innerHTML = html;
         log.appendChild(el);
         log.scrollTop = log.scrollHeight;

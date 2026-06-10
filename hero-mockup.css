@@ -1,0 +1,61 @@
+/* P0-1: hero mockup must render populated without JS or animation (loaded after landing.css) */
+.appdemo .fzdm-window {
+  display: grid !important;
+  grid-template-columns: 156px minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  height: 420px !important;
+  min-height: 420px !important;
+  max-height: 420px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  background: #eef1f8 !important;
+}
+.appdemo .fzdm-side {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+}
+.appdemo .fzdm-main {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  width: auto !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+.appdemo .fzdm-kpi,
+.appdemo .fzdm-panel {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.appdemo .fzdm-bars span {
+  height: var(--h, 50%) !important;
+  min-height: 4px !important;
+  animation: none !important;
+  transform: none !important;
+}
+.appdemo .fzdm-line-chart .fzdm-line-stroke,
+.appdemo .fzdm-line-chart .fzdm-line-fill {
+  opacity: 1 !important;
+  stroke-dasharray: none !important;
+  stroke-dashoffset: 0 !important;
+}
+@media (max-width: 900px) {
+  .appdemo .fzdm-window {
+    grid-template-columns: 1fr !important;
+  }
+  .appdemo .fzdm-side {
+    display: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .appdemo .fzdm-bars span,
+  .appdemo .fzdm-navsel {
+    animation: none !important;
+    transform: none !important;
+  }
+}
