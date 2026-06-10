@@ -31,7 +31,7 @@
       before: animateDemoAIClick,
       after: closeDemoAI,
     },
-    { sel: null, title: 'Ready for the real thing?', body: 'That’s the tour! Clear this sample data and import your own bank or card export (.qfx / .ofx / .csv). Your data never leaves your device.', final: true },
+    { sel: null, title: 'Ready for the real thing?', body: 'That’s the tour! Clear this sample data and import your own bank or card statement (.pdf / .csv / .qfx / .ofx). Your data never leaves your device.', final: true },
   ];
 
   let idx = 0, coach = null, target = null, demoCursor = null;
