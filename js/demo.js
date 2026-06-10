@@ -102,8 +102,9 @@
       const csv = await res.text();
       const parsed = F.parseCSV(csv);
       await Promise.resolve(F.Store.mergeTransactions(parsed, 'default'));
-      F.Store.setBudget('Shopping/Retail', 120);
-      F.Store.setBudget('Groceries', 200);
+      F.Store.setBudget('Groceries', 900);
+      F.Store.setBudget('Restaurants', 550);
+      F.Store.setBudget('Coffee', 50);
       localStorage.setItem(DEMO_KEY, '1');
       F.render && F.render();
       updateBanner();
@@ -392,8 +393,9 @@
     if (F.Store.getTransactions().length) {
       const b = F.Store.getBudgets();
       if (!Object.keys(b).length) {
-        F.Store.setBudget('Shopping/Retail', 120);
-        F.Store.setBudget('Groceries', 200);
+        F.Store.setBudget('Groceries', 900);
+        F.Store.setBudget('Restaurants', 550);
+        F.Store.setBudget('Coffee', 50);
         F.render && F.render();
       }
       updateBanner();
